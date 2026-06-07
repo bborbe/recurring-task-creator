@@ -1,13 +1,17 @@
 ---
+status: prompted
 tags:
-  - dark-factory
-  - spec
-status: draft
+    - dark-factory
+    - spec
+approved: "2026-06-07T20:47:31Z"
+generating: "2026-06-07T21:27:11Z"
+prompted: "2026-06-07T21:27:11Z"
+branch: dark-factory/schedule-encoding
 ---
 
 ## Summary
 
-- Encode the full recurring-task inventory (~40 entries currently emitted by `jira-task-creator`) as typed Go data inside this service.
+- Encode the full recurring-task inventory (all ~45 entries currently emitted by `jira-task-creator`) as typed Go data inside this service.
 - Provide a pure date-driven lookup that answers "which recurring task definitions fire on this date?" with no I/O.
 - Translation fidelity is the bar: for any given date, the set of task slugs returned must equal the set of subtasks the current Jira providers would emit for that date.
 - Out of scope here: Kafka publishing, deterministic UUID5 generation, hourly cron tick, HTTP trigger, K8s manifests — those are follow-up specs.
@@ -38,7 +42,7 @@ After this work, a single in-process function can be called with a calendar date
 2. Each entry carries: stable slug, title template, markdown body template, recurrence kind (`daily | weekly | monthly | quarterly | yearly`), and a predicate that decides "does this fire on date D?".
 3. A pure function `TasksForDate(date) []TaskDefinition` returns every entry whose predicate is true for that date, in deterministic order (sorted by slug).
 4. Slugs are stable, kebab-case, globally unique across the inventory, and chosen so the eventual UUID5 input `recurring-<slug>-<YYYY-MM-DD>` will be stable across reboots and refactors.
-5. Title templates support exactly the placeholders observed in the source providers: `{{date}}` (YYYY-MM-DD), `{{iso-week}}` (YYYYwWW), `{{next-iso-week}}`, `{{month}}` (YYYY-MM), `{{last-month}}`, `{{quarter}}` (YYYYqQ), `{{last-quarter}}`, `{{year}}` (YYYY), `{{last-year}}`. No others; unknown placeholders are a build-time failure of the inventory test, not a runtime fallback.
+5. Title templates support exactly the placeholders observed in the source providers: `{{date}}` (YYYY-MM-DD), `{{iso-week}}` (YYYYWWW — uppercase `W`, matches source `dateToWeek`), `{{next-iso-week}}`, `{{month}}` (YYYY-MM), `{{last-month}}`, `{{quarter}}` (YYYYQQ — uppercase `Q`, matches source `dateToQuarter`), `{{last-quarter}}`, `{{year}}` (YYYY), `{{last-year}}`. No others; unknown placeholders are a build-time failure of the inventory test, not a runtime fallback.
 6. Body templates are raw markdown strings; whatever ADF the Jira providers built up paragraph-by-paragraph is flattened to its markdown equivalent (links as `[text](url)`, paragraphs separated by blank lines, list items as `- ` / `1. `).
 7. Predicates compose from primitives: weekday-in-set, day-of-month-in-set, ISO-week-parity, month-and-day, every-day, quarter-boundary (first day of Jan/Apr/Jul/Oct), year-boundary (first day of Jan). The set of primitives is closed; adding a new kind of predicate is a new spec.
 8. The inventory is exhaustive: every non-disabled entry across the four `trading_*-story-provider.go` files appears in the inventory exactly once, with predicate matching the original `switch`/`if` arm that gated it.
@@ -75,12 +79,12 @@ Not applicable — no HTTP, no file I/O, no user input crosses a trust boundary 
 - [ ] For date `2025-01-04` (a Saturday in W01), `TasksForDate` returns exactly the set of slugs corresponding to the Saturday arm of `NewDailyProvider` (`shutdown-k3s`, `turn-on-hell`, `weekly-review`, `check-ftmo-demo-accounts`, `lexoffice-invoices`, `moneymoney-review`, `opnsense-update`, `home-assistant-update-backup`, `renew-gmail-oauth-tokens`, `plan-next-week`, `run-update-all-saturday`, `topic-backup-saturday`) — evidence: Ginkgo `Expect(slugs).To(ConsistOf(...))` passes; exact slug list lives in the test file as the canonical spelling.
 - [ ] For date `2025-01-05` (a Sunday), `TasksForDate` returns exactly the Sunday arm (`complete-rsync-backups`, `complete-longhorn-backups`, `turn-off-hell`, `turn-off-sun`, `turn-off-fire`, `docker-registry-gc`, `rebuild-trading-dev-prod`, `check-bot-is-healthy`, `run-update-all`) — evidence: Ginkgo `ConsistOf` passes.
 - [ ] For date `2025-03-05` (a Wednesday, day-of-month=5), `TasksForDate` returns exactly `{update-finances}` — evidence: Ginkgo `ConsistOf` passes (note: not a Sat/Sun, so no weekly arm contributes).
-- [ ] For date `2025-05-01` (a Thursday, month=5 day=1), `TasksForDate` returns exactly `{capitalcom-apikey-prod, capitalcom-apikey-dev}` — evidence: Ginkgo `ConsistOf` passes.
+- [ ] For date `2025-05-01` (a Thursday, month=5 day=1), `TasksForDate` returns the union of the monthly inventory (same 17 monthly slugs as listed in the 2025-04-01 AC below: `backup-atlassian-confluence`, `backup-atlassian-jira`, `backup-google-drive`, `backup-pictures`, `monthly-review`, `plan-month`, `trading-profits`, `update-frontend`, `update-go-mod`, `update-inventar`, `update-journal`, `world-apply`, `update-screego`, `update-poste`, `update-minio`, `update-library`, `update-k3s`) and the year-1st pair `{capitalcom-apikey-prod, capitalcom-apikey-dev}` — exactly 19 slugs total — evidence: Ginkgo `ConsistOf` passes. (Monthly fires on day-of-month=1; this is consistent with the 2025-04-01 AC.)
 - [ ] For date `2025-04-01` (quarter boundary, month=4 day=1), `TasksForDate` returns the union of the monthly inventory (`backup-atlassian-confluence`, `backup-atlassian-jira`, `backup-google-drive`, `backup-pictures`, `monthly-review`, `plan-month`, `trading-profits`, `update-frontend`, `update-go-mod`, `update-inventar`, `update-journal`, `world-apply`, `update-screego`, `update-poste`, `update-minio`, `update-library`, `update-k3s`) and the quarterly inventory (`quarter-review`, `quarter-plan`) — evidence: Ginkgo `ConsistOf` passes.
 - [ ] For date `2025-01-01` (year boundary, also quarter boundary, also a Wednesday), `TasksForDate` returns the union of monthly + quarterly + yearly inventories (yearly adds `yearly-review`, `plan-year`) — evidence: Ginkgo `ConsistOf` passes.
 - [ ] Returned slice is sorted by slug ascending on every call — evidence: Ginkgo `Expect(slugs).To(Equal(sortedSlugs))` passes.
 - [ ] Calling `TasksForDate` twice with the same date produces identical slices (deep equality on every field) — evidence: Ginkgo `Expect(a).To(Equal(b))` passes.
-- [ ] The full set of inventory slugs (across all entries, regardless of date) equals a frozen canonical sorted list pinned in the test file — evidence: Ginkgo `Expect(allSlugs).To(Equal([]string{...full canonical list of all ~40 slugs...}))` passes. This locks DB #8's exhaustiveness against silent omission: an entry missing from the registry but not firing on any of the six representative dates would still fail this assertion. The canonical list lives in the test, not in production code.
+- [ ] The full set of inventory slugs (across all entries, regardless of date) equals a frozen canonical sorted list pinned in the test file — evidence: Ginkgo `Expect(allSlugs).To(Equal([]string{...full canonical list of all all ~45 slugs...}))` passes. This locks DB #8's exhaustiveness against silent omission: an entry missing from the registry but not firing on any of the six representative dates would still fail this assertion. The canonical list lives in the test, not in production code.
 - [ ] Package contains zero imports of `github.com/segmentio/kafka-go`, `github.com/google/uuid`, `net/http`, or `github.com/bborbe/jira-task-creator/...` — evidence: `grep -E '"(github\.com/segmentio/kafka-go|github\.com/google/uuid|net/http|github\.com/bborbe/jira-task-creator)"' pkg/schedule/*.go` returns no matches.
 - [ ] No scenario test added — covered by unit tests above; see scenario rule below.
 
