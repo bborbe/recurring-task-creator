@@ -1,5 +1,6 @@
-workflow: branch
-pr: true
-autoMerge: true
+workflow: direct
+pr: false
+autoMerge: false
+autoRelease: false
 defaultBranch: master
 validationPrompt: docs/dod.md
