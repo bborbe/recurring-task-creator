@@ -10,7 +10,7 @@ metadata:
     keel.sh/pollSchedule: "@every 1m"
     random: '{{ "RANDOM" | env }}'
 spec:
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels:
       app: recurring-task-creator
@@ -34,7 +34,9 @@ spec:
                   - key: node_type
                     operator: In
                     values:
-                      - '{{ "NAMESPACE" | env }}'
+                      - agent
+      securityContext:
+        fsGroup: 65534
       containers:
         - name: service
           args:
@@ -42,6 +44,10 @@ spec:
           env:
             - name: LISTEN
               value: ':9090'
+            - name: KAFKA_BROKERS
+              value: '{{ "KAFKA_BROKERS" | env }}'
+            - name: STAGE
+              value: '{{ "STAGE" | env }}'
             - name: SENTRY_DSN
               valueFrom:
                 secretKeyRef:
@@ -49,10 +55,8 @@ spec:
                   name: recurring-task-creator
             - name: SENTRY_PROXY
               value: '{{"SENTRY_PROXY_URL" | env}}'
-            - name: DATADIR
-              value: '/data'
-            - name: KAFKA_BROKERS
-              value: '{{ "KAFKA_BROKERS" | env }}'
+            - name: TZ
+              value: Europe/Berlin
           image: '{{"DOCKER_REGISTRY" | env}}/recurring-task-creator:{{"BRANCH" | env}}'
           imagePullPolicy: Always
           livenessProbe:
@@ -76,25 +80,26 @@ spec:
             timeoutSeconds: 5
           resources:
             limits:
-              cpu: 500m
-              memory: 50Mi
+              cpu: 200m
+              memory: 100Mi
             requests:
               cpu: 20m
               memory: 20Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65534
           volumeMounts:
-            - mountPath: /data
-              name: datadir
+            - mountPath: /tmp
+              name: tmp
       imagePullSecrets:
         - name: docker-quant
+      volumes:
+        - name: tmp
+          emptyDir: {}
   updateStrategy:
     type: RollingUpdate
-  volumeClaimTemplates:
-    - metadata:
-        name: datadir
-      spec:
-        storageClassName: local-path
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi

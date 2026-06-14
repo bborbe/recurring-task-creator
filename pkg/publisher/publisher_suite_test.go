@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package handler_test
+package publisher_test
 
 import (
 	"testing"
@@ -13,11 +13,12 @@ import (
 	"github.com/onsi/gomega/format"
 )
 
+//go:generate go run -mod=mod github.com/maxbrunsfeld/counterfeiter/v6 -generate
 func TestSuite(t *testing.T) {
 	time.Local = time.UTC
 	format.TruncatedDiff = false
 	RegisterFailHandler(Fail)
 	suiteConfig, reporterConfig := GinkgoConfiguration()
 	suiteConfig.Timeout = 60 * time.Second
-	RunSpecs(t, "Handler Suite", suiteConfig, reporterConfig)
+	RunSpecs(t, "Publisher Suite", suiteConfig, reporterConfig)
 }
