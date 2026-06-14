@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat: Add `GET /trigger?date=YYYY-MM-DD` HTTP handler that replays the day's recurring-task publishes on demand and returns a JSON summary with per-task error accumulation; add structured `GET /healthz` JSON handler replacing the Spec 3 text stub
 - feat: Wire `main.go` for the hourly tick loop (initial tick at boot, then 1-hour ticker in parallel with HTTP admin server via `run.CancelOnFirstFinish`); trim HTTP router to `/healthz`, `/readiness`, `/metrics`, `/setloglevel/{level}`; drop `BATCH_SIZE` and `DATADIR` env vars; delete `pkg/handler/` and `pkg/mathutil/` skeleton packages; add `pkg/factory.CreateTick`
 - feat: Add `pkg/tick` package that runs the hourly cron loop (initial tick at boot, then 1-hour ticker) calling `publisher.Publish` for every `schedule.TasksForDate` entry; per-task error isolation via glog + Prometheus counter; gauge for last-tick timestamp; `Europe/Berlin` civil date from injected clock
 - feat: Add `pkg/publisher` package that builds a deterministic `task.CreateCommand` from `(schedule.TaskDefinition, schedule.Date)` and sends it via an injected `task.CreateCommandSender`; identifier is UUID5 of `"recurring-<slug>-<YYYY-MM-DD>"`; frontmatter is frozen at `assignee/status/page_type/priority/goals/recurring`

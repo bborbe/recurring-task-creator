@@ -6,6 +6,8 @@ package factory_test
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"time"
 
 	taskmocks "github.com/bborbe/agent/lib/command/task/mocks"
@@ -66,4 +68,40 @@ var _ = Describe("CreateTick", func() {
 		// failed this test. The presence of a non-nil Tick IS the proof.
 		Expect(t).NotTo(BeNil())
 	})
+})
+
+var _ = Describe("CreateHealthzHandler", func() {
+	It("returns a non-nil http.Handler", func() {
+		Expect(factory.CreateHealthzHandler()).NotTo(BeNil())
+	})
+})
+
+var _ = Describe("CreateTriggerHandler", func() {
+	var (
+		pubFake  *projmocks.PublisherPublisher
+		httpHndl http.Handler
+	)
+	BeforeEach(func() {
+		pubFake = &projmocks.PublisherPublisher{}
+		pubFake.PublishReturns(nil)
+		httpHndl = factory.CreateTriggerHandler(pubFake)
+	})
+	It("returns a non-nil http.Handler", func() {
+		Expect(httpHndl).NotTo(BeNil())
+	})
+	It(
+		"wires the supplied publisher into the handler (publish is reachable through the returned handler)",
+		func() {
+			// Smoke test: drive the handler with a known date and confirm the
+			// fake publisher was called the expected number of times. Detailed
+			// per-task behavior is covered in pkg/handler/trigger_test.go.
+			req := httptest.NewRequest("GET", "/trigger?date=2025-01-04", nil)
+			resp := httptest.NewRecorder()
+			httpHndl.ServeHTTP(resp, req)
+			Expect(resp.Code).To(Equal(http.StatusOK))
+			Expect(pubFake.PublishCallCount()).To(Equal(
+				len(schedule.TasksForDate(schedule.NewDate(2025, time.January, 4))),
+			))
+		},
+	)
 })

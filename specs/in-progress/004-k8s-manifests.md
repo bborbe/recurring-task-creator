@@ -1,11 +1,12 @@
 ---
-status: prompted
+status: verifying
 tags:
     - dark-factory
     - spec
 approved: "2026-06-14T12:05:08Z"
 generating: "2026-06-14T12:13:39Z"
 prompted: "2026-06-14T12:25:32Z"
+verifying: "2026-06-14T12:52:12Z"
 branch: dark-factory/k8s-manifests
 ---
 

@@ -26,6 +26,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/bborbe/recurring-task-creator/pkg/factory"
+	"github.com/bborbe/recurring-task-creator/pkg/publisher"
 	"github.com/bborbe/recurring-task-creator/pkg/tick"
 )
 
@@ -81,22 +82,23 @@ func (a *application) Run(ctx context.Context, _ libsentry.Client) error {
 
 	return run.CancelOnFirstFinish(
 		ctx,
-		a.runHTTPServer(),
+		a.runHTTPServer(pub),
 		tickLoop.Run,
 	)
 }
 
-func (a *application) runHTTPServer() run.Func {
+func (a *application) runHTTPServer(pub publisher.Publisher) run.Func {
 	return func(ctx context.Context) error {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
 		router := mux.NewRouter()
-		router.Path("/healthz").Handler(libhttp.NewPrintHandler("OK"))
+		router.Path("/healthz").Handler(factory.CreateHealthzHandler())
 		router.Path("/readiness").Handler(libhttp.NewPrintHandler("OK"))
 		router.Path("/metrics").Handler(promhttp.Handler())
 		router.Path("/setloglevel/{level}").
 			Handler(liblog.NewSetLoglevelHandler(ctx, liblog.NewLogLevelSetter(2, 5*time.Minute)))
+		router.Path("/trigger").Methods("GET").Handler(factory.CreateTriggerHandler(pub))
 
 		glog.V(2).Infof("starting http server listen on %s", a.Listen)
 		return libhttp.NewServer(a.Listen, router).Run(ctx)

@@ -6,11 +6,13 @@ package factory
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/bborbe/agent/lib/command/task"
 	"github.com/bborbe/errors"
 	libtime "github.com/bborbe/time"
 
+	"github.com/bborbe/recurring-task-creator/pkg/handler"
 	"github.com/bborbe/recurring-task-creator/pkg/publisher"
 	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 	"github.com/bborbe/recurring-task-creator/pkg/tick"
@@ -44,4 +46,14 @@ func CreateTick(
 		panic(errors.Wrap(ctx, err, "create tick failed"))
 	}
 	return t
+}
+
+// CreateHealthzHandler returns the liveness-probe HTTP handler. Pure plumbing.
+func CreateHealthzHandler() http.Handler {
+	return handler.NewHealthzHandler()
+}
+
+// CreateTriggerHandler returns the operator-replay HTTP handler. Pure plumbing.
+func CreateTriggerHandler(publisher publisher.Publisher) http.Handler {
+	return handler.NewTriggerHandler(publisher)
 }

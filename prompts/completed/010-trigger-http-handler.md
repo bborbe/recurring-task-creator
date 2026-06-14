@@ -1,8 +1,13 @@
 ---
-status: approved
+status: completed
 spec: [005-trigger-http-handler]
+summary: Added `GET /trigger?date=YYYY-MM-DD` and structured `GET /healthz` JSON handlers in fresh `pkg/handler/` package, wired via `pkg/factory.Create*` constructors and a 5-route `main.go` admin router; all tests pass with 100% handler coverage and `make precommit` exits 0.
+container: recurring-task-creator-mvp-exec-010-trigger-http-handler
+dark-factory-version: v0.177.1
 created: "2026-06-14T12:40:27Z"
 queued: "2026-06-14T12:46:41Z"
+started: "2026-06-14T12:52:13Z"
+completed: "2026-06-14T13:03:32Z"
 branch: dark-factory/trigger-http-handler
 ---
 
