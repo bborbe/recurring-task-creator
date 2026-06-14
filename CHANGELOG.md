@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat: Switch `pkg/tick` to publish the full inventory every hour (drop the per-day `schedule.TasksForDate` filter); add `schedule.Inventory()` accessor; tick constructor now takes `[]schedule.TaskDefinition` instead of `schedule.ScheduleLookup`; trigger HTTP handler (`?date=` manual replay) is unchanged
 - feat: Switch `pkg/publisher` deterministic identifier to period-anchored shape `recurring-<slug>-<period-token>` (token is `YYYY-MM-DD` for daily, `YYYYWNN` for weekly, `YYYY-MM` for monthly, `YYYYQN` for quarterly, `YYYY` for yearly; reused the title-rendering formatters in `pkg/publisher/render.go`); uuid namespace constant unchanged
 - feat: Add `DRY_RUN` env/flag — when true, publisher logs the would-be `task.CreateCommand` (slug, date, identifier) and skips the Kafka `SendCommand` call; wired through `main` and `cmd/run-once` for local smoke-testing
 - feat: Add `GET /trigger?date=YYYY-MM-DD` HTTP handler that replays the day's recurring-task publishes on demand and returns a JSON summary with per-task error accumulation; add structured `GET /healthz` JSON handler replacing the Spec 3 text stub

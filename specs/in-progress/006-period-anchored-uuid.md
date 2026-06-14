@@ -1,11 +1,12 @@
 ---
-status: prompted
+status: verifying
 tags:
     - dark-factory
     - spec
 approved: "2026-06-14T19:58:07Z"
 generating: "2026-06-14T19:59:05Z"
 prompted: "2026-06-14T20:17:47Z"
+verifying: "2026-06-14T20:20:41Z"
 branch: dark-factory/period-anchored-uuid
 ---
 

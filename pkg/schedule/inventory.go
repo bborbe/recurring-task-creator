@@ -440,3 +440,19 @@ var inventory = []TaskDefinition{
 		Fires:      OnFirstDayOfYear(),
 	},
 }
+
+// Inventory returns a fresh copy of the canonical recurring-task inventory.
+// The tick consumes this directly — every entry is published every hour.
+// Callers receive a defensive copy: mutating the returned slice does NOT
+// affect the package-level inventory state. Pure function; no I/O, no
+// clock, no env.
+//
+// The factory wires schedule.Inventory() (this function) into NewTick so
+// the tick path never imports the slice directly. The trigger HTTP handler
+// (pkg/handler/trigger) still uses schedule.TasksForDate for per-day
+// ?date= replay; this accessor is the canonical full-inventory read.
+func Inventory() []TaskDefinition {
+	out := make([]TaskDefinition, len(inventory))
+	copy(out, inventory)
+	return out
+}

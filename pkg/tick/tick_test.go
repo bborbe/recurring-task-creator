@@ -23,11 +23,11 @@ import (
 
 var _ = Describe("Tick", func() {
 	var (
-		pub        *pubmocks.PublisherPublisher
-		clock      libtime.CurrentDateTime
-		metrics    *pubmocks.TickMetrics
-		scheduleFn schedule.ScheduleLookup
-		tk         tick.Tick
+		pub       *pubmocks.PublisherPublisher
+		clock     libtime.CurrentDateTime
+		metrics   *pubmocks.TickMetrics
+		inventory []schedule.TaskDefinition
+		tk        tick.Tick
 	)
 
 	BeforeEach(func() {
@@ -39,18 +39,16 @@ var _ = Describe("Tick", func() {
 
 		metrics = &pubmocks.TickMetrics{}
 
-		scheduleFn = func(date schedule.Date) []schedule.TaskDefinition {
-			return []schedule.TaskDefinition{
-				{
-					Slug:          "weekly-review",
-					TitleTemplate: "t",
-					Recurrence:    schedule.RecurrenceWeekly,
-				},
-			}
+		inventory = []schedule.TaskDefinition{
+			{
+				Slug:          "weekly-review",
+				TitleTemplate: "t",
+				Recurrence:    schedule.RecurrenceWeekly,
+			},
 		}
 
 		var err error
-		tk, err = tick.NewTick(context.Background(), scheduleFn, pub, clock, metrics)
+		tk, err = tick.NewTick(context.Background(), inventory, pub, clock, metrics)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -92,7 +90,7 @@ var _ = Describe("Tick", func() {
 	})
 
 	Describe("publish-per-entry", func() {
-		It("calls Publish once for a single-entry scheduleFn", func() {
+		It("calls Publish once for a single-entry inventory", func() {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			done := make(chan struct{})
@@ -108,16 +106,14 @@ var _ = Describe("Tick", func() {
 			Eventually(done, "200ms", "5ms").Should(BeClosed())
 		})
 
-		It("calls Publish once for every entry when scheduleFn returns 3", func() {
-			scheduleFn = func(date schedule.Date) []schedule.TaskDefinition {
-				return []schedule.TaskDefinition{
-					{Slug: "a", TitleTemplate: "t", Recurrence: schedule.RecurrenceDaily},
-					{Slug: "b", TitleTemplate: "t", Recurrence: schedule.RecurrenceWeekly},
-					{Slug: "c", TitleTemplate: "t", Recurrence: schedule.RecurrenceMonthly},
-				}
+		It("calls Publish once for every entry in the inventory", func() {
+			inventory = []schedule.TaskDefinition{
+				{Slug: "a", TitleTemplate: "t", Recurrence: schedule.RecurrenceDaily},
+				{Slug: "b", TitleTemplate: "t", Recurrence: schedule.RecurrenceWeekly},
+				{Slug: "c", TitleTemplate: "t", Recurrence: schedule.RecurrenceMonthly},
 			}
 			var err error
-			tk, err = tick.NewTick(context.Background(), scheduleFn, pub, clock, metrics)
+			tk, err = tick.NewTick(context.Background(), inventory, pub, clock, metrics)
 			Expect(err).NotTo(HaveOccurred())
 
 			ctx, cancel := context.WithCancel(context.Background())
@@ -139,11 +135,9 @@ var _ = Describe("Tick", func() {
 	Describe("Europe/Berlin date conversion", func() {
 		It("converts winter UTC to next-day Berlin civil date", func() {
 			clock.SetNow(libtimetest.ParseDateTime("2025-01-04T23:30:00Z"))
-			scheduleFn = func(date schedule.Date) []schedule.TaskDefinition {
-				return []schedule.TaskDefinition{{Slug: "x"}}
-			}
+			inventory = []schedule.TaskDefinition{{Slug: "x"}}
 			var err error
-			tk, err = tick.NewTick(context.Background(), scheduleFn, pub, clock, metrics)
+			tk, err = tick.NewTick(context.Background(), inventory, pub, clock, metrics)
 			Expect(err).NotTo(HaveOccurred())
 
 			ctx, cancel := context.WithCancel(context.Background())
@@ -166,11 +160,9 @@ var _ = Describe("Tick", func() {
 
 		It("converts summer UTC to next-day Berlin civil date (CEST)", func() {
 			clock.SetNow(libtimetest.ParseDateTime("2025-07-15T23:30:00Z"))
-			scheduleFn = func(date schedule.Date) []schedule.TaskDefinition {
-				return []schedule.TaskDefinition{{Slug: "x"}}
-			}
+			inventory = []schedule.TaskDefinition{{Slug: "x"}}
 			var err error
-			tk, err = tick.NewTick(context.Background(), scheduleFn, pub, clock, metrics)
+			tk, err = tick.NewTick(context.Background(), inventory, pub, clock, metrics)
 			Expect(err).NotTo(HaveOccurred())
 
 			ctx, cancel := context.WithCancel(context.Background())
@@ -192,13 +184,11 @@ var _ = Describe("Tick", func() {
 		})
 	})
 
-	Describe("no tasks for date", func() {
+	Describe("empty inventory", func() {
 		It("updates the gauge but does not call Publish or Inc", func() {
-			scheduleFn = func(date schedule.Date) []schedule.TaskDefinition {
-				return []schedule.TaskDefinition{}
-			}
+			inventory = []schedule.TaskDefinition{}
 			var err error
-			tk, err = tick.NewTick(context.Background(), scheduleFn, pub, clock, metrics)
+			tk, err = tick.NewTick(context.Background(), inventory, pub, clock, metrics)
 			Expect(err).NotTo(HaveOccurred())
 
 			ctx, cancel := context.WithCancel(context.Background())
@@ -225,15 +215,13 @@ var _ = Describe("Tick", func() {
 
 	Describe("per-task error isolation", func() {
 		It("continues publishing after a Publish error", func() {
-			scheduleFn = func(date schedule.Date) []schedule.TaskDefinition {
-				return []schedule.TaskDefinition{
-					{Slug: "a", TitleTemplate: "t", Recurrence: schedule.RecurrenceWeekly},
-					{Slug: "b", TitleTemplate: "t", Recurrence: schedule.RecurrenceWeekly},
-					{Slug: "c", TitleTemplate: "t", Recurrence: schedule.RecurrenceWeekly},
-				}
+			inventory = []schedule.TaskDefinition{
+				{Slug: "a", TitleTemplate: "t", Recurrence: schedule.RecurrenceWeekly},
+				{Slug: "b", TitleTemplate: "t", Recurrence: schedule.RecurrenceWeekly},
+				{Slug: "c", TitleTemplate: "t", Recurrence: schedule.RecurrenceWeekly},
 			}
 			var err error
-			tk, err = tick.NewTick(context.Background(), scheduleFn, pub, clock, metrics)
+			tk, err = tick.NewTick(context.Background(), inventory, pub, clock, metrics)
 			Expect(err).NotTo(HaveOccurred())
 
 			pub.PublishReturnsOnCall(0, errors.New(context.Background(), "kafka down"))
@@ -271,14 +259,12 @@ var _ = Describe("Tick", func() {
 		})
 
 		It("increments the counter labeled with the task's recurrence kind", func() {
-			scheduleFn = func(date schedule.Date) []schedule.TaskDefinition {
-				return []schedule.TaskDefinition{
-					{Slug: "a", TitleTemplate: "t", Recurrence: schedule.RecurrenceDaily},
-					{Slug: "b", TitleTemplate: "t", Recurrence: schedule.RecurrenceMonthly},
-				}
+			inventory = []schedule.TaskDefinition{
+				{Slug: "a", TitleTemplate: "t", Recurrence: schedule.RecurrenceDaily},
+				{Slug: "b", TitleTemplate: "t", Recurrence: schedule.RecurrenceMonthly},
 			}
 			var err error
-			tk, err = tick.NewTick(context.Background(), scheduleFn, pub, clock, metrics)
+			tk, err = tick.NewTick(context.Background(), inventory, pub, clock, metrics)
 			Expect(err).NotTo(HaveOccurred())
 
 			pub.PublishReturns(errors.New(context.Background(), "boom"))
@@ -310,17 +296,15 @@ var _ = Describe("Tick", func() {
 
 	Describe("context cancellation", func() {
 		It("exits the per-task loop early when ctx is cancelled mid-tick", func() {
-			scheduleFn = func(date schedule.Date) []schedule.TaskDefinition {
-				return []schedule.TaskDefinition{
-					{Slug: "a", TitleTemplate: "t"},
-					{Slug: "b", TitleTemplate: "t"},
-					{Slug: "c", TitleTemplate: "t"},
-					{Slug: "d", TitleTemplate: "t"},
-					{Slug: "e", TitleTemplate: "t"},
-				}
+			inventory = []schedule.TaskDefinition{
+				{Slug: "a", TitleTemplate: "t"},
+				{Slug: "b", TitleTemplate: "t"},
+				{Slug: "c", TitleTemplate: "t"},
+				{Slug: "d", TitleTemplate: "t"},
+				{Slug: "e", TitleTemplate: "t"},
 			}
 			var err error
-			tk, err = tick.NewTick(context.Background(), scheduleFn, pub, clock, metrics)
+			tk, err = tick.NewTick(context.Background(), inventory, pub, clock, metrics)
 			Expect(err).NotTo(HaveOccurred())
 
 			ctx, cancel := context.WithCancel(context.Background())
@@ -394,15 +378,13 @@ var _ = Describe("Tick", func() {
 		DescribeTable(
 			"records the kind for each RecurrenceKind value",
 			func(kind schedule.RecurrenceKind) {
-				scheduleFn = func(date schedule.Date) []schedule.TaskDefinition {
-					return []schedule.TaskDefinition{
-						{Slug: "x", TitleTemplate: "t", Recurrence: kind},
-					}
+				inventory = []schedule.TaskDefinition{
+					{Slug: "x", TitleTemplate: "t", Recurrence: kind},
 				}
 				var err error
 				tk, err = tick.NewTick(
 					context.Background(),
-					scheduleFn,
+					inventory,
 					pub,
 					clock,
 					metrics,
@@ -436,6 +418,45 @@ var _ = Describe("Tick", func() {
 			Entry("quarterly", schedule.RecurrenceQuarterly),
 			Entry("yearly", schedule.RecurrenceYearly),
 		)
+	})
+
+	Describe("full inventory", func() {
+		It("publishes every entry in the canonical inventory regardless of the civil date", func() {
+			// Derive expected count at test time (NOT a hardcoded literal).
+			expected := len(schedule.Inventory())
+			Expect(expected).To(BeNumerically(">", 0)) // sanity: inventory is non-empty
+
+			for _, instant := range []string{
+				"2025-01-15T10:00:00Z", // Wednesday
+				"2025-07-04T10:00:00Z", // Friday (different month)
+				"2026-03-01T10:00:00Z", // Sunday (different year)
+			} {
+				clock.SetNow(libtimetest.ParseDateTime(instant))
+				tk, err := tick.NewTick(
+					context.Background(),
+					schedule.Inventory(),
+					pub,
+					clock,
+					metrics,
+				)
+				Expect(err).NotTo(HaveOccurred())
+
+				ctx, cancel := context.WithCancel(context.Background())
+				done := make(chan struct{})
+				go func() {
+					_ = tk.Run(ctx)
+					close(done)
+				}()
+
+				Eventually(
+					func() int { return pub.PublishCallCount() },
+					"200ms",
+					"5ms",
+				).Should(Equal(expected))
+				cancel()
+				Eventually(done, "200ms", "5ms").Should(BeClosed())
+			}
+		})
 	})
 })
 

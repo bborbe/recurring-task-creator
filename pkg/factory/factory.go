@@ -26,11 +26,10 @@ func CreatePublisher(sender task.CreateCommandSender, dryRun bool) publisher.Pub
 	return publisher.NewPublisher(sender, dryRun)
 }
 
-// CreateTick builds the hourly cron loop. schedule.TasksForDate is
-// injected as the lookup so the caller never imports the inventory
-// directly. pub sends one CreateCommand per task; clock is the wall-clock
-// source; metrics records per-publish outcomes and the tick-start
-// timestamp.
+// CreateTick builds the hourly cron loop. The full inventory is published
+// every tick; per-day filtering is gone (Spec 6). pub sends one
+// CreateCommand per inventory entry; clock is the wall-clock source;
+// metrics records per-publish outcomes and the tick-start timestamp.
 //
 // NewTick can fail at construction time if time.LoadLocation("Europe/Berlin")
 // fails (tzdata missing from the container image). That is a container-build
@@ -43,7 +42,7 @@ func CreateTick(
 	clock libtime.CurrentDateTimeGetter,
 	metrics tick.Metrics,
 ) tick.Tick {
-	t, err := tick.NewTick(ctx, schedule.TasksForDate, pub, clock, metrics)
+	t, err := tick.NewTick(ctx, schedule.Inventory(), pub, clock, metrics)
 	if err != nil {
 		panic(errors.Wrap(ctx, err, "create tick failed"))
 	}
@@ -56,8 +55,11 @@ func CreateHealthzHandler() http.Handler {
 }
 
 // CreateTriggerHandler returns the operator-replay HTTP handler. lookup is
-// injected as the per-date task source so the handler never imports the
-// inventory directly; production wiring passes schedule.TasksForDate.
+// injected as the per-date task source; production wiring passes
+// schedule.TasksForDate. Unchanged by Spec 6 — manual replay of a specific
+// date is still useful for the operator (e.g. backfilling a missed period
+// for a known date), and the trigger path is independent of the hourly
+// tick's full-inventory loop.
 func CreateTriggerHandler(
 	publisher publisher.Publisher,
 	lookup schedule.ScheduleLookup,

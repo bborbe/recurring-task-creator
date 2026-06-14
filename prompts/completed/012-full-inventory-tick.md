@@ -1,7 +1,13 @@
 ---
-status: draft
+status: completed
 spec: [006-period-anchored-uuid]
+summary: 'Switched pkg/tick to full-inventory publisher: added schedule.Inventory() accessor, changed NewTick signature to take []schedule.TaskDefinition instead of schedule.ScheduleLookup, updated tick struct/work loop/factory wiring, rewrote all existing tick tests for the new constructor, added a new full-inventory test that asserts publish count equals len(schedule.Inventory()) for three different civil dates, and added a feat: CHANGELOG bullet. make precommit exits 0 with coverage 80.6% in pkg/tick.'
+container: recurring-task-creator-always-fire-exec-012-full-inventory-tick
+dark-factory-version: v0.177.1
 created: "2026-06-14T20:30:00Z"
+queued: "2026-06-14T20:21:21Z"
+started: "2026-06-14T20:21:22Z"
+completed: "2026-06-14T20:31:46Z"
 branch: dark-factory/period-anchored-uuid
 ---
 
