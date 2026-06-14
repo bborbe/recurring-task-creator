@@ -36,7 +36,7 @@ func main() {
 type application struct {
 	SentryDSN    string `required:"false" arg:"sentry-dsn"    env:"SENTRY_DSN"    usage:"SentryDSN"                                                         display:"length"`
 	SentryProxy  string `required:"false" arg:"sentry-proxy"  env:"SENTRY_PROXY"  usage:"Sentry Proxy"`
-	KafkaBrokers string `required:"true"  arg:"kafka-brokers" env:"KAFKA_BROKERS" usage:"Comma separated list of Kafka brokers"`
+	KafkaBrokers string `required:"false" arg:"kafka-brokers" env:"KAFKA_BROKERS" usage:"Comma separated list of Kafka brokers (ignored when DRY_RUN=true)"`
 	DryRun       bool   `required:"false" arg:"dry-run"       env:"DRY_RUN"       usage:"if true, log every would-be CreateCommand and skip the Kafka send"                  default:"false"`
 }
 
