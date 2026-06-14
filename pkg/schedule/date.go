@@ -33,4 +33,13 @@ func (d Date) toTime() time.Time {
 	return time.Date(d.Year, d.Month, d.Day, 0, 0, 0, 0, time.UTC)
 }
 
+// Time converts the civil Date to its midnight-UTC carrier time.Time.
+// Pure conversion — no system clock access, no DST math. Provided so
+// consumers can run stdlib time arithmetic (ISOWeek, AddDate, Format)
+// against the carrier without re-implementing the conversion or
+// forcing a duplicate helper in their own package.
+func (d Date) Time() time.Time {
+	return d.toTime()
+}
+
 func (d Date) weekday() time.Weekday { return d.toTime().Weekday() }

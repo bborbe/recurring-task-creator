@@ -35,7 +35,7 @@ func renderTemplate(template, slug string, date schedule.Date) string {
 // year/last-year) does not.
 func buildPlaceholderValues(slug string, date schedule.Date) map[string]string {
 	_ = slug
-	base := dateToTime(date)
+	base := date.Time()
 	isoYear, isoWeek := base.ISOWeek()
 	next := base.AddDate(0, 0, 7)
 	nextIsoYear, nextIsoWeek := next.ISOWeek()
@@ -52,18 +52,6 @@ func buildPlaceholderValues(slug string, date schedule.Date) map[string]string {
 		"{{year}}":          fmtYear(base.Year()),
 		"{{last-year}}":     fmtYear(base.Year() - 1),
 	}
-}
-
-// dateToTime converts a civil schedule.Date to its midnight-UTC carrier
-// time.Time. Pure conversion — no system clock access, no DST math.
-//
-// dateToTime exposes schedule.Date's midnight-UTC carrier through a
-// publisher-local helper so the publisher can run ISOWeek() and
-// AddDate(0, 0, 7) without re-implementing the conversion. The
-// midnight-UTC choice is timezone-agnostic for a fixed civil (Y,M,D) —
-// see pkg/schedule/date.go.
-func dateToTime(d schedule.Date) time.Time {
-	return time.Date(d.Year, d.Month, d.Day, 0, 0, 0, 0, time.UTC)
 }
 
 // fmtDate renders YYYY-MM-DD.
