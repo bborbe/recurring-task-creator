@@ -2,6 +2,7 @@
 status: approved
 spec: [005-trigger-http-handler]
 created: "2026-06-14T12:40:27Z"
+queued: "2026-06-14T12:46:41Z"
 branch: dark-factory/trigger-http-handler
 ---
 

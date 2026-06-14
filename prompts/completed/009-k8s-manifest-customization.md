@@ -1,8 +1,13 @@
 ---
-status: approved
+status: completed
 spec: [004-k8s-manifests]
+summary: 'Rewrote k8s/recurring-task-creator-sts.yaml to the spec''s required shape (replicas: 1, agent-node affinity, env block in spec order with TZ=Europe/Berlin, non-root pod with read-only root FS, emptyDir-only volumes), updated example.env with the 5 missing templating env vars, appended a feat: bullet to CHANGELOG.md, and confirmed all 28 spec AC greps pass and make precommit exits 0'
+container: recurring-task-creator-mvp-exec-009-k8s-manifest-customization
+dark-factory-version: v0.177.1
 created: "2026-06-14T12:16:41Z"
 queued: "2026-06-14T12:26:23Z"
+started: "2026-06-14T12:45:51Z"
+completed: "2026-06-14T12:52:12Z"
 branch: dark-factory/k8s-manifests
 ---
 
