@@ -27,7 +27,7 @@ var _ = Describe("Publisher", func() {
 	BeforeEach(func() {
 		sender = &taskmocks.TaskCreateCommandSender{}
 		sender.SendCommandReturns(nil)
-		pub = publisher.NewPublisher(sender)
+		pub = publisher.NewPublisher(sender, false)
 	})
 
 	capture := func() task.CreateCommand {
@@ -264,6 +264,21 @@ var _ = Describe("Publisher", func() {
 			)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("zero date"))
+			Expect(sender.SendCommandCallCount()).To(Equal(0))
+		})
+
+		It("does not call SendCommand when dryRun is true", func() {
+			dryPub := publisher.NewPublisher(sender, true)
+			def := schedule.TaskDefinition{
+				Slug:          "weekly-review",
+				TitleTemplate: "t",
+				Recurrence:    schedule.RecurrenceWeekly,
+			}
+			Expect(dryPub.Publish(
+				context.Background(),
+				def,
+				schedule.NewDate(2025, time.January, 4),
+			)).To(Succeed())
 			Expect(sender.SendCommandCallCount()).To(Equal(0))
 		})
 
