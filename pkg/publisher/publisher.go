@@ -56,8 +56,17 @@ func (p *publisher) Publish(
 	if date.IsZero() {
 		return errors.Errorf(ctx, "publish failed: zero date for slug %q", def.Slug)
 	}
+	token, err := buildTaskIdentifier(ctx, def.Slug, def.Recurrence, date)
+	if err != nil {
+		return errors.Wrapf(
+			ctx,
+			err,
+			"publish failed: build identifier for slug %q",
+			def.Slug,
+		)
+	}
 	cmd := task.CreateCommand{
-		TaskIdentifier: buildTaskIdentifier(def.Slug, date),
+		TaskIdentifier: token,
 		Title:          renderTemplate(def.TitleTemplate, def.Slug, date),
 		Frontmatter:    buildFrontmatter(def.Recurrence),
 		Body:           renderTemplate(def.BodyTemplate, def.Slug, date),
