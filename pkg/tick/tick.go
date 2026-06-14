@@ -29,6 +29,9 @@ type Tick interface {
 	// Run performs an initial tick synchronously, then enters a 1-hour loop
 	// that fires on time.NewTicker. Returns nil on clean context cancellation.
 	Run(ctx context.Context) error
+	// RunOnce performs a single tick (compute today's task set, publish each)
+	// and returns. Intended for local smoke-testing via cmd/run-once.
+	RunOnce(ctx context.Context) error
 }
 
 // NewTick builds the hourly cron loop. scheduleFn is invoked every tick
@@ -83,15 +86,21 @@ func (t *tick) Run(ctx context.Context) error {
 	}
 }
 
+// RunOnce performs a single tick and returns. Useful for cmd/run-once
+// smoke-testing without entering the long-lived ticker loop.
+func (t *tick) RunOnce(ctx context.Context) error {
+	t.tick(ctx)
+	return nil
+}
+
 // tick performs one full pass: read clock, convert to Berlin civil date,
 // call scheduleFn, iterate, and call publisher.Publish for each entry.
 // Per-task errors are logged and counted but never abort the pass.
 func (t *tick) tick(ctx context.Context) {
 	now := t.clock.Now().Time().In(t.berlin)
+	t.metrics.SetLastTickTimestamp(float64(now.Unix()))
 	year, month, day := now.Date()
 	date := schedule.NewDate(year, month, day)
-
-	t.metrics.SetLastTickTimestamp(float64(t.clock.Now().Time().Unix()))
 
 	tasks := t.scheduleFn(date)
 	if len(tasks) == 0 {

@@ -20,6 +20,17 @@ type TickTick struct {
 	runReturnsOnCall map[int]struct {
 		result1 error
 	}
+	RunOnceStub        func(context.Context) error
+	runOnceMutex       sync.RWMutex
+	runOnceArgsForCall []struct {
+		arg1 context.Context
+	}
+	runOnceReturns struct {
+		result1 error
+	}
+	runOnceReturnsOnCall map[int]struct {
+		result1 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -81,6 +92,67 @@ func (fake *TickTick) RunReturnsOnCall(i int, result1 error) {
 		})
 	}
 	fake.runReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *TickTick) RunOnce(arg1 context.Context) error {
+	fake.runOnceMutex.Lock()
+	ret, specificReturn := fake.runOnceReturnsOnCall[len(fake.runOnceArgsForCall)]
+	fake.runOnceArgsForCall = append(fake.runOnceArgsForCall, struct {
+		arg1 context.Context
+	}{arg1})
+	stub := fake.RunOnceStub
+	fakeReturns := fake.runOnceReturns
+	fake.recordInvocation("RunOnce", []interface{}{arg1})
+	fake.runOnceMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *TickTick) RunOnceCallCount() int {
+	fake.runOnceMutex.RLock()
+	defer fake.runOnceMutex.RUnlock()
+	return len(fake.runOnceArgsForCall)
+}
+
+func (fake *TickTick) RunOnceCalls(stub func(context.Context) error) {
+	fake.runOnceMutex.Lock()
+	defer fake.runOnceMutex.Unlock()
+	fake.RunOnceStub = stub
+}
+
+func (fake *TickTick) RunOnceArgsForCall(i int) context.Context {
+	fake.runOnceMutex.RLock()
+	defer fake.runOnceMutex.RUnlock()
+	argsForCall := fake.runOnceArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *TickTick) RunOnceReturns(result1 error) {
+	fake.runOnceMutex.Lock()
+	defer fake.runOnceMutex.Unlock()
+	fake.RunOnceStub = nil
+	fake.runOnceReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *TickTick) RunOnceReturnsOnCall(i int, result1 error) {
+	fake.runOnceMutex.Lock()
+	defer fake.runOnceMutex.Unlock()
+	fake.RunOnceStub = nil
+	if fake.runOnceReturnsOnCall == nil {
+		fake.runOnceReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.runOnceReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
 }

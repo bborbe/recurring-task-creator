@@ -6,6 +6,7 @@ package main
 
 import (
 	"context"
+	"net/http"
 	"os"
 	"time"
 
@@ -26,7 +27,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/bborbe/recurring-task-creator/pkg/factory"
-	"github.com/bborbe/recurring-task-creator/pkg/publisher"
 	"github.com/bborbe/recurring-task-creator/pkg/tick"
 )
 
@@ -45,6 +45,12 @@ type application struct {
 	BuildGitVersion string            `required:"false" arg:"build-git-version" env:"BUILD_GIT_VERSION" usage:"Build Git version"                                      default:"dev"`
 	BuildGitCommit  string            `required:"false" arg:"build-git-commit"  env:"BUILD_GIT_COMMIT"  usage:"Build Git commit hash"                                  default:"none"`
 	BuildDate       *libtime.DateTime `required:"false" arg:"build-date"        env:"BUILD_DATE"        usage:"Build timestamp (RFC3339)"`
+
+	// HealthzHandler + TriggerHandler are wired in Run() and consumed by
+	// runHTTPServer(). Exposing them on application matches the maintainer
+	// watcher pattern (e.g. github-build/main.go).
+	HealthzHandler http.Handler
+	TriggerHandler http.Handler
 }
 
 func (a *application) Run(ctx context.Context, _ libsentry.Client) error {
@@ -80,25 +86,28 @@ func (a *application) Run(ctx context.Context, _ libsentry.Client) error {
 	metrics := tick.NewPrometheusMetrics()
 	tickLoop := factory.CreateTick(ctx, pub, clock, metrics)
 
+	a.HealthzHandler = factory.CreateHealthzHandler()
+	a.TriggerHandler = factory.CreateTriggerHandler(pub)
+
 	return run.CancelOnFirstFinish(
 		ctx,
-		a.runHTTPServer(pub),
+		a.runHTTPServer(),
 		tickLoop.Run,
 	)
 }
 
-func (a *application) runHTTPServer(pub publisher.Publisher) run.Func {
+func (a *application) runHTTPServer() run.Func {
 	return func(ctx context.Context) error {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
 		router := mux.NewRouter()
-		router.Path("/healthz").Handler(factory.CreateHealthzHandler())
+		router.Path("/healthz").Handler(a.HealthzHandler)
 		router.Path("/readiness").Handler(libhttp.NewPrintHandler("OK"))
 		router.Path("/metrics").Handler(promhttp.Handler())
 		router.Path("/setloglevel/{level}").
 			Handler(liblog.NewSetLoglevelHandler(ctx, liblog.NewLogLevelSetter(2, 5*time.Minute)))
-		router.Path("/trigger").Methods("GET").Handler(factory.CreateTriggerHandler(pub))
+		router.Path("/trigger").Methods("GET").Handler(a.TriggerHandler)
 
 		glog.V(2).Infof("starting http server listen on %s", a.Listen)
 		return libhttp.NewServer(a.Listen, router).Run(ctx)
