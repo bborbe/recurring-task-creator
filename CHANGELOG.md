@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- fix: read STAGE env to set Kafka topic branch (was hardcoded "master")
 - feat: Add `DRY_RUN` env/flag — when true, publisher logs the would-be `task.CreateCommand` (slug, date, identifier) and skips the Kafka `SendCommand` call; wired through `main` and `cmd/run-once` for local smoke-testing
 - feat: Add `GET /trigger?date=YYYY-MM-DD` HTTP handler that replays the day's recurring-task publishes on demand and returns a JSON summary with per-task error accumulation; add structured `GET /healthz` JSON handler replacing the Spec 3 text stub
 - feat: Wire `main.go` for the hourly tick loop (initial tick at boot, then 1-hour ticker in parallel with HTTP admin server via `run.CancelOnFirstFinish`); trim HTTP router to `/healthz`, `/readiness`, `/metrics`, `/setloglevel/{level}`; drop `BATCH_SIZE` and `DATADIR` env vars; delete `pkg/handler/` and `pkg/mathutil/` skeleton packages; add `pkg/factory.CreateTick`
