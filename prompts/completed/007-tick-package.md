@@ -1,7 +1,14 @@
 ---
-spec: ["003-tick"]
-status: draft
+status: completed
+spec: [003-tick]
+summary: Created pkg/tick with Metrics interface, Prometheus impl, Tick interface, NewTick constructor, hourly Run loop, Berlin civil-date conversion, per-task error isolation, and 21 Ginkgo specs achieving 85.7% coverage; make precommit exits 0
+container: recurring-task-creator-mvp-exec-007-tick-package
+dark-factory-version: v0.177.1
 created: "2026-06-14T12:01:16Z"
+queued: "2026-06-14T12:24:33Z"
+started: "2026-06-14T12:24:34Z"
+completed: "2026-06-14T12:35:51Z"
+branch: dark-factory/tick
 ---
 
 <summary>
@@ -45,11 +52,12 @@ Verified external symbols (read at `/home/node/go/pkg/mod/` via the YOLO contain
 
 `github.com/bborbe/time` (direct dep, v1.27.1) — file `current_date_time_getter.go`:
 ```go
+type DateTime time.Time // named type — stdlib time.Time methods are NOT promoted
 type CurrentDateTimeGetter interface {
-    Now() time.Time
+    Now() DateTime
 }
 ```
-The `Now()` method returns stdlib `time.Time`. (Note: the package's public surface also has `DateTime` and `Date` types, but the getter returns stdlib `time.Time` per the existing `pkg/publisher`-style signature on the `bborbe/time` module source.) Construct a real instance via `libtime.NewCurrentDateTime()` in `main.go` (Spec 4); the test files use `libtimetest.NewCurrentDateTime().SetNow(...)` to drive determinism.
+`Now()` returns `libtime.DateTime`; call `.Time()` for the stdlib `time.Time` carrier (e.g. `clock.Now().Time().In(berlin)`). `libtime.NewCurrentDateTime()` (in the main `github.com/bborbe/time` package, NOT in the `test` subpackage) returns a `CurrentDateTime` that satisfies the getter and exposes `SetNow(DateTime)` for tests. The `github.com/bborbe/time/test` subpackage (`libtimetest`) exports helpers like `libtimetest.ParseDateTime(value) libtime.DateTime` (single arg, no ctx, no error) for building deterministic `DateTime` values in tests.
 
 `github.com/bborbe/run` (direct dep, v1.9.28) — package surface (verified by reading `func.go` and `cancel.go`):
 ```go
@@ -66,9 +74,11 @@ The spec's `run.CancelOnFirstFinish` is the **function that fires-and-cancels-bu
 
 `github.com/bborbe/errors` (direct dep, v1.5.13):
 ```go
+func Wrap(ctx context.Context, err error, message string) error
 func Wrapf(ctx context.Context, err error, format string, args ...interface{}) error
 func Errorf(ctx context.Context, format string, args ...interface{}) error
 ```
+Every `errors.Wrap` / `errors.Wrapf` call MUST pass `ctx` as the first arg.
 
 `github.com/prometheus/client_golang/prometheus` (direct dep, v1.23.2) — verified at `prometheus/counter.go`, `prometheus/gauge.go`, `prometheus/registry.go`:
 ```go
@@ -192,6 +202,8 @@ package tick
 
 import (
     "github.com/prometheus/client_golang/prometheus"
+
+    "github.com/bborbe/recurring-task-creator/pkg/schedule"
 )
 
 // Metrics records observability events for the hourly tick loop.
@@ -214,8 +226,6 @@ type prometheusMetrics struct {
     gauge   prometheus.Gauge
 }
 
-var _ = prometheus.MustRegister(recurringTasksPublishedTotal, recurringTasksLastTickTimestamp)
-
 // recurringTasksPublishedTotal counts Publish outcomes by result and recurrence.
 // Pre-initialized to zero for all 10 combinations in init() so Prometheus
 // scrapers see the series before the first event.
@@ -237,11 +247,18 @@ var recurringTasksLastTickTimestamp = prometheus.NewGauge(
 )
 
 func init() {
-    for _, result := range []string{"success", "error"} {
-        for _, recurrence := range []string{"daily", "weekly", "monthly", "quarterly", "yearly"} {
+    prometheus.MustRegister(recurringTasksPublishedTotal, recurringTasksLastTickTimestamp)
+    for _, kind := range []schedule.RecurrenceKind{
+        schedule.RecurrenceDaily,
+        schedule.RecurrenceWeekly,
+        schedule.RecurrenceMonthly,
+        schedule.RecurrenceQuarterly,
+        schedule.RecurrenceYearly,
+    } {
+        for _, result := range []string{"success", "error"} {
             recurringTasksPublishedTotal.With(prometheus.Labels{
                 "result":     result,
-                "recurrence": recurrence,
+                "recurrence": string(kind),
             }).Add(0)
         }
     }
@@ -270,9 +287,9 @@ func (m *prometheusMetrics) SetLastTickTimestamp(seconds float64) {
 ```
 
 Notes on the above:
-- `var _ = prometheus.MustRegister(...)` runs the registration once at package init. (Using `var _ = ...` keeps the call at the package level without forcing a top-of-file `func init()` while still running at import-time.)
-- The 10 pre-init label combinations are `result ∈ {success, error}` × `recurrence ∈ {daily, weekly, monthly, quarterly, yearly}`. The `recurrence` strings MUST be the exact lower-case string values of the `schedule.RecurrenceKind` constants.
-- `NewPrometheusMetrics()` is the production-side wiring point — `pkg/factory` calls it (Spec 4).
+- `prometheus.MustRegister(...)` is called as a statement inside `func init()` — it returns void and cannot be used in a `var _ = ...` expression.
+- The 10 pre-init label combinations are `result ∈ {success, error}` × `recurrence ∈ {daily, weekly, monthly, quarterly, yearly}`. The `recurrence` strings MUST come from `string(schedule.RecurrenceKind)` (drift-resistant); ranging over the typed constants prevents hardcoded-string skew if a new kind is added.
+- **`NewPrometheusMetrics() Metrics`** is the production-side wiring point — `main.go` (Prompt 2) calls it to obtain the `Metrics` value passed to `factory.CreateTick`. This constructor MUST be exported; without it Prompt 2 has nothing to call.
 - The `Metrics` interface is a seam: tests use the counterfeiter fake (generated in §6), production uses `NewPrometheusMetrics()`.
 
 ## 4. The `ScheduleLookup` type and the `Tick` interface
@@ -313,6 +330,7 @@ type Tick interface {
 // and the tick-start timestamp. Returns a wrapped error if
 // time.LoadLocation("Europe/Berlin") fails at struct init.
 func NewTick(
+    ctx context.Context,
     scheduleFn ScheduleLookup,
     pub publisher.Publisher,
     clock libtime.CurrentDateTimeGetter,
@@ -320,7 +338,7 @@ func NewTick(
 ) (Tick, error) {
     berlin, err := time.LoadLocation("Europe/Berlin")
     if err != nil {
-        return nil, errors.Wrap(err, "load location Europe/Berlin failed")
+        return nil, errors.Wrap(ctx, err, "load location Europe/Berlin failed")
     }
     return &tick{
         scheduleFn: scheduleFn,
@@ -362,11 +380,11 @@ func (t *tick) Run(ctx context.Context) error {
 // call scheduleFn, iterate, and call publisher.Publish for each entry.
 // Per-task errors are logged and counted but never abort the pass.
 func (t *tick) tick(ctx context.Context) {
-    now := t.clock.Now().In(t.berlin)
+    now := t.clock.Now().Time().In(t.berlin)
     year, month, day := now.Date()
     date := schedule.NewDate(year, month, day)
 
-    t.metrics.SetLastTickTimestamp(float64(t.clock.Now().Unix()))
+    t.metrics.SetLastTickTimestamp(float64(t.clock.Now().Time().Unix()))
 
     tasks := t.scheduleFn(date)
     if len(tasks) == 0 {
@@ -399,7 +417,7 @@ Notes on the above:
 - `glog.V(2).Infof("tick loop: context cancelled, exiting cleanly")` is the canonical log line — tests assert on it (level 2; glog at default level 0 filters it out).
 - The per-task `select` is a non-blocking `default` check on `<-ctx.Done()` — covers the "context cancelled mid-tick" AC.
 - `def.Recurrence` is a `schedule.RecurrenceKind`; `string(def.Recurrence)` is the exact label value used in `Metrics.IncPublished`.
-- The gauge is updated to `t.clock.Now().Unix()` (not `now.Unix()`) so the metric reflects the wall-clock time the tick started in the location-independent Unix coordinate. The `t.clock.Now().In(t.berlin)` call is the date computation; the two reads of `t.clock.Now()` happen back-to-back and may differ by microseconds only — acceptable.
+- The gauge is updated via `t.clock.Now().Time().Unix()` (not `now.Unix()`) so the metric reflects the wall-clock time the tick started in the location-independent Unix coordinate. The `t.clock.Now().Time().In(t.berlin)` call is the date computation; the two reads of `t.clock.Now()` happen back-to-back and may differ by microseconds only — acceptable. (`.Time()` is required because `libtime.DateTime` is a named type and stdlib `time.Time` methods are NOT promoted.)
 - The `tick` method is intentionally unexported and not part of the `Tick` interface. It's the internal unit-of-work that `Run` orchestrates. Tests that need to drive a single iteration call `t.Run(ctx)` and let the initial tick exercise it — see §5 for the test seam.
 - The order of the per-tick work is: (1) compute date, (2) update gauge, (3) compute tasks, (4) iterate. The gauge update happens before the iteration so a panic inside `Publish` still leaves the gauge reflecting this tick (it does not, however, recover from the panic — that is `service.Main`'s job).
 - The `//counterfeiter:generate` directive on the `Tick` interface is for symmetry / future testing of consumer code; the executor may strip it if the executor decides the Tick mock is unused — keep it in this spec because the spec's AC table mentions "A counterfeiter mock for `publisher.Publisher`" and "A counterfeiter mock for the tick metrics interface" but says nothing about a Tick mock; the directive on the interface is defensive (a future spec may need to mock a Tick consumer) and is harmless if never generated.
@@ -510,7 +528,7 @@ BeforeEach(func() {
         }
     }
 
-    t, _ = tick.NewTick(scheduleFn, pub, clock, metrics)
+    t, _ = tick.NewTick(context.Background(), scheduleFn, pub, clock, metrics)
 })
 ```
 
@@ -518,7 +536,7 @@ The set of `It` blocks (one per acceptance criterion / failure-mode row):
 
 a. **Constructor returns a Tick on the happy path.** `Expect(t).NotTo(BeNil())`.
 
-b. **Constructor returns a wrapped error when LoadLocation fails.** Stub the location-load failure path. The cleanest seam: a Ginkgo test that captures the error path by direct test of `NewTick` with a non-existent timezone — but the location is hard-coded to `"Europe/Berlin"`. The simpler test is the **shape check**: read the source for `time.LoadLocation("Europe/Berlin")` and confirm the wrap is `errors.Wrap(err, "load location Europe/Berlin failed")` (or equivalent). Per the AC, evidence shape: either a Ginkgo test or `grep -n 'Europe/Berlin' pkg/tick/*.go` returning the load call and the error-wrap site. Provide a Ginkgo test that calls `time.LoadLocation("NoSuch/Zone")` to confirm the error from `LoadLocation` itself, plus a `grep`-style evidence block:
+b. **Constructor returns a wrapped error when LoadLocation fails.** Stub the location-load failure path. The cleanest seam: a Ginkgo test that captures the error path by direct test of `NewTick` with a non-existent timezone — but the location is hard-coded to `"Europe/Berlin"`. The simpler test is the **shape check**: read the source for `time.LoadLocation("Europe/Berlin")` and confirm the wrap is `errors.Wrap(ctx, err, "load location Europe/Berlin failed")` (or equivalent). Per the AC, evidence shape: either a Ginkgo test or `grep -n 'Europe/Berlin' pkg/tick/*.go` returning the load call and the error-wrap site. Provide a Ginkgo test that calls `time.LoadLocation("NoSuch/Zone")` to confirm the error from `LoadLocation` itself, plus a `grep`-style evidence block:
    ```go
    It("returns a wrapped error when time.LoadLocation fails (verified via grep + stdlib failure mode)", func() {
        _, err := time.LoadLocation("NoSuch/Zone")
@@ -561,7 +579,7 @@ j. **Context cancelled between per-task Publish calls — loop exits early.** Us
 
 k. **Context cancelled between ticks — Run returns nil cleanly.** Cancel the context after 50 ms while `Run` is blocked on the ticker. Assert `Run` returns within 100 ms with `Expect(err).NotTo(HaveOccurred())` and `Expect(pub.PublishCallCount() >= 1)`. (The initial tick fires synchronously; cancellation during the ticker wait causes `Run` to return via `<-ctx.Done()`.)
 
-l. **Gauge value equals the clock's Unix seconds.** After one tick, assert `metrics.SetLastTickTimestampArgsForCall(0)` is `float64(clock.Now().Unix())` (within 1 second — `time.Unix()` rounds).
+l. **Gauge value equals the clock's Unix seconds.** After one tick, assert `metrics.SetLastTickTimestampArgsForCall(0)` is `float64(clock.Now().Time().Unix())` (within 1 second — `time.Unix()` rounds).
 
 m. **Prometheus counter pre-initialization — gather before any tick.** Capture the default registerer's output via `prometheus.DefaultGatherer.Gather()` and find the `recurring_tasks_published_total` metric family. Assert the family has exactly 10 series (one per label combination), all with value 0. (Implementation hint: iterate `m.GetMetric()`, count, assert label sets. Use `prometheus.GathererFunc` to call the gatherer inside a `BeforeEach`.)
 
@@ -583,7 +601,7 @@ The bullet must use the `feat:` prefix (minor bump per `changelog-guide.md`).
 
 - Every new `.go` file starts with the 2026 copyright header.
 - Use `goimports-reviser` style: standard library first, then third-party (alphabetical: `github.com/bborbe/...`, `github.com/golang/...`, `github.com/onsi/...`, `github.com/prometheus/...`), then internal (`github.com/bborbe/recurring-task-creator/...`).
-- Use `github.com/bborbe/errors` for wrapping; `errors.Wrap(err, "load location Europe/Berlin failed")` for the constructor's load failure.
+- Use `github.com/bborbe/errors` for wrapping; `errors.Wrap(ctx, err, "load location Europe/Berlin failed")` for the constructor's load failure.
 - Do NOT call `time.Now()` in any non-test file.
 - Dot-import `github.com/onsi/ginkgo/v2` and `github.com/onsi/gomega` in `*_test.go` files only.
 - Do NOT touch `main.go`, `pkg/factory/`, `pkg/schedule/`, `pkg/publisher/`, `pkg/handler/`, `pkg/mathutil/`, `Makefile`, or any K8s manifest.
@@ -611,7 +629,7 @@ If `make precommit` flags an unused-variable, missing-license-header, or import-
 - The package MUST NOT walk Kafka topics, KV stores, files, or env vars. Inputs are constructor-injected; outputs are the publisher and the metrics.
 - The package MUST follow the Interface → Constructor → Struct → Method pattern: `Tick` (interface) → `NewTick(...) (Tick, error)` → `tick` (private struct) → `(t *tick) Run(ctx context.Context) error`.
 - Context-cancellation discipline: every blocking `select` includes `<-ctx.Done()`; every per-task iteration body checks `ctx.Err()` before doing meaningful work.
-- Error wrapping: use `github.com/bborbe/errors` for the constructor's `LoadLocation` failure (`errors.Wrap(err, "load location Europe/Berlin failed")`); `glog.Errorf` for per-task publish errors with the slug and ISO date in the message.
+- Error wrapping: use `github.com/bborbe/errors` for the constructor's `LoadLocation` failure (`errors.Wrap(ctx, err, "load location Europe/Berlin failed")`); `glog.Errorf` for per-task publish errors with the slug and ISO date in the message.
 - Prometheus metrics: register in `init()` via `prometheus.MustRegister`; pre-initialize the counter for all 10 label combinations (`result ∈ {success, error}` × `recurrence ∈ {daily, weekly, monthly, quarterly, yearly}`) to `0`; gauge is registered once with no labels.
 - The Europe/Berlin timezone MUST be loaded via `time.LoadLocation("Europe/Berlin")` ONCE at struct init (cached on the struct), NOT per-tick. If the load fails, the constructor returns a wrapped error.
 - The first tick fires BEFORE the `for { select }` loop, not after. The initial tick is subject to the same per-task error isolation as every subsequent tick.
@@ -631,7 +649,7 @@ From `/workspace`:
 2. `go test -mod=mod -cover -race ./pkg/tick/...` — all specs green, coverage ≥80% for `pkg/tick`.
 3. `grep -E '"(net/http|github\.com/segmentio/kafka-go|github\.com/IBM/sarama|github\.com/bborbe/jira-task-creator)"|time\.Now\(\)' pkg/tick/*.go` — must return no matches (excluding `*_test.go` files; the forbidden-imports Ginkgo test enforces this for production files).
 4. `grep -E '^(type Tick|func NewTick|type tick )' pkg/tick/*.go` — must list exactly one `Tick` interface declaration, one `NewTick` constructor, and one unexported `tick` struct.
-5. `grep -nE 'func NewTick\(' pkg/tick/*.go` — must show a signature matching `func NewTick(<ScheduleLookup>, publisher.Publisher, libtime.CurrentDateTimeGetter, Metrics) (Tick, error)`.
+5. `grep -nE 'func NewTick\(' pkg/tick/*.go` — must show a signature matching `func NewTick(ctx context.Context, <ScheduleLookup>, publisher.Publisher, libtime.CurrentDateTimeGetter, Metrics) (Tick, error)`.
 6. `ls mocks/` — must list `mocks.go`, plus `tick-metrics.go` and (if generated) `tick-tick.go` and `publisher-publisher.go`.
 7. Spot-check: open `pkg/tick/tick.go` and visually confirm the initial `t.tick(ctx)` is BEFORE `time.NewTicker(time.Hour)` and the `for { select }` loop.
 8. Spot-check: open `pkg/tick/metrics.go` and visually confirm the 10-element pre-init loop covers `result ∈ {success, error}` × `recurrence ∈ {daily, weekly, monthly, quarterly, yearly}`.

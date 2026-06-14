@@ -1,10 +1,11 @@
 ---
-status: generating
+status: prompted
 tags:
     - dark-factory
     - spec
 approved: "2026-06-14T11:58:12Z"
 generating: "2026-06-14T11:58:12Z"
+prompted: "2026-06-14T12:13:39Z"
 branch: dark-factory/tick
 ---
 
