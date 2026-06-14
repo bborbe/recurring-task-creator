@@ -1,11 +1,12 @@
 ---
-status: prompted
+status: verifying
 tags:
     - dark-factory
     - spec
 approved: "2026-06-14T12:12:07Z"
 generating: "2026-06-14T12:25:32Z"
 prompted: "2026-06-14T12:43:36Z"
+verifying: "2026-06-14T13:03:33Z"
 branch: dark-factory/trigger-http-handler
 ---
 
