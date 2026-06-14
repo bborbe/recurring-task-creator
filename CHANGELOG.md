@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat: Add `pkg/publisher` package that builds a deterministic `task.CreateCommand` from `(schedule.TaskDefinition, schedule.Date)` and sends it via an injected `task.CreateCommandSender`; identifier is UUID5 of `"recurring-<slug>-<YYYY-MM-DD>"`; frontmatter is frozen at `assignee/status/page_type/priority/goals/recurring`
 - feat: Add `pkg/schedule` package with 45-entry recurring-task inventory and `TasksForDate` pure function
 
 ## v0.0.2

@@ -1,0 +1,70 @@
+// Copyright (c) 2026 Benjamin Borbe All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package publisher
+
+import (
+	"context"
+
+	"github.com/bborbe/agent/lib/command/task"
+	"github.com/bborbe/errors"
+
+	"github.com/bborbe/recurring-task-creator/pkg/schedule"
+)
+
+// goalsLink is the wiki link placed in Frontmatter["goals"] for every
+// recurring task created by this service. Frozen; do not move or rename
+// without a new spec.
+const goalsLink = "[[Migrate Personal Workflow from Atlassian to Obsidian]]"
+
+// Publisher turns one (TaskDefinition, Date) pair into a validated
+// task.CreateCommand and sends it via the injected task.CreateCommandSender.
+//
+//counterfeiter:generate -o ../mocks/publisher-publisher.go --fake-name PublisherPublisher . Publisher
+type Publisher interface {
+	// Publish builds a CreateCommand for (def, date) and sends it. The
+	// returned error is wrapped with the slug and ISO date in its message.
+	// Same (def, date) on a second call produces a byte-identical command.
+	Publish(ctx context.Context, def schedule.TaskDefinition, date schedule.Date) error
+}
+
+// NewPublisher returns a Publisher that sends through sender. The sender
+// is invoked exactly once per Publish call (when inputs are valid). It
+// validates the constructed command internally — see
+// task.CreateCommandSender.SendCommand in github.com/bborbe/agent/lib/command/task.
+func NewPublisher(sender task.CreateCommandSender) Publisher {
+	return &publisher{sender: sender}
+}
+
+type publisher struct {
+	sender task.CreateCommandSender
+}
+
+func (p *publisher) Publish(
+	ctx context.Context,
+	def schedule.TaskDefinition,
+	date schedule.Date,
+) error {
+	if def.Slug == "" {
+		return errors.Errorf(ctx, "publish failed: empty slug")
+	}
+	if date.IsZero() {
+		return errors.Errorf(ctx, "publish failed: zero date for slug %q", def.Slug)
+	}
+	cmd := task.CreateCommand{
+		TaskIdentifier: buildTaskIdentifier(def.Slug, date),
+		Title:          renderTemplate(def.TitleTemplate, def.Slug, date),
+		Frontmatter:    buildFrontmatter(def.Recurrence),
+		Body:           renderTemplate(def.BodyTemplate, def.Slug, date),
+	}
+	if err := p.sender.SendCommand(ctx, cmd); err != nil {
+		return errors.Wrapf(
+			ctx,
+			err,
+			"publish failed: send CreateCommand for slug %q on %04d-%02d-%02d",
+			def.Slug, date.Year, date.Month, date.Day,
+		)
+	}
+	return nil
+}
