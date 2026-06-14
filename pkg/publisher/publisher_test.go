@@ -200,7 +200,8 @@ var _ = Describe("Publisher", func() {
 				"goals",
 				[]interface{}{"[[Migrate Personal Workflow from Atlassian to Obsidian]]"},
 			))
-			Expect(fm).To(HaveLen(6))
+			Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
+			Expect(fm).To(HaveLen(7))
 		})
 
 		DescribeTable("recurring matches RecurrenceKind",

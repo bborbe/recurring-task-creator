@@ -15,11 +15,12 @@ import (
 // breaking change to the migration's vault-file layout.
 func buildFrontmatter(recurrence schedule.RecurrenceKind) lib.TaskFrontmatter {
 	return lib.TaskFrontmatter{
-		"assignee":  "bborbe",
-		"status":    "in_progress",
-		"page_type": "task",
-		"goals":     []interface{}{goalsLink},
-		"priority":  2,
-		"recurring": string(recurrence),
+		"assignee":   "bborbe",
+		"status":     "in_progress",
+		"page_type":  "task",
+		"goals":      []interface{}{goalsLink},
+		"priority":   2,
+		"recurring":  string(recurrence),
+		"created_by": "recurring-task-creator",
 	}
 }
