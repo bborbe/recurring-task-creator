@@ -19,10 +19,10 @@ import (
 // without a new spec.
 const goalsLink = "[[Migrate Personal Workflow from Atlassian to Obsidian]]"
 
+//counterfeiter:generate -o ../../mocks/publisher-publisher.go --fake-name PublisherPublisher . Publisher
+
 // Publisher turns one (TaskDefinition, Date) pair into a validated
 // task.CreateCommand and sends it via the injected task.CreateCommandSender.
-//
-//counterfeiter:generate -o ../mocks/publisher-publisher.go --fake-name PublisherPublisher . Publisher
 type Publisher interface {
 	// Publish builds a CreateCommand for (def, date) and sends it. The
 	// returned error is wrapped with the slug and ISO date in its message.

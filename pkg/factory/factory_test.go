@@ -15,8 +15,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	projmocks "github.com/bborbe/recurring-task-creator/mocks"
 	"github.com/bborbe/recurring-task-creator/pkg/factory"
-	projmocks "github.com/bborbe/recurring-task-creator/pkg/mocks"
 	"github.com/bborbe/recurring-task-creator/pkg/publisher"
 	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 	"github.com/bborbe/recurring-task-creator/pkg/tick"

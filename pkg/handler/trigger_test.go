@@ -15,8 +15,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/bborbe/recurring-task-creator/mocks"
 	"github.com/bborbe/recurring-task-creator/pkg/handler"
-	"github.com/bborbe/recurring-task-creator/pkg/mocks"
 	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 )
 

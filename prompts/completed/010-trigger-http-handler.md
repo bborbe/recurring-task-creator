@@ -369,7 +369,7 @@ import (
     . "github.com/onsi/gomega"
 
     "github.com/bborbe/recurring-task-creator/pkg/handler"
-    "github.com/bborbe/recurring-task-creator/pkg/mocks"
+    "github.com/bborbe/recurring-task-creator/mocks"
     "github.com/bborbe/recurring-task-creator/pkg/schedule"
 )
 
@@ -568,7 +568,7 @@ import (
     . "github.com/onsi/gomega"
 
     "github.com/bborbe/recurring-task-creator/pkg/handler"
-    "github.com/bborbe/recurring-task-creator/pkg/mocks"
+    "github.com/bborbe/recurring-task-creator/mocks"
     "github.com/bborbe/recurring-task-creator/pkg/schedule"
 )
 ```
