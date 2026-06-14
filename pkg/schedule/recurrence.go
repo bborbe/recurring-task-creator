@@ -14,3 +14,15 @@ const (
 	RecurrenceQuarterly RecurrenceKind = "quarterly"
 	RecurrenceYearly    RecurrenceKind = "yearly"
 )
+
+// AllRecurrenceKinds is the canonical, closed set of RecurrenceKind values
+// in stable declaration order. Consumers that need to iterate over every
+// kind (e.g. pre-initializing Prometheus counter label combinations) range
+// over this slice — never hand-roll a duplicate slice.
+var AllRecurrenceKinds = []RecurrenceKind{
+	RecurrenceDaily,
+	RecurrenceWeekly,
+	RecurrenceMonthly,
+	RecurrenceQuarterly,
+	RecurrenceYearly,
+}

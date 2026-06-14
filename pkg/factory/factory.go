@@ -53,7 +53,12 @@ func CreateHealthzHandler() http.Handler {
 	return handler.NewHealthzHandler()
 }
 
-// CreateTriggerHandler returns the operator-replay HTTP handler. Pure plumbing.
-func CreateTriggerHandler(publisher publisher.Publisher) http.Handler {
-	return handler.NewTriggerHandler(publisher)
+// CreateTriggerHandler returns the operator-replay HTTP handler. lookup is
+// injected as the per-date task source so the handler never imports the
+// inventory directly; production wiring passes schedule.TasksForDate.
+func CreateTriggerHandler(
+	publisher publisher.Publisher,
+	lookup handler.ScheduleLookup,
+) http.Handler {
+	return handler.NewTriggerHandler(publisher, lookup)
 }

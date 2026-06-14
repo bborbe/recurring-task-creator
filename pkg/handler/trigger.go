@@ -16,6 +16,13 @@ import (
 	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 )
 
+// ScheduleLookup is the pure function NewTriggerHandler invokes to compute
+// the task set for a civil date. Defined locally (rather than imported from
+// pkg/tick) to keep the dependency direction pkg/factory → pkg/handler and
+// pkg/factory → pkg/tick — never pkg/handler → pkg/tick. The concrete
+// production value is schedule.TasksForDate, injected by the factory.
+type ScheduleLookup func(date schedule.Date) []schedule.TaskDefinition
+
 // triggerErrorEntry is one per-task failure in the /trigger response.
 // Always emitted, even when empty (no omitempty on the errors slice).
 type triggerErrorEntry struct {
@@ -33,18 +40,20 @@ type triggerResponse struct {
 
 // NewTriggerHandler returns an HTTP handler that replays the recurring-task
 // publishes for one civil date. The date is supplied as the `date` query
-// parameter in YYYY-MM-DD format. For each entry returned by
-// schedule.TasksForDate for that date, the handler calls
-// publisher.Publish(req.Context(), def, date). Per-task errors are
-// accumulated in the response's `errors` array — the iteration does NOT
-// short-circuit on error. The response is always HTTP 200 on a successfully
-// parsed date, regardless of whether any individual publish failed.
+// parameter in YYYY-MM-DD format. For each entry returned by lookup(date),
+// the handler calls publisher.Publish(req.Context(), def, date). Per-task
+// errors are accumulated in the response's `errors` array — the iteration
+// does NOT short-circuit on error. The response is always HTTP 200 on a
+// successfully parsed date, regardless of whether any individual publish
+// failed.
 //
-// Malformed or missing `date` parameter returns HTTP 400 with a JSON body
-// of the form {"error":"<message>"}. The handler holds no per-request state
-// and is safe to call concurrently for the same date (the controller dedups
-// by deterministic UUID5).
-func NewTriggerHandler(publisher publisher.Publisher) http.Handler {
+// lookup is injected so the handler does not import the inventory directly;
+// the factory passes schedule.TasksForDate in production. Malformed or
+// missing `date` parameter returns HTTP 400 with a JSON body of the form
+// {"error":"<message>"}. The handler holds no per-request state and is safe
+// to call concurrently for the same date (the controller dedups by
+// deterministic UUID5).
+func NewTriggerHandler(publisher publisher.Publisher, lookup ScheduleLookup) http.Handler {
 	return http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
 		param := req.URL.Query().Get("date")
 		if param == "" {
@@ -62,7 +71,7 @@ func NewTriggerHandler(publisher publisher.Publisher) http.Handler {
 			return
 		}
 		date := schedule.NewDate(t.Year(), t.Month(), t.Day())
-		tasks := schedule.TasksForDate(date)
+		tasks := lookup(date)
 
 		glog.V(2).
 			Infof("trigger: processing %d task(s) for %04d-%02d-%02d", len(tasks), date.Year, date.Month, date.Day)

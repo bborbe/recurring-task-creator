@@ -27,6 +27,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/bborbe/recurring-task-creator/pkg/factory"
+	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 	"github.com/bborbe/recurring-task-creator/pkg/tick"
 )
 
@@ -87,7 +88,7 @@ func (a *application) Run(ctx context.Context, _ libsentry.Client) error {
 	tickLoop := factory.CreateTick(ctx, pub, clock, metrics)
 
 	a.HealthzHandler = factory.CreateHealthzHandler()
-	a.TriggerHandler = factory.CreateTriggerHandler(pub)
+	a.TriggerHandler = factory.CreateTriggerHandler(pub, schedule.TasksForDate)
 
 	return run.CancelOnFirstFinish(
 		ctx,

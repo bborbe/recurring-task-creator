@@ -53,13 +53,7 @@ var recurringTasksLastTickTimestamp = prometheus.NewGauge(
 
 func init() {
 	prometheus.MustRegister(recurringTasksPublishedTotal, recurringTasksLastTickTimestamp)
-	for _, kind := range []schedule.RecurrenceKind{
-		schedule.RecurrenceDaily,
-		schedule.RecurrenceWeekly,
-		schedule.RecurrenceMonthly,
-		schedule.RecurrenceQuarterly,
-		schedule.RecurrenceYearly,
-	} {
+	for _, kind := range schedule.AllRecurrenceKinds {
 		for _, result := range []string{"success", "error"} {
 			recurringTasksPublishedTotal.With(prometheus.Labels{
 				"result":     result,

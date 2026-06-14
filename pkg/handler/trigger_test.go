@@ -28,7 +28,7 @@ var _ = Describe("TriggerHandler", func() {
 
 	BeforeEach(func() {
 		fakePublisher = &mocks.PublisherPublisher{}
-		httpHandler = handler.NewTriggerHandler(fakePublisher)
+		httpHandler = handler.NewTriggerHandler(fakePublisher, schedule.TasksForDate)
 	})
 
 	// ---------- 400 paths (missing/invalid date) ----------
