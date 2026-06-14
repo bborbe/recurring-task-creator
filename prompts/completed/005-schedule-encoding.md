@@ -1,10 +1,14 @@
 ---
-status: failed
+status: completed
 spec: [001-schedule-encoding]
+summary: Created pkg/schedule with 45-entry inventory, Date/RecurrenceKind/predicate types, and pure TasksForDate function; all 35 Ginkgo specs green, make precommit exits 0
+container: recurring-task-creator-exec-005-schedule-encoding
+dark-factory-version: v0.177.1
 created: "2026-06-07T13:30:00Z"
 queued: "2026-06-14T10:24:39Z"
-completed: "2026-06-14T10:36:09Z"
-lastFailReason: 'setup workflow: working tree is not clean; cannot switch to branch "dark-factory/005-schedule-encoding"; uncommitted changes: CLAUDE.md'
+started: "2026-06-14T10:39:45Z"
+completed: "2026-06-14T10:51:56Z"
+branch: dark-factory/005-schedule-encoding
 ---
 
 <summary>
