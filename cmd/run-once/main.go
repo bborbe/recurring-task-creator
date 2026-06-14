@@ -22,6 +22,7 @@ import (
 	libtime "github.com/bborbe/time"
 
 	"github.com/bborbe/recurring-task-creator/pkg/factory"
+	"github.com/bborbe/recurring-task-creator/pkg/publisher"
 	"github.com/bborbe/recurring-task-creator/pkg/tick"
 )
 
@@ -33,41 +34,45 @@ func main() {
 }
 
 type application struct {
-	SentryDSN    string `required:"false" arg:"sentry-dsn"    env:"SENTRY_DSN"    usage:"SentryDSN"                             display:"length"`
+	SentryDSN    string `required:"false" arg:"sentry-dsn"    env:"SENTRY_DSN"    usage:"SentryDSN"                                                         display:"length"`
 	SentryProxy  string `required:"false" arg:"sentry-proxy"  env:"SENTRY_PROXY"  usage:"Sentry Proxy"`
-	KafkaBrokers string `required:"true"  arg:"kafka-brokers" env:"KAFKA_BROKERS" usage:"Comma separated list of Kafka brokers"`
+	KafkaBrokers string `required:"false" arg:"kafka-brokers" env:"KAFKA_BROKERS" usage:"Comma separated list of Kafka brokers (ignored when DRY_RUN=true)"`
+	DryRun       bool   `required:"false" arg:"dry-run"       env:"DRY_RUN"       usage:"if true, log every would-be CreateCommand and skip the Kafka send"                  default:"false"`
 }
 
 func (a *application) Run(ctx context.Context, _ libsentry.Client) error {
-	saramaClient, err := libkafka.CreateSaramaClient(
-		ctx,
-		libkafka.ParseBrokersFromString(a.KafkaBrokers),
-	)
-	if err != nil {
-		return errors.Wrap(ctx, err, "create sarama client failed")
+	var sender task.CreateCommandSender
+	if a.DryRun {
+		sender = publisher.NewNoopSender()
+	} else {
+		saramaClient, err := libkafka.CreateSaramaClient(
+			ctx,
+			libkafka.ParseBrokersFromString(a.KafkaBrokers),
+		)
+		if err != nil {
+			return errors.Wrap(ctx, err, "create sarama client failed")
+		}
+		defer saramaClient.Close()
+
+		syncProducer, err := libkafka.NewSyncProducerWithName(
+			ctx,
+			libkafka.ParseBrokersFromString(a.KafkaBrokers),
+			serviceName,
+		)
+		if err != nil {
+			return errors.Wrap(ctx, err, "create sync producer failed")
+		}
+		defer syncProducer.Close()
+
+		sender = task.NewCreateCommandSender(cdb.NewCommandObjectSender(
+			syncProducer,
+			cqrsbase.Branch("master"),
+			liblog.DefaultSamplerFactory,
+		))
 	}
-	defer saramaClient.Close()
-
-	syncProducer, err := libkafka.NewSyncProducerWithName(
-		ctx,
-		libkafka.ParseBrokersFromString(a.KafkaBrokers),
-		serviceName,
-	)
-	if err != nil {
-		return errors.Wrap(ctx, err, "create sync producer failed")
-	}
-	defer syncProducer.Close()
-
-	sender := task.NewCreateCommandSender(cdb.NewCommandObjectSender(
-		syncProducer,
-		cqrsbase.Branch("master"),
-		liblog.DefaultSamplerFactory,
-	))
-	pub := factory.CreatePublisher(sender)
-
+	pub := factory.CreatePublisher(sender, a.DryRun)
 	clock := libtime.NewCurrentDateTime()
 	metrics := tick.NewPrometheusMetrics()
 	tickLoop := factory.CreateTick(ctx, pub, clock, metrics)
-
 	return tickLoop.RunOnce(ctx)
 }

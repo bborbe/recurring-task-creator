@@ -30,7 +30,7 @@ var _ = Describe("CreatePublisher", func() {
 	BeforeEach(func() {
 		sender = &taskmocks.TaskCreateCommandSender{}
 		sender.SendCommandReturns(nil)
-		pub = factory.CreatePublisher(sender)
+		pub = factory.CreatePublisher(sender, false)
 	})
 	It("returns a Publisher that delegates to the sender", func() {
 		def := schedule.TaskDefinition{

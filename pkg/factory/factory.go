@@ -19,9 +19,11 @@ import (
 )
 
 // CreatePublisher builds a publisher.Publisher that sends through the
-// given task.CreateCommandSender. Pure plumbing: no business logic.
-func CreatePublisher(sender task.CreateCommandSender) publisher.Publisher {
-	return publisher.NewPublisher(sender)
+// given task.CreateCommandSender. When dryRun is true, the publisher logs
+// the would-be CreateCommand and skips the sender call. Pure plumbing: no
+// business logic.
+func CreatePublisher(sender task.CreateCommandSender, dryRun bool) publisher.Publisher {
+	return publisher.NewPublisher(sender, dryRun)
 }
 
 // CreateTick builds the hourly cron loop. schedule.TasksForDate is
