@@ -16,7 +16,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 
-	pubmocks "github.com/bborbe/recurring-task-creator/pkg/mocks"
+	pubmocks "github.com/bborbe/recurring-task-creator/mocks"
 	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 	"github.com/bborbe/recurring-task-creator/pkg/tick"
 )

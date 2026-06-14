@@ -10,9 +10,9 @@ import (
 	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 )
 
+//counterfeiter:generate -o ../../mocks/tick-metrics.go --fake-name TickMetrics . Metrics
+
 // Metrics records observability events for the hourly tick loop.
-//
-//counterfeiter:generate -o ../mocks/tick-metrics.go --fake-name TickMetrics . Metrics
 type Metrics interface {
 	// IncPublished is called once per Publish attempt with the outcome
 	// ("success" | "error") and the recurrence kind of the task.

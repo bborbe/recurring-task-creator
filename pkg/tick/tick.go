@@ -16,9 +16,9 @@ import (
 	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 )
 
+//counterfeiter:generate -o ../../mocks/tick-tick.go --fake-name TickTick . Tick
+
 // Tick runs the hourly cron loop. Run blocks until ctx is cancelled.
-//
-//counterfeiter:generate -o ../mocks/tick-tick.go --fake-name TickTick . Tick
 type Tick interface {
 	// Run performs an initial tick synchronously, then enters a 1-hour loop
 	// that fires on time.NewTicker. Returns nil on clean context cancellation.
