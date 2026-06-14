@@ -1,7 +1,10 @@
 ---
-spec: ["001"]
-status: draft
+status: failed
+spec: [001-schedule-encoding]
 created: "2026-06-07T13:30:00Z"
+queued: "2026-06-14T10:24:39Z"
+completed: "2026-06-14T10:36:09Z"
+lastFailReason: 'setup workflow: working tree is not clean; cannot switch to branch "dark-factory/005-schedule-encoding"; uncommitted changes: CLAUDE.md'
 ---
 
 <summary>
@@ -150,7 +153,7 @@ type predicate func(d Date) bool
 
 Provide EXACTLY these constructors, all exported, and NO OTHERS:
 
-a. `OnWeekdays(days ...time.Weekday) predicate` — fires when `d.weekday()` is in the set. Use `stdtime` alias if the file imports `time` as `stdtime`.
+a. `OnWeekdays(days ...time.Weekday) predicate` — fires when `d.weekday()` is in the set.
 
 b. `OnDaysOfMonth(days ...int) predicate` — fires when `d.Day` is in the set.
 
@@ -260,7 +263,7 @@ Encode EXACTLY these 45 entries. Each row below specifies: slug, recurrence, pre
 
 For body templates, paragraphs are separated by a blank line (`\n\n`). Links are `[text](url)`. Where the source provider built multiple ADF paragraphs, flatten to one markdown paragraph per source paragraph, separated by blank lines. Lists keep their source markers (`* `, `1. `, `- `). The exact body wording does not need to match the source byte-for-byte — the test surface asserts slugs, sort order, placeholder validity, uniqueness, and the canonical slug list. Bodies are static markdown defined in code; they cross no trust boundary.
 
-### Daily — Saturday (12 entries, predicate `OnWeekdays(time.Saturday)`, recurrence `RecurrenceWeekly`)
+### Weekly — Saturday (12 entries, predicate `OnWeekdays(time.Saturday)`, recurrence `RecurrenceWeekly`)
 
 | Slug | TitleTemplate | BodyTemplate (markdown, paragraph-separated) |
 |------|---------------|----------------------------------------------|
@@ -277,7 +280,7 @@ For body templates, paragraphs are separated by a blank line (`\n\n`). Links are
 | `run-update-all-saturday` | `Run update-all.sh (before restart)` | `Run system updates before weekend restart (sun.hm and fire.hm)\n\n/Users/bborbe/Documents/workspaces/scripts/update-all.sh` |
 | `topic-backup-saturday` | `Backup Kafka Topics` | `Backup Kafka topics before weekend restart\n\nPrerequisite: hell must be powered on (see "Turn on hell" subtask).\n\ncd /Users/bborbe/Documents/workspaces/trading/strimzi/topic-backuper/cmd/backup\n\nmake backup` |
 
-### Daily — Sunday (9 entries, predicate `OnWeekdays(time.Sunday)`, recurrence `RecurrenceWeekly`)
+### Weekly — Sunday (9 entries, predicate `OnWeekdays(time.Sunday)`, recurrence `RecurrenceWeekly`)
 
 | Slug | TitleTemplate | BodyTemplate |
 |------|---------------|--------------|
@@ -324,7 +327,7 @@ For body templates, paragraphs are separated by a blank line (`\n\n`). Links are
 | `update-poste` | `Update Poste` | `[Poste Docker Hub](https://hub.docker.com/r/analogic/poste.io/tags)\n\ncat ~/Documents/workspaces/world/configuration/world.go|grep poste\n\n# update poste version in world.go\n\nmake install\n\nworld apply -a poste -v=2` |
 | `update-minio` | `Update Minio` | `helm repo add minio-operator https://operator.min.io\n\nhelm repo update\n\nhelm list -n minio-operator\n\nhelm search repo minio-operator/operator\n\nhelm list -n minio\n\nhelm search repo minio-operator/tenant\n\nOpen "backup" Intellij Project\n\nUpdate Version in k8s/minio/operator/Makefile\n\nmake upgrade\n\nUpdate Version in k8s/minio/tenant/Makefile\n\nmake upgrade` |
 | `update-library` | `Update Github Libraries` | `Automated workflow (recommended):\n\n[Updater Guide](obsidian://open?vault=Personal&file=50%20Knowledge%20Base%2FUpdater%20Guide)\n\nManual workflow:\n\n[Go Library Update Workflow](obsidian://open?vault=Personal&file=50%20Knowledge%20Base%2FGo%20Library%20Update%20Workflow)\n\nTask tracking:\n\n[Update All Go Libraries Task](obsidian://open?vault=Personal&file=24%20Tasks%2FUpdate%20All%20Go%20Libraries%20Following%20Workflow)` |
-| `update-k3s` | `Update K3s` | `[K3s Release Channels](https://update.k3s.io/v1-release/channels)\n\n[K3s Upgrade Guide](obsidian://open?vault=Obsidian&file=50%20Knowledge%20Base%2FK3s%20Ugrade)\n\n* Update Hell\n* Update Nuke` |
+| `update-k3s` | `Update K3s` | `[K3s Release Channels](https://update.k3s.io/v1-release/channels)\n\n[K3s Upgrade Guide](obsidian://open?vault=Personal&file=50%20Knowledge%20Base%2FK3s%20Upgrade)\n\n* Update Hell\n* Update Nuke` |
 
 Note on `update-k3s`: the source `CreateUpdateK3s` interpolates the latest K3s version via an HTTP lookup. This spec forbids I/O, so the static title `Update K3s` is shipped. Slug fidelity is preserved.
 
@@ -344,19 +347,15 @@ Note on `update-k3s`: the source `CreateUpdateK3s` interpolates the latest K3s v
 
 Total: 12 + 9 + 1 + 2 + 17 + 2 + 2 = **45 entries**.
 
-## 8. Optional helper: placeholder substitution
-
-The spec does NOT require `TasksForDate` to render the templates — it returns the `TaskDefinition` with placeholders intact, and a later publisher spec will substitute. Therefore you do NOT need to implement substitution in this prompt. If you nonetheless want to expose a substitution helper for future use, do so via a separate exported function `RenderTitle(def TaskDefinition, d Date) string` / `RenderBody(def TaskDefinition, d Date) string` that uses `strings.ReplaceAll` per placeholder (one `ReplaceAll` call per supported placeholder, in the order listed in `SupportedPlaceholders`). Do NOT use regex. If you skip this helper entirely, that is acceptable for this spec — the spec's AC does not require it. (Recommendation: skip for this spec; defer to the publisher spec.)
-
-## 9. Tests — write all of these in `/workspace/pkg/schedule/`
+## 8. Tests — write all of these in `/workspace/pkg/schedule/`
 
 All test files are `package schedule_test` (external) except the slug-list canonical pin which can live in either; keep it external for consistency.
 
-### 9a. `/workspace/pkg/schedule/predicate_test.go`
+### 8a. `/workspace/pkg/schedule/predicate_test.go`
 
 Cover each predicate constructor with table-driven `Describe("OnWeekdays", ...)` / `Describe("OnDaysOfMonth", ...)` / `Describe("OnMonthAndDay", ...)` / `Describe("EveryDay", ...)` / `Describe("OnFirstDayOfQuarter", ...)` / `Describe("OnFirstDayOfYear", ...)` / `Describe("OnFirstDayOfMonth", ...)`. For each: at least one date that fires and one that does not. Use `NewDate(2025, time.January, 4)` (Saturday, W01), `NewDate(2025, time.January, 5)` (Sunday), `NewDate(2025, time.April, 1)` (Tuesday, quarter boundary), `NewDate(2025, time.July, 1)` (quarter boundary), `NewDate(2025, time.October, 1)` (quarter boundary), `NewDate(2025, time.January, 1)` (year boundary, Wednesday), `NewDate(2025, time.March, 5)` (Wednesday, DOM=5), `NewDate(2025, time.May, 1)`.
 
-### 9b. `/workspace/pkg/schedule/inventory_validation_test.go`
+### 8b. `/workspace/pkg/schedule/inventory_validation_test.go`
 
 ```go
 var _ = Describe("inventory", func() {
@@ -417,7 +416,7 @@ func AllDefinitionsForTest() []TaskDefinition {
 }
 ```
 
-### 9c. `/workspace/pkg/schedule/tasks_for_date_test.go`
+### 8c. `/workspace/pkg/schedule/tasks_for_date_test.go`
 
 Cover EVERY acceptance-criterion date from the spec. Use a helper `slugs(defs []schedule.TaskDefinition) []string` to project to a slug list.
 
@@ -515,7 +514,7 @@ var _ = Describe("TasksForDate", func() {
 })
 ```
 
-### 9d. `/workspace/pkg/schedule/canonical_slugs_test.go`
+### 8d. `/workspace/pkg/schedule/canonical_slugs_test.go`
 
 Pin the full alphabetically-sorted slug list. Computed list (45 slugs, sorted):
 
@@ -586,7 +585,7 @@ var _ = Describe("inventory canonical slug list", func() {
 })
 ```
 
-### 9e. `/workspace/pkg/schedule/no_forbidden_imports_test.go`
+### 8e. `/workspace/pkg/schedule/no_forbidden_imports_test.go`
 
 Walks `pkg/schedule/*.go` (excluding `*_test.go`) and asserts none of the forbidden import paths appear. Implement using `go/parser` and `go/ast`:
 
@@ -622,7 +621,7 @@ var _ = Describe("package surface", func() {
 
 The test runs with `pkg/schedule` as its working directory (Ginkgo default for `go test ./...`), so `os.ReadDir(".")` enumerates exactly the package files.
 
-## 10. Imports and conventions
+## 9. Imports and conventions
 
 - Every new `.go` file starts with the 2026 copyright header (3 lines exactly as shown in `<context>`).
 - Use `goimports`-style grouping: standard library first, then third-party, then internal — each group separated by a blank line. See `pkg/handler/sentry-alert_test.go` for the pattern.
@@ -631,7 +630,7 @@ The test runs with `pkg/schedule` as its working directory (Ginkgo default for `
 - Do NOT add any new dep to `go.mod`. Everything needed is already a direct dep.
 - Do NOT touch `pkg/handler/`, `pkg/factory/`, `pkg/mathutil/`, `main.go`, `Makefile`, or any K8s manifest.
 
-## 11. Verify and wire-up
+## 10. Verify and wire-up
 
 After all files are written:
 1. Run `cd /workspace && go build ./pkg/schedule/...` — must compile.
@@ -666,6 +665,5 @@ Run these from the repo root `/workspace`:
 2. `go test ./pkg/schedule/...` — all specs green.
 3. `grep -E '"(github\.com/segmentio/kafka-go|github\.com/google/uuid|net/http|github\.com/bborbe/jira-task-creator)"' pkg/schedule/*.go` — must return no matches (excluding `*_test.go` files; the forbidden-imports Ginkgo test verifies this for production files).
 4. `ls pkg/schedule/` — must list at minimum: `date.go`, `recurrence.go`, `predicate.go`, `task_definition.go`, `tasks_for_date.go`, `inventory.go`, `inventory_export_test.go`, `schedule_suite_test.go`, `predicate_test.go`, `inventory_validation_test.go`, `tasks_for_date_test.go`, `canonical_slugs_test.go`, `no_forbidden_imports_test.go`.
-5. `grep -c '^	{$' pkg/schedule/inventory.go || true` — informational; should be 45 (one opening brace per `TaskDefinition{` block) — adjust the grep to whatever shape your literal uses; the canonical-slugs test is the load-bearing assertion of 45.
-6. Spot-check: open `pkg/schedule/inventory.go` and visually confirm 45 entries.
+5. Spot-check: open `pkg/schedule/inventory.go` and visually confirm 45 entries (the canonical-slugs test in §8d is the load-bearing assertion of 45).
 </verification>
