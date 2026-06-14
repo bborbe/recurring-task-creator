@@ -81,7 +81,8 @@ The split between prompt and spec is **business-why vs technical-how**, not big 
 - Always audit before approving
 - Always verify before completing — use `/dark-factory:verify-spec <id>` over manual `dark-factory spec complete`
 - **Spec-linked prompts are daemon-generated** — never hand-write prompts for an approved spec
-- **BLOCKING: Never run `dark-factory prompt approve`, `dark-factory spec approve`, or `dark-factory daemon` without explicit user confirmation**
+- **Standing workflow: audit → fix → approve.** After creating a spec or prompt: (1) run the auditor, (2) apply fixes from the audit report, (3) if the resulting artifact has no critical/blocker issues, run `dark-factory spec approve <name>` / `dark-factory prompt approve <name>` **without asking** — this is pre-approved. If the audit surfaces unresolvable blockers, stop and report.
+- **BLOCKING: Never run `dark-factory daemon` without explicit user confirmation** (separate from approve — daemon spawns containers, makes commits, opens PRs)
 - **Before starting daemon** — run `dark-factory status` first
 - **Start daemon in background** — use Bash `run_in_background: true`
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- feat: Add `pkg/schedule` package with 45-entry recurring-task inventory and `TasksForDate` pure function
+
 ## v0.0.2
 
 - Remove flaky `gexec.Build` main test (skeleton inheritance; precommit covers compile check)
