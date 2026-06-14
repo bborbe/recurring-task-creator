@@ -46,6 +46,12 @@ type triggerResponse struct {
 // {"error":"<message>"}. The handler holds no per-request state and is safe
 // to call concurrently for the same date (the controller dedups by
 // deterministic UUID5).
+//
+// Security: this handler intentionally has no authentication. The service
+// is deployed cluster-internal-only (no k8s Ingress); all external access
+// is brokered by ~/Documents/workspaces/trading/frontend/gateway, which
+// owns auth. The /trigger surface is reachable only inside the cluster.
+// Idempotency via deterministic UUID5 also makes accidental replay safe.
 func NewTriggerHandler(publisher publisher.Publisher, lookup schedule.ScheduleLookup) http.Handler {
 	return http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
 		param := req.URL.Query().Get("date")

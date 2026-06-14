@@ -22,7 +22,8 @@ A change is done only when all of the following hold.
 
 - `make precommit` passes from the project root (lint, test, security scan, license headers).
 - `go.mod` has no stray `replace` or `exclude` directives unless explicitly required.
-- No `LICENSE` file; no `claude*.yml` workflow files (this repo is private, solo, intentionally lean).
+- `LICENSE` file present (BSD-style, copied from go-skeleton convention).
+- No `claude*.yml` workflow files (private, solo repo).
 
 ## Documentation
 
@@ -37,7 +38,6 @@ A change is done only when all of the following hold.
 
 ## Out of Scope (do NOT add)
 
-- `LICENSE` file
 - Claude PR review workflow (`.github/workflows/claude*.yml`)
 - `README.md` "Status: Under Development" banner
 - Runtime feature flags for individual recurring tasks (per task-file design decisions)
