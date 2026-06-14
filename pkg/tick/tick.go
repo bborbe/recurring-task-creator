@@ -16,12 +16,6 @@ import (
 	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 )
 
-// ScheduleLookup is the pure function that the tick invokes every hour to
-// compute "what should fire today?". The type is satisfied by
-// schedule.TasksForDate; exposing it here makes the constructor signature
-// self-documenting and lets tests substitute a fake.
-type ScheduleLookup func(date schedule.Date) []schedule.TaskDefinition
-
 // Tick runs the hourly cron loop. Run blocks until ctx is cancelled.
 //
 //counterfeiter:generate -o ../mocks/tick-tick.go --fake-name TickTick . Tick
@@ -41,7 +35,7 @@ type Tick interface {
 // time.LoadLocation("Europe/Berlin") fails at struct init.
 func NewTick(
 	ctx context.Context,
-	scheduleFn ScheduleLookup,
+	scheduleFn schedule.ScheduleLookup,
 	pub publisher.Publisher,
 	clock libtime.CurrentDateTimeGetter,
 	metrics Metrics,
@@ -60,7 +54,7 @@ func NewTick(
 }
 
 type tick struct {
-	scheduleFn ScheduleLookup
+	scheduleFn schedule.ScheduleLookup
 	publisher  publisher.Publisher
 	clock      libtime.CurrentDateTimeGetter
 	metrics    Metrics

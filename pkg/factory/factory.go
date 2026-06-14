@@ -58,7 +58,7 @@ func CreateHealthzHandler() http.Handler {
 // inventory directly; production wiring passes schedule.TasksForDate.
 func CreateTriggerHandler(
 	publisher publisher.Publisher,
-	lookup handler.ScheduleLookup,
+	lookup schedule.ScheduleLookup,
 ) http.Handler {
 	return handler.NewTriggerHandler(publisher, lookup)
 }

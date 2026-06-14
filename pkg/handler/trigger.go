@@ -16,13 +16,6 @@ import (
 	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 )
 
-// ScheduleLookup is the pure function NewTriggerHandler invokes to compute
-// the task set for a civil date. Defined locally (rather than imported from
-// pkg/tick) to keep the dependency direction pkg/factory → pkg/handler and
-// pkg/factory → pkg/tick — never pkg/handler → pkg/tick. The concrete
-// production value is schedule.TasksForDate, injected by the factory.
-type ScheduleLookup func(date schedule.Date) []schedule.TaskDefinition
-
 // triggerErrorEntry is one per-task failure in the /trigger response.
 // Always emitted, even when empty (no omitempty on the errors slice).
 type triggerErrorEntry struct {
@@ -53,7 +46,7 @@ type triggerResponse struct {
 // {"error":"<message>"}. The handler holds no per-request state and is safe
 // to call concurrently for the same date (the controller dedups by
 // deterministic UUID5).
-func NewTriggerHandler(publisher publisher.Publisher, lookup ScheduleLookup) http.Handler {
+func NewTriggerHandler(publisher publisher.Publisher, lookup schedule.ScheduleLookup) http.Handler {
 	return http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
 		param := req.URL.Query().Get("date")
 		if param == "" {

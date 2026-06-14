@@ -23,12 +23,14 @@ type Metrics interface {
 	SetLastTickTimestamp(seconds float64)
 }
 
-// prometheusMetrics is the Prometheus-backed implementation of Metrics.
-// The counter and gauge are package-level singletons registered once in init()
-// and pre-initialized for all ten result/recurrence label combinations.
-type prometheusMetrics struct {
-	counter *prometheus.CounterVec
-	gauge   prometheus.Gauge
+// NewPrometheusMetrics returns a Metrics backed by the package-level
+// Prometheus counter and gauge. The counter is pre-initialized in init()
+// so the first call into the metrics surface is just an Inc/Add.
+func NewPrometheusMetrics() Metrics {
+	return &prometheusMetrics{
+		counter: recurringTasksPublishedTotal,
+		gauge:   recurringTasksLastTickTimestamp,
+	}
 }
 
 // recurringTasksPublishedTotal counts Publish outcomes by result and recurrence.
@@ -63,14 +65,12 @@ func init() {
 	}
 }
 
-// NewPrometheusMetrics returns a Metrics backed by the package-level
-// Prometheus counter and gauge. The counter is pre-initialized in init()
-// so the first call into the metrics surface is just an Inc/Add.
-func NewPrometheusMetrics() Metrics {
-	return &prometheusMetrics{
-		counter: recurringTasksPublishedTotal,
-		gauge:   recurringTasksLastTickTimestamp,
-	}
+// prometheusMetrics is the Prometheus-backed implementation of Metrics.
+// The counter and gauge are package-level singletons registered once in init()
+// and pre-initialized for all ten result/recurrence label combinations.
+type prometheusMetrics struct {
+	counter *prometheus.CounterVec
+	gauge   prometheus.Gauge
 }
 
 func (m *prometheusMetrics) IncPublished(result string, recurrence string) {

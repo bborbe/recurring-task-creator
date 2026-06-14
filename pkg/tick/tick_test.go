@@ -26,7 +26,7 @@ var _ = Describe("Tick", func() {
 		pub        *pubmocks.PublisherPublisher
 		clock      libtime.CurrentDateTime
 		metrics    *pubmocks.TickMetrics
-		scheduleFn tick.ScheduleLookup
+		scheduleFn schedule.ScheduleLookup
 		tk         tick.Tick
 	)
 

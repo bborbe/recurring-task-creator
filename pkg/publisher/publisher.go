@@ -9,6 +9,7 @@ import (
 
 	"github.com/bborbe/agent/lib/command/task"
 	"github.com/bborbe/errors"
+	"github.com/golang/glog"
 
 	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 )
@@ -66,5 +67,7 @@ func (p *publisher) Publish(
 			def.Slug, date.Year, date.Month, date.Day,
 		)
 	}
+	glog.V(2).
+		Infof("publisher: sent CreateCommand slug=%q date=%04d-%02d-%02d", def.Slug, date.Year, date.Month, date.Day)
 	return nil
 }
