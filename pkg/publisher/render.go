@@ -79,14 +79,11 @@ func fmtMonthYear(year, month int) string {
 	return fmt.Sprintf("%04d-%02d", year, month)
 }
 
-// fmtQuarter renders YYYYQNN (uppercase Q, two-digit quarter with leading zero).
-// Matches the source provider's dateToQuarter format ("%dQ%d", upgraded to
-// zero-padded width — see spec rationale: the spec's expected output is
-// "2025Q02" and "2025Q01" with a two-digit quarter; the source's "%dQ%d"
-// renders "2025Q2" and "2025Q1" — the spec wins because the spec's
-// acceptance criteria are the contract, not the source).
+// fmtQuarter renders YYYYQN (uppercase Q, single-digit quarter 1-4).
+// Matches the source provider's dateToQuarter format ("%dQ%d") and the
+// existing vault convention (e.g. "2025Q4", "2026Q1").
 func fmtQuarter(year, quarter int) string {
-	return fmt.Sprintf("%04dQ%02d", year, quarter)
+	return fmt.Sprintf("%dQ%d", year, quarter)
 }
 
 // fmtYear renders YYYY.

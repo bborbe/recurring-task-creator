@@ -125,13 +125,13 @@ var _ = Describe("Publisher", func() {
 				name:     "{{quarter}}",
 				template: "Q {{quarter}}",
 				date:     schedule.NewDate(2025, time.April, 1),
-				want:     "Q 2025Q02",
+				want:     "Q 2025Q2",
 			}),
 			Entry("{{last-quarter}} with year roll-back", renderCase{
 				name:     "{{last-quarter}}",
 				template: "Last {{last-quarter}}",
 				date:     schedule.NewDate(2025, time.January, 1),
-				want:     "Last 2024Q04",
+				want:     "Last 2024Q4",
 			}),
 			Entry("{{year}}", renderCase{
 				name:     "{{year}}",
