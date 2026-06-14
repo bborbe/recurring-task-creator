@@ -54,6 +54,9 @@ func buildPlaceholderValues(slug string, date schedule.Date) map[string]string {
 	}
 }
 
+// dateToTime converts a civil schedule.Date to its midnight-UTC carrier
+// time.Time. Pure conversion — no system clock access, no DST math.
+//
 // dateToTime exposes schedule.Date's midnight-UTC carrier through a
 // publisher-local helper so the publisher can run ISOWeek() and
 // AddDate(0, 0, 7) without re-implementing the conversion. The

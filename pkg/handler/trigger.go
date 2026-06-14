@@ -6,6 +6,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -50,6 +51,7 @@ func NewTriggerHandler(publisher publisher.Publisher) http.Handler {
 			writeTriggerError(resp, http.StatusBadRequest, "missing date parameter")
 			return
 		}
+		// time.Parse here is input parsing, not a clock read; no time.Now().
 		t, err := time.Parse("2006-01-02", param)
 		if err != nil {
 			writeTriggerError(
@@ -66,7 +68,7 @@ func NewTriggerHandler(publisher publisher.Publisher) http.Handler {
 			Infof("trigger: processing %d task(s) for %04d-%02d-%02d", len(tasks), date.Year, date.Month, date.Day)
 
 		out := triggerResponse{
-			Date:      param,
+			Date:      fmt.Sprintf("%04d-%02d-%02d", date.Year, date.Month, date.Day),
 			Published: 0,
 			Errors:    []triggerErrorEntry{},
 		}

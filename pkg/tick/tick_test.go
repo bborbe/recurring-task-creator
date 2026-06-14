@@ -6,9 +6,9 @@ package tick_test
 
 import (
 	"context"
-	"errors"
 	"time"
 
+	"github.com/bborbe/errors"
 	libtime "github.com/bborbe/time"
 	libtimetest "github.com/bborbe/time/test"
 	. "github.com/onsi/ginkgo/v2"
@@ -236,7 +236,7 @@ var _ = Describe("Tick", func() {
 			tk, err = tick.NewTick(context.Background(), scheduleFn, pub, clock, metrics)
 			Expect(err).NotTo(HaveOccurred())
 
-			pub.PublishReturnsOnCall(0, errors.New("kafka down"))
+			pub.PublishReturnsOnCall(0, errors.New(context.Background(), "kafka down"))
 			pub.PublishReturnsOnCall(1, nil)
 			pub.PublishReturnsOnCall(2, nil)
 
@@ -281,7 +281,7 @@ var _ = Describe("Tick", func() {
 			tk, err = tick.NewTick(context.Background(), scheduleFn, pub, clock, metrics)
 			Expect(err).NotTo(HaveOccurred())
 
-			pub.PublishReturns(errors.New("boom"))
+			pub.PublishReturns(errors.New(context.Background(), "boom"))
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()

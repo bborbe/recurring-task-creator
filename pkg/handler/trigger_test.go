@@ -7,11 +7,11 @@ package handler_test
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"time"
 
+	"github.com/bborbe/errors"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -136,7 +136,7 @@ var _ = Describe("TriggerHandler", func() {
 			fakePublisher.PublishCalls(
 				func(ctx context.Context, def schedule.TaskDefinition, d schedule.Date) error {
 					if def.Slug == target {
-						return errors.New("simulated publish failure")
+						return errors.New(ctx, "simulated publish failure")
 					}
 					return nil
 				},
@@ -169,7 +169,7 @@ var _ = Describe("TriggerHandler", func() {
 		func() {
 			date := schedule.NewDate(2025, time.January, 4)
 			tasks := schedule.TasksForDate(date)
-			fakePublisher.PublishReturns(errors.New("all down"))
+			fakePublisher.PublishReturns(errors.New(context.Background(), "all down"))
 
 			req := httptest.NewRequest("GET", "/trigger?date=2025-01-04", nil)
 			resp := httptest.NewRecorder()
