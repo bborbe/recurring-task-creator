@@ -1,8 +1,13 @@
 ---
-status: approved
+status: completed
 spec: [003-tick]
+summary: Wired main.go for tick loop + HTTP server via run.CancelOnFirstFinish; trimmed HTTP router to 4 endpoints; deleted pkg/handler/ and pkg/mathutil/; added CreateTick factory + tests; make precommit exits 0
+container: recurring-task-creator-mvp-exec-008-main-wiring
+dark-factory-version: v0.177.1
 created: "2026-06-14T12:01:16Z"
 queued: "2026-06-14T12:24:33Z"
+started: "2026-06-14T12:35:51Z"
+completed: "2026-06-14T12:45:50Z"
 branch: dark-factory/tick
 ---
 

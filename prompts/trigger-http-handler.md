@@ -1,8 +1,7 @@
 ---
 status: approved
 spec: [005-trigger-http-handler]
-created:
-queued:
+created: "2026-06-14T12:40:27Z"
 branch: dark-factory/trigger-http-handler
 ---
 
@@ -47,7 +46,7 @@ Verified external symbols (read from the project's own source; no new module fet
 
 `github.com/bborbe/http` (direct dep, v1.26.13) — used at the import site `libhttp "github.com/bborbe/http"`. `libhttp.NewPrintHandler("OK")` is the interim stub being replaced for `/healthz` only; it is NOT being replaced for `/readiness` (Spec 3 owns that, and `/readiness` stays as `NewPrintHandler("OK")`).
 
-`github.com/gorilla/mux` (direct dep, v1.8.1) — `mux.NewRouter()`, `router.Path("/healthz").Handler(handler)`, `router.Path("/trigger").Handler(handler)`. Use `.Path(...)` (not `.Methods(...).Path(...)`) to match the existing pattern in `main.go`. Gorilla/mux returns HTTP 405 for the wrong method by default — `POST /trigger?date=...` will get a 405 with no handler invocation, which is the spec's row 9 outcome.
+`github.com/gorilla/mux` (direct dep, v1.8.1) — `mux.NewRouter()`, `router.Path("/healthz").Handler(handler)`, `router.Path("/trigger").Methods("GET").Handler(handler)`. **Critical**: a `.Path(...)`-only route matches ALL HTTP verbs; without `.Methods("GET")` on `/trigger`, `POST /trigger` hits the handler and returns 200 (contradicting spec row 9). Append `.Methods("GET")` to `/trigger` so a wrong-method request gets a 405 from gorilla/mux's built-in method-not-allowed handler. `/healthz` does NOT need `.Methods(...)` — POST /healthz returning 200 is harmless (the k8s probe is GET).
 
 `github.com/golang/glog` (direct dep, v1.2.5) — `glog.V(2).Infof(...)` for the entry-trace per request, `glog.Errorf(...)` for per-task errors. Per `go-logging-guide.md` and `go-glog-guide.md`: V(2) is the heartbeat level (default verbosity emits nothing), V(3) is per-item. The handler emits one V(2) line per request and one Errorf line per failing task. The error-log line must include the slug (spec AC #13).
 
@@ -59,13 +58,13 @@ Verified external symbols (read from the project's own source; no new module fet
 
 Coding-guideline references (inside the YOLO container; read these before writing Go):
 - `/home/node/.claude/plugins/marketplaces/coding/docs/go-architecture-patterns.md` — Interface → Constructor → Struct → Method. The trigger handler depends on the `publisher.Publisher` INTERFACE (not the concrete `*publisher`), which is the canonical DI shape. For stateless handlers, returning `http.Handler` directly from `New<Name>Handler` is sufficient (matches the now-deleted `NewSentryAlertHandler` / `NewTestLoglevelHandler` shape).
-- `/home/node/.claude/plugins/marketpaces/coding/docs/go-http-handler-refactoring-guide.md` — handlers in `pkg/handler/`, factory wiring in `pkg/factory/`, never inline in `main.go`.
-- `/home/node/.claude/plugins/marketpaces/coding/docs/go-factory-pattern.md` — `Create*` prefix, zero business logic, returns interface type, never returns `error`. `CreateHealthzHandler` and `CreateTriggerHandler` are one-line pass-throughs.
-- `/home/node/.claude/plugins/marketpaces/coding/docs/go-testing-guide.md` — Ginkgo v2 / Gomega, dot-imports, `BeforeEach`, `Expect`, external test package (`package handler_test`).
-- `/home/node/.claude/plugins/marketpaces/coding/docs/go-error-wrapping-guide.md` — internal helpers that return errors wrap with `github.com/bborbe/errors`; the handler's date-parse path does NOT propagate the wrapped error (it writes a JSON body), so no wrap needed.
-- `/home/node/.claude/plugins/marketpaces/coding/docs/go-logging-guide.md` — `glog.V(2).Infof` for the request entry trace, `glog.Errorf` for per-task errors. Never `glog.Info*` without V-gating.
-- `/home/node/.claude/plugins/marketpaces/coding/docs/go-licensing-guide.md` — BSD license header on every new `.go` file, year `2026`.
-- `/home/node/.claude/plugins/marketpaces/coding/docs/dod.md` — coverage ≥80% for new code.
+- `/home/node/.claude/plugins/marketplaces/coding/docs/go-http-handler-refactoring-guide.md` — handlers in `pkg/handler/`, factory wiring in `pkg/factory/`, never inline in `main.go`.
+- `/home/node/.claude/plugins/marketplaces/coding/docs/go-factory-pattern.md` — `Create*` prefix, zero business logic, returns interface type, never returns `error`. `CreateHealthzHandler` and `CreateTriggerHandler` are one-line pass-throughs.
+- `/home/node/.claude/plugins/marketplaces/coding/docs/go-testing-guide.md` — Ginkgo v2 / Gomega, dot-imports, `BeforeEach`, `Expect`, external test package (`package handler_test`).
+- `/home/node/.claude/plugins/marketplaces/coding/docs/go-error-wrapping-guide.md` — internal helpers that return errors wrap with `github.com/bborbe/errors`; the handler's date-parse path does NOT propagate the wrapped error (it writes a JSON body), so no wrap needed.
+- `/home/node/.claude/plugins/marketplaces/coding/docs/go-logging-guide.md` — `glog.V(2).Infof` for the request entry trace, `glog.Errorf` for per-task errors. Never `glog.Info*` without V-gating.
+- `/home/node/.claude/plugins/marketplaces/coding/docs/go-licensing-guide.md` — BSD license header on every new `.go` file, year `2026`.
+- `/home/node/.claude/plugins/marketplaces/coding/docs/dod.md` — coverage ≥80% for new code.
 
 Load-bearing snippets inlined for executor verification:
 
@@ -360,7 +359,6 @@ import (
     "net/http/httptest"
     "time"
 
-    "github.com/golang/glog"
     . "github.com/onsi/ginkgo/v2"
     . "github.com/onsi/gomega"
 
@@ -545,33 +543,12 @@ var _ = Describe("TriggerHandler", func() {
         }
     })
 
-    It("logs an error containing the slug when a publish fails", func() {
-        // Use glog's test stderr redirection to capture the error line.
-        // The standard pattern in the bborbe ecosystem is to swap
-        // glog's stderr writer with a buffer. We assert the substring
-        // appears in the captured stderr.
-        //
-        // If the project already has a glog-capture helper, use it.
-        // Otherwise, the simplest acceptable assertion is the source-level
-        // check in <verification> (grep for the glog.Errorf call with
-        // the slug in the format string).
-        fakePublisher.PublishReturns(errors.New("boom"))
-
-        req := httptest.NewRequest("GET", "/trigger?date=2025-01-04", nil)
-        resp := httptest.NewRecorder()
-        httpHandler.ServeHTTP(resp, req)
-
-        // Source-level evidence: glog.Errorf is called in the handler.
-        // See <verification> step 4 for the grep command.
-        Expect(resp.Code).To(Equal(http.StatusOK))
-        _ = glog.Errorf // touch the import; if not used, goimports will fail and the file must use it elsewhere — keep this as a no-op reference or drop the import. The drop is fine: remove `"github.com/golang/glog"` from the imports if not otherwise used.
-    })
 })
 ```
 
-Note on the last `It` block (logging): the spec's AC #13 is satisfied two ways — source-inspection (`grep -nE 'glog\.Errorf' pkg/handler/trigger.go` returns at least one match AND the format string contains the slug variable name) is the PRIMARY path. If a glog stderr-capture helper is already in the codebase (check `pkg/handler/` and `pkg/schedule/` tests for prior art), use it; otherwise, drop the `glog` import from this test file and rely on the grep evidence in `<verification>`. **Decision: drop the import** — there's no precedent glog-capture helper in this project, and the source-grep evidence is what the auditor will use.
+Note on AC #13 (per-task error log): the source-grep check in `<verification>` step 12 (`grep -nE 'glog\.Errorf' pkg/handler/trigger.go` — at least one match; format string includes the slug via `%q` paired with `def.Slug`) is the verification path. No glog import is needed in this test file.
 
-Imports required (final list, after dropping `glog`):
+Imports required:
 ```go
 import (
     "context"
@@ -656,40 +633,10 @@ var _ = Describe("CreateTriggerHandler", func() {
     It("returns a non-nil http.Handler", func() {
         Expect(httpHndl).NotTo(BeNil())
     })
-    It("wires the supplied publisher into the handler", func() {
-        // Drive the handler with a real request; the publish should be
-        // delegated to the injected fake.
-        req := httptest.NewRequest("GET", "/trigger?date=2025-01-04", nil)
-        resp := httptest.NewRecorder()
-        httpHndl.ServeHTTP(resp, resp_for_handler)
-        // NOTE: the test above has a typo (resp_for_handler) — the
-        // executor must use `httptest.NewRecorder()` here. See final
-        // form below.
-        Expect(pubFake.PublishCallCount()).To(BeNumerically(">=", 0))
-    })
-})
-```
-
-Wait — the inline snippet above has a typo on the recorder variable (`resp_for_handler`). The CORRECT form is:
-
-```go
-var _ = Describe("CreateTriggerHandler", func() {
-    var (
-        pubFake  *projmocks.PublisherPublisher
-        httpHndl http.Handler
-    )
-    BeforeEach(func() {
-        pubFake = &projmocks.PublisherPublisher{}
-        pubFake.PublishReturns(nil)
-        httpHndl = factory.CreateTriggerHandler(pubFake)
-    })
-    It("returns a non-nil http.Handler", func() {
-        Expect(httpHndl).NotTo(BeNil())
-    })
     It("wires the supplied publisher into the handler (publish is reachable through the returned handler)", func() {
         // Smoke test: drive the handler with a known date and confirm the
-        // fake publisher was called at least once. Detailed per-task
-        // behavior is covered in pkg/handler/trigger_test.go.
+        // fake publisher was called the expected number of times. Detailed
+        // per-task behavior is covered in pkg/handler/trigger_test.go.
         req := httptest.NewRequest("GET", "/trigger?date=2025-01-04", nil)
         resp := httptest.NewRecorder()
         httpHndl.ServeHTTP(resp, req)
@@ -700,16 +647,6 @@ var _ = Describe("CreateTriggerHandler", func() {
     })
 })
 ```
-
-Required new imports in `factory_test.go`:
-- `"net/http"`
-- `"net/http/httptest"`
-- `projmocks "github.com/bborbe/recurring-task-creator/mocks"` (the alias may already exist from prompt 008's `CreateTick` block; if it does, do NOT add a duplicate — Go will reject it)
-- `time` (likely already imported)
-
-The `projmocks` alias is the project-mocks package (the same one used by prompt 008's `CreateTick` test block). The fake type is `PublisherPublisher` (counterfeiter-generated from `pkg/publisher/publisher.go`).
-
-**YAGNI note**: the factory tests intentionally do NOT replicate the full trigger-handler test matrix. The handler package's `trigger_test.go` is the test of record for behavior. The factory tests only assert: (a) the constructor returns a non-nil `http.Handler`, (b) the publisher parameter is wired through (reachable via the returned handler).
 
 ## 8. `main.go` router rewiring
 
@@ -724,7 +661,7 @@ router.Path("/readiness").Handler(libhttp.NewPrintHandler("OK"))
 router.Path("/metrics").Handler(promhttp.Handler())
 router.Path("/setloglevel/{level}").
     Handler(log.NewSetLoglevelHandler(ctx, log.NewLogLevelSetter(2, 5*time.Minute)))
-router.Path("/trigger").Handler(factory.CreateTriggerHandler(pub))
+router.Path("/trigger").Methods("GET").Handler(factory.CreateTriggerHandler(pub))
 ```
 
 Key changes:
@@ -733,9 +670,7 @@ Key changes:
 
 **Do NOT change any other path.** Do NOT add new env vars, new log lines, or new imports beyond what is needed for the new handler symbols.
 
-**Variable scoping for `pub`**: the `createHTTPServer` function signature may or may not currently receive `pub` as a parameter. Read the current `main.go` (post-008 state). If `createHTTPServer` is a method on `*application` and the publisher is built in `Run`, you may need to add a `pub publisher.Publisher` parameter to `createHTTPServer` and pass it from `Run`. **Decision rule**: prefer minimal-diff. If the publisher is reachable from `application` state (e.g. a field on `application`), use that; otherwise, thread it through as a parameter. Either way, the resulting `main.go` must compile and the `/trigger` route must call `factory.CreateTriggerHandler(<publisher-var>)`.
-
-The cleanest path is: extend `createHTTPServer`'s parameter list to take the `publisher.Publisher` as a second argument, then pass it from the `service.Run` call site in `Run`. The parameter ordering should be (sentryClient, db, pub) — match the existing argument order, appending `pub` at the end. If `createHTTPServer` does NOT take `db` (because prompt 008 may have removed it), the new signature is `(sentryClient libsentry.Client, pub publisher.Publisher) run.Func`. **Read the current `main.go` and match the existing parameter shape — do NOT invent a new shape.**
+**Variable scoping for the publisher**: thread the `publisher.Publisher` to `createHTTPServer` as an additional parameter. Read the current `main.go` (post-008 state) to determine the existing parameter list, then APPEND the publisher to that list (do not reorder existing parameters). At the `service.Run` call site in `Run`, pass the publisher in the same position. The variable name in scope is whatever prompt 008 used — likely `pub`; read the file to confirm.
 
 After the rewiring:
 - `grep -nE 'router\.Path' main.go` returns exactly 5 lines.

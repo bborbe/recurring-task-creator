@@ -4,18 +4,16 @@ go 1.26.4
 
 require (
 	github.com/bborbe/agent/lib v0.65.0
-	github.com/bborbe/boltkv v1.14.1
+	github.com/bborbe/cqrs v0.5.2
 	github.com/bborbe/errors v1.5.13
 	github.com/bborbe/http v1.26.13
 	github.com/bborbe/kafka v1.23.2
-	github.com/bborbe/kv v1.21.2
 	github.com/bborbe/log v1.6.14
 	github.com/bborbe/metrics v0.5.4
 	github.com/bborbe/run v1.9.28
 	github.com/bborbe/sentry v1.9.18
 	github.com/bborbe/service v1.10.1
 	github.com/bborbe/time v1.27.1
-	github.com/getsentry/sentry-go v0.46.2
 	github.com/golang/glog v1.2.5
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
@@ -30,8 +28,8 @@ require (
 	github.com/Masterminds/semver/v3 v3.5.0 // indirect
 	github.com/bborbe/argument/v2 v2.12.27 // indirect
 	github.com/bborbe/collection v1.20.13 // indirect
-	github.com/bborbe/cqrs v0.5.2 // indirect
 	github.com/bborbe/k8s v1.14.2 // indirect
+	github.com/bborbe/kv v1.21.2 // indirect
 	github.com/bborbe/math v1.3.11 // indirect
 	github.com/bborbe/parse v1.10.13 // indirect
 	github.com/bborbe/strimzi v1.8.4 // indirect
@@ -43,6 +41,7 @@ require (
 	github.com/eapache/go-resiliency v1.7.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.13.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.2 // indirect
+	github.com/getsentry/sentry-go v0.46.2 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-openapi/jsonpointer v0.23.1 // indirect
 	github.com/go-openapi/jsonreference v0.21.5 // indirect
@@ -83,7 +82,6 @@ require (
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	go.etcd.io/bbolt v1.4.3 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.52.0 // indirect
