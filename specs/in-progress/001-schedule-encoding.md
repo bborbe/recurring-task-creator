@@ -1,11 +1,12 @@
 ---
-status: prompted
+status: verifying
 tags:
     - dark-factory
     - spec
 approved: "2026-06-07T20:47:31Z"
 generating: "2026-06-07T21:27:11Z"
 prompted: "2026-06-07T21:27:11Z"
+verifying: "2026-06-14T10:51:57Z"
 branch: dark-factory/schedule-encoding
 ---
 
