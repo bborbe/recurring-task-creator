@@ -1,6 +1,6 @@
 ---
 status: completed
-spec: ["006"]
+spec: [006-period-anchored-uuid]
 summary: Switched pkg/publisher deterministic identifier to period-anchored shape (recurring-<slug>-<period-token>); frozen uuidNamespace constant unchanged; 100% test coverage on pkg/publisher; make precommit exits 0
 container: recurring-task-creator-always-fire-exec-011-period-anchored-identifier
 dark-factory-version: v0.177.1

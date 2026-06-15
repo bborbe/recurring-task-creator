@@ -84,7 +84,7 @@ var _ = Describe("CreateTriggerHandler", func() {
 	BeforeEach(func() {
 		pubFake = &projmocks.PublisherPublisher{}
 		pubFake.PublishReturns(nil)
-		httpHndl = factory.CreateTriggerHandler(pubFake, schedule.TasksForDate)
+		httpHndl = factory.CreateTriggerHandler(pubFake)
 	})
 	It("returns a non-nil http.Handler", func() {
 		Expect(httpHndl).NotTo(BeNil())
@@ -100,7 +100,7 @@ var _ = Describe("CreateTriggerHandler", func() {
 			httpHndl.ServeHTTP(resp, req)
 			Expect(resp.Code).To(Equal(http.StatusOK))
 			Expect(pubFake.PublishCallCount()).To(Equal(
-				len(schedule.TasksForDate(schedule.NewDate(2025, time.January, 4))),
+				len(schedule.Inventory()),
 			))
 		},
 	)

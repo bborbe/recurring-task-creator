@@ -4,27 +4,8 @@
 
 package schedule
 
-import "time"
-
-// onWeekdayDay5OfMonth fires on day 5 of any month that is not a Saturday or
-// Sunday. The spec lists the finances update under "Day-of-Month = 5" with
-// recurrence Monthly, but its literal acceptance test for 2025-01-05 (a
-// Sunday) expects the Sunday arm only and does not include update-finances.
-// This predicate reconciles the two by skipping weekend day-5 dates.
-//
-// NOTE: this single entry uses a purpose-built predicate instead of one of
-// the closed primitives in predicate.go. The deviation is documented because
-// the spec's two requirements (inventory table + acceptance test) are
-// mutually inconsistent.
-func onWeekdayDay5OfMonth(d Date) bool {
-	if d.weekday() == time.Saturday || d.weekday() == time.Sunday {
-		return false
-	}
-	return d.Day == 5
-}
-
 // inventory is the canonical, frozen recurring-task inventory. Order in this
-// slice has no semantic meaning — TasksForDate sorts by Slug before returning.
+// slice has no semantic meaning.
 var inventory = []TaskDefinition{
 	// Weekly — Saturday (12 entries)
 	{
@@ -35,14 +16,12 @@ var inventory = []TaskDefinition{
 			"[K3s Cluster Weekly Reboot Procedure](obsidian://open?vault=Personal&file=50%20Knowledge%20Base%2FK3s%20Cluster%20Weekly%20Reboot%20Procedure)\n\n" +
 			"[jira-task-creator](obsidian://open?vault=Personal&file=50%20Knowledge%20Base%2Fjira-task-creator)",
 		Recurrence: RecurrenceWeekly,
-		Fires:      OnWeekdays(time.Saturday),
 	},
 	{
 		Slug:          "turn-on-hell",
 		TitleTemplate: "Turn on hell",
 		BodyTemplate:  "power on hell",
 		Recurrence:    RecurrenceWeekly,
-		Fires:         OnWeekdays(time.Saturday),
 	},
 	{
 		Slug:          "weekly-review",
@@ -52,7 +31,6 @@ var inventory = []TaskDefinition{
 			"1. /complete-week - Bot performance, fills weekly note\n" +
 			"2. /weekly-trading-review {{iso-week}} - Portfolio balances",
 		Recurrence: RecurrenceWeekly,
-		Fires:      OnWeekdays(time.Saturday),
 	},
 	{
 		Slug:          "check-ftmo-demo-accounts",
@@ -64,28 +42,24 @@ var inventory = []TaskDefinition{
 			"* [FTMO](https://trader.ftmo.com/accounts-overview)\n" +
 			"* [Dev](https://dev.quant.benjamin-borbe.de/account/detail/ftmo-demo)",
 		Recurrence: RecurrenceWeekly,
-		Fires:      OnWeekdays(time.Saturday),
 	},
 	{
 		Slug:          "lexoffice-invoices",
 		TitleTemplate: "LexOffice Accounting",
 		BodyTemplate:  "[LexOffice](https://app.lexoffice.de/fis/#)",
 		Recurrence:    RecurrenceWeekly,
-		Fires:         OnWeekdays(time.Saturday),
 	},
 	{
 		Slug:          "moneymoney-review",
 		TitleTemplate: "Review MoneyMoney",
 		BodyTemplate:  "Review MoneyMoney",
 		Recurrence:    RecurrenceWeekly,
-		Fires:         OnWeekdays(time.Saturday),
 	},
 	{
 		Slug:          "opnsense-update",
 		TitleTemplate: "OPNsense Update",
 		BodyTemplate:  "[OPNsense Firmware Updates](https://opnsense.hm.benjamin-borbe.de/ui/core/firmware#updates)",
 		Recurrence:    RecurrenceWeekly,
-		Fires:         OnWeekdays(time.Saturday),
 	},
 	{
 		Slug:          "home-assistant-update-backup",
@@ -98,7 +72,6 @@ var inventory = []TaskDefinition{
 			"4. Update all\n\n" +
 			"[Home Assistant](http://homeassistant.local:8123/config/dashboard)",
 		Recurrence: RecurrenceWeekly,
-		Fires:      OnWeekdays(time.Saturday),
 	},
 	{
 		Slug:          "renew-gmail-oauth-tokens",
@@ -107,7 +80,6 @@ var inventory = []TaskDefinition{
 			"Dev: [OAuth Init](https://dev.quant.benjamin-borbe.de/admin/core-mail-controller/oauth2/init)\n\n" +
 			"Prod: [OAuth Init](https://prod.quant.benjamin-borbe.de/admin/core-mail-controller/oauth2/init)",
 		Recurrence: RecurrenceWeekly,
-		Fires:      OnWeekdays(time.Saturday),
 	},
 	{
 		Slug:          "plan-next-week",
@@ -116,7 +88,6 @@ var inventory = []TaskDefinition{
 			"In Obsidian run:\n\n" +
 			"/plan-week",
 		Recurrence: RecurrenceWeekly,
-		Fires:      OnWeekdays(time.Saturday),
 	},
 	{
 		Slug:          "run-update-all-saturday",
@@ -124,7 +95,6 @@ var inventory = []TaskDefinition{
 		BodyTemplate: "Run system updates before weekend restart (sun.hm and fire.hm)\n\n" +
 			"/Users/bborbe/Documents/workspaces/scripts/update-all.sh",
 		Recurrence: RecurrenceWeekly,
-		Fires:      OnWeekdays(time.Saturday),
 	},
 	{
 		Slug:          "topic-backup-saturday",
@@ -134,7 +104,6 @@ var inventory = []TaskDefinition{
 			"cd /Users/bborbe/Documents/workspaces/trading/strimzi/topic-backuper/cmd/backup\n\n" +
 			"make backup",
 		Recurrence: RecurrenceWeekly,
-		Fires:      OnWeekdays(time.Saturday),
 	},
 	// Weekly — Sunday (9 entries)
 	{
@@ -143,35 +112,30 @@ var inventory = []TaskDefinition{
 		BodyTemplate: "* check backup status\n" +
 			"** [Backup Status](https://backup.hell.hm.benjamin-borbe.de/status)",
 		Recurrence: RecurrenceWeekly,
-		Fires:      OnWeekdays(time.Sunday),
 	},
 	{
 		Slug:          "complete-longhorn-backups",
 		TitleTemplate: "Complete Longhorn Backups",
 		BodyTemplate:  "[Longhorn Volumes](https://longhorn.quant.benjamin-borbe.de/#/volume)",
 		Recurrence:    RecurrenceWeekly,
-		Fires:         OnWeekdays(time.Sunday),
 	},
 	{
 		Slug:          "turn-off-hell",
 		TitleTemplate: "Turn off hell",
 		BodyTemplate:  "power off hell",
 		Recurrence:    RecurrenceWeekly,
-		Fires:         OnWeekdays(time.Sunday),
 	},
 	{
 		Slug:          "turn-off-sun",
 		TitleTemplate: "Turn off sun",
 		BodyTemplate:  "power off sun",
 		Recurrence:    RecurrenceWeekly,
-		Fires:         OnWeekdays(time.Sunday),
 	},
 	{
 		Slug:          "turn-off-fire",
 		TitleTemplate: "Turn off fire",
 		BodyTemplate:  "power off fire",
 		Recurrence:    RecurrenceWeekly,
-		Fires:         OnWeekdays(time.Sunday),
 	},
 	{
 		Slug:          "docker-registry-gc",
@@ -180,7 +144,6 @@ var inventory = []TaskDefinition{
 			"kubectlquant -n docker-registry get pods\n\n" +
 			"kubectlquant -n docker-registry exec -it <POD_NAME> -- registry garbage-collect /etc/docker/registry/config.yml",
 		Recurrence: RecurrenceWeekly,
-		Fires:      OnWeekdays(time.Sunday),
 	},
 	{
 		Slug:          "rebuild-trading-dev-prod",
@@ -188,7 +151,6 @@ var inventory = []TaskDefinition{
 		BodyTemplate: "Rebuild and redeploy all trading services for dev and prod.\n\n" +
 			"Runbook: Trading - Rebuild Dev and Prod",
 		Recurrence: RecurrenceWeekly,
-		Fires:      OnWeekdays(time.Sunday),
 	},
 	{
 		Slug:          "check-bot-is-healthy",
@@ -198,7 +160,6 @@ var inventory = []TaskDefinition{
 			"* [Prometheus Alerts](https://prometheus.quant.benjamin-borbe.de/alerts)\n" +
 			"* [Karma Active Alerts](https://karma.quant.benjamin-borbe.de/?q=%40state%3Dactive)",
 		Recurrence: RecurrenceWeekly,
-		Fires:      OnWeekdays(time.Sunday),
 	},
 	{
 		Slug:          "run-update-all",
@@ -206,7 +167,6 @@ var inventory = []TaskDefinition{
 		BodyTemplate: "Run system updates across all servers\n\n" +
 			"/Users/bborbe/Documents/workspaces/scripts/update-all.sh",
 		Recurrence: RecurrenceWeekly,
-		Fires:      OnWeekdays(time.Sunday),
 	},
 	// Day-of-Month = 5 (1 entry)
 	{
@@ -215,7 +175,6 @@ var inventory = []TaskDefinition{
 		BodyTemplate: "Fill spreadsheet at 5. of each month\n\n" +
 			"[Finances Spreadsheet](https://docs.google.com/spreadsheets/d/1Bmj_zmpomXJHW5sRTIcEE0xolIlGrYtO0FkY3nrxkPc/edit?usp=sharing)",
 		Recurrence: RecurrenceMonthly,
-		Fires:      onWeekdayDay5OfMonth,
 	},
 	// May 1st only (2 entries)
 	{
@@ -223,14 +182,12 @@ var inventory = []TaskDefinition{
 		TitleTemplate: "Change Capitalcom ApiKey - Prod",
 		BodyTemplate:  "[Capital.com API Settings](https://capital.com/trading/platform/?popup=api-key-generation&tab=APISettings)",
 		Recurrence:    RecurrenceYearly,
-		Fires:         OnMonthAndDay(time.May, 1),
 	},
 	{
 		Slug:          "capitalcom-apikey-dev",
 		TitleTemplate: "Change Capitalcom ApiKey - Dev",
 		BodyTemplate:  "[Capital.com API Settings](https://capital.com/trading/platform/?popup=api-key-generation&tab=APISettings)",
 		Recurrence:    RecurrenceYearly,
-		Fires:         OnMonthAndDay(time.May, 1),
 	},
 	// Monthly — day 1 of every month (17 entries)
 	{
@@ -239,7 +196,6 @@ var inventory = []TaskDefinition{
 		BodyTemplate: "[Atlassian Confluence Backup](https://borbe.atlassian.net/wiki/plugins/servlet/ondemandbackupmanager/admin)\n\n" +
 			"Save to: smb://hell.hm.benjamin-borbe.de/bborbe/Backups/Atlassian-Cloud/",
 		Recurrence: RecurrenceMonthly,
-		Fires:      OnFirstDayOfMonth(),
 	},
 	{
 		Slug:          "backup-atlassian-jira",
@@ -247,7 +203,6 @@ var inventory = []TaskDefinition{
 		BodyTemplate: "[Atlassian Jira Backup](https://borbe.atlassian.net/secure/admin/CloudExport.jspa)\n\n" +
 			"Save to: smb://hell.hm.benjamin-borbe.de/bborbe/Backups/Atlassian-Cloud/",
 		Recurrence: RecurrenceMonthly,
-		Fires:      OnFirstDayOfMonth(),
 	},
 	{
 		Slug:          "backup-google-drive",
@@ -258,7 +213,6 @@ var inventory = []TaskDefinition{
 			"2. Google Drive Desktop synced\n\n" +
 			"Script: ~/Documents/workspaces/scripts/backup-google-drive.sh",
 		Recurrence: RecurrenceMonthly,
-		Fires:      OnFirstDayOfMonth(),
 	},
 	{
 		Slug:          "backup-pictures",
@@ -271,7 +225,6 @@ var inventory = []TaskDefinition{
 			"3. Archive to external drive using rsync\n" +
 			"4. Delete images from iPhone",
 		Recurrence: RecurrenceMonthly,
-		Fires:      OnFirstDayOfMonth(),
 	},
 	{
 		Slug:          "monthly-review",
@@ -280,7 +233,6 @@ var inventory = []TaskDefinition{
 			"In Obsidian run:\n\n" +
 			"/monthly-trading-review {{last-month}}",
 		Recurrence: RecurrenceMonthly,
-		Fires:      OnFirstDayOfMonth(),
 	},
 	{
 		Slug:          "plan-month",
@@ -289,14 +241,12 @@ var inventory = []TaskDefinition{
 			"In Obsidian run:\n\n" +
 			"/plan-month",
 		Recurrence: RecurrenceMonthly,
-		Fires:      OnFirstDayOfMonth(),
 	},
 	{
 		Slug:          "trading-profits",
 		TitleTemplate: "Add Trading Profits to Sheet",
 		BodyTemplate:  "[Trading Profits Sheet](https://docs.google.com/spreadsheets/d/1F6ObbGvRciK4ZdvB3BuRCf7LJFWdL-46teXvXlR0waI/edit?usp=sharing)",
 		Recurrence:    RecurrenceMonthly,
-		Fires:         OnFirstDayOfMonth(),
 	},
 	{
 		Slug:          "update-frontend",
@@ -305,7 +255,6 @@ var inventory = []TaskDefinition{
 			"Guide location: 50 Knowledge Base/Frontend Update Guide.md\n\n" +
 			"[Verification](https://prod.quant.benjamin-borbe.de/chart?epic=BTCUSD&broker=capitalcom&source=standard&bidAsk=bid&resolution=1m&from=NOW-7d&until=NOW)",
 		Recurrence: RecurrenceMonthly,
-		Fires:      OnFirstDayOfMonth(),
 	},
 	{
 		Slug:          "update-go-mod",
@@ -314,7 +263,6 @@ var inventory = []TaskDefinition{
 			"Done when: All projects updated, tests pass, changes merged to master.\n\n" +
 			"[Updater Guide](obsidian://open?vault=Personal&file=50%20Knowledge%20Base%2FUpdater%20Guide)",
 		Recurrence: RecurrenceMonthly,
-		Fires:      OnFirstDayOfMonth(),
 	},
 	{
 		Slug:          "update-inventar",
@@ -327,21 +275,18 @@ var inventory = []TaskDefinition{
 			"3. Add items following the inventory guide\n" +
 			"4. Verify items appear in dashboard",
 		Recurrence: RecurrenceMonthly,
-		Fires:      OnFirstDayOfMonth(),
 	},
 	{
 		Slug:          "update-journal",
 		TitleTemplate: "Update Trading Journal",
 		BodyTemplate:  "Use /update-trading-journal in Claude Code",
 		Recurrence:    RecurrenceMonthly,
-		Fires:         OnFirstDayOfMonth(),
 	},
 	{
 		Slug:          "world-apply",
 		TitleTemplate: "World apply",
 		BodyTemplate:  "[World Apply Guide](obsidian://open?vault=Personal&file=50%20Knowledge%20Base%2FWorld%20Apply%20Guide)",
 		Recurrence:    RecurrenceMonthly,
-		Fires:         OnFirstDayOfMonth(),
 	},
 	{
 		Slug:          "update-screego",
@@ -349,7 +294,6 @@ var inventory = []TaskDefinition{
 		BodyTemplate: "[Screego Docker Hub](https://hub.docker.com/r/screego/server/tags)\n\n" +
 			"cat ~/Documents/workspaces/world/configuration/world.go|grep screego",
 		Recurrence: RecurrenceMonthly,
-		Fires:      OnFirstDayOfMonth(),
 	},
 	{
 		Slug:          "update-poste",
@@ -360,7 +304,6 @@ var inventory = []TaskDefinition{
 			"make install\n\n" +
 			"world apply -a poste -v=2",
 		Recurrence: RecurrenceMonthly,
-		Fires:      OnFirstDayOfMonth(),
 	},
 	{
 		Slug:          "update-minio",
@@ -377,7 +320,6 @@ var inventory = []TaskDefinition{
 			"Update Version in k8s/minio/tenant/Makefile\n\n" +
 			"make upgrade",
 		Recurrence: RecurrenceMonthly,
-		Fires:      OnFirstDayOfMonth(),
 	},
 	{
 		Slug:          "update-library",
@@ -389,7 +331,6 @@ var inventory = []TaskDefinition{
 			"Task tracking:\n\n" +
 			"[Update All Go Libraries Task](obsidian://open?vault=Personal&file=24%20Tasks%2FUpdate%20All%20Go%20Libraries%20Following%20Workflow)",
 		Recurrence: RecurrenceMonthly,
-		Fires:      OnFirstDayOfMonth(),
 	},
 	{
 		Slug:          "update-k3s",
@@ -399,7 +340,6 @@ var inventory = []TaskDefinition{
 			"* Update Hell\n" +
 			"* Update Nuke",
 		Recurrence: RecurrenceMonthly,
-		Fires:      OnFirstDayOfMonth(),
 	},
 	// Quarterly — first day of Jan/Apr/Jul/Oct (2 entries)
 	{
@@ -409,7 +349,6 @@ var inventory = []TaskDefinition{
 			"In Obsidian run:\n\n" +
 			"/quarterly-trading-review {{last-quarter}}",
 		Recurrence: RecurrenceQuarterly,
-		Fires:      OnFirstDayOfQuarter(),
 	},
 	{
 		Slug:          "quarter-plan",
@@ -418,7 +357,6 @@ var inventory = []TaskDefinition{
 			"In Obsidian run:\n\n" +
 			"/plan-quarter",
 		Recurrence: RecurrenceQuarterly,
-		Fires:      OnFirstDayOfQuarter(),
 	},
 	// Yearly — first day of January (2 entries)
 	{
@@ -428,7 +366,6 @@ var inventory = []TaskDefinition{
 			"In Obsidian run:\n\n" +
 			"/yearly-trading-review {{last-year}}",
 		Recurrence: RecurrenceYearly,
-		Fires:      OnFirstDayOfYear(),
 	},
 	{
 		Slug:          "plan-year",
@@ -437,7 +374,6 @@ var inventory = []TaskDefinition{
 			"In Obsidian run:\n\n" +
 			"/plan-year",
 		Recurrence: RecurrenceYearly,
-		Fires:      OnFirstDayOfYear(),
 	},
 }
 
@@ -449,7 +385,7 @@ var inventory = []TaskDefinition{
 //
 // The factory wires schedule.Inventory() (this function) into NewTick so
 // the tick path never imports the slice directly. The trigger HTTP handler
-// (pkg/handler/trigger) still uses schedule.TasksForDate for per-day
+// (pkg/handler/trigger) also reads schedule.Inventory() for full-inventory
 // ?date= replay; this accessor is the canonical full-inventory read.
 func Inventory() []TaskDefinition {
 	out := make([]TaskDefinition, len(inventory))

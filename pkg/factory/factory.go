@@ -58,17 +58,12 @@ func CreateHealthzHandler() http.Handler {
 	return handler.NewHealthzHandler()
 }
 
-// CreateTriggerHandler returns the operator-replay HTTP handler. lookup is
-// injected as the per-date task source; production wiring passes
-// schedule.TasksForDate. Unchanged by Spec 6 — manual replay of a specific
-// date is still useful for the operator (e.g. backfilling a missed period
-// for a known date), and the trigger path is independent of the hourly
-// tick's full-inventory loop.
-func CreateTriggerHandler(
-	publisher publisher.Publisher,
-	lookup schedule.ScheduleLookup,
-) http.Handler {
-	return handler.NewTriggerHandler(publisher, lookup)
+// CreateTriggerHandler returns the operator-replay HTTP handler. The
+// handler iterates schedule.Inventory() (full inventory, slug-sorted)
+// and calls publisher.Publish for each entry against the parsed date.
+// Pure plumbing: no business logic, no closure capture, no state.
+func CreateTriggerHandler(publisher publisher.Publisher) http.Handler {
+	return handler.NewTriggerHandler(publisher)
 }
 
 func CreateTickLoop(

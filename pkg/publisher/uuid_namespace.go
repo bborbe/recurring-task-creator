@@ -6,6 +6,7 @@ package publisher
 
 import (
 	"context"
+	"time"
 
 	"github.com/bborbe/agent/lib"
 	"github.com/bborbe/errors"
@@ -26,12 +27,13 @@ var uuidNamespace uuid.UUID = uuid.MustParse("f4e1c5b7-3a82-4d59-9e7c-1c8b9d2e4f
 
 // buildPeriodToken returns the period-anchored token for the given
 // (recurrence, date) pair. The token is the same string the corresponding
-// title-rendering formatter produces — "YYYY-MM-DD" for daily, "YYYYWNN"
-// for weekly, "YYYY-MM" for monthly, "YYYYQN" for quarterly, "YYYY" for
-// yearly. Anchoring by def.Recurrence (not def.Fires) is intentional: the
-// publisher's identifier layer is period-stable, the schedule's firing
-// predicate is a hint about which day inside the period the user wants
-// to see the task.
+// title-rendering formatter produces — "YYYY-MM-DD" for daily,
+// "YYYYWNN-<3-letter-lowercase-weekday>" for weekly (the suffix is taken
+// from the entry's Weekday field, NOT the date's weekday), "YYYY-MM" for
+// monthly, "YYYYQN" for quarterly, "YYYY" for yearly. Anchoring by
+// def.Recurrence (not def.Weekday) is intentional: the publisher's
+// identifier layer is period-stable, the schedule's intended weekday is a
+// hint about which day inside the period the user wants to see the task.
 //
 // Berlin local time governs the period boundary; the date passed in is
 // already Berlin-local (the tick converts wall-clock to Berlin civil date
@@ -44,6 +46,7 @@ func buildPeriodToken(
 	ctx context.Context,
 	recurrence schedule.RecurrenceKind,
 	date schedule.Date,
+	weekday time.Weekday,
 ) (string, error) {
 	base := date.Time()
 	switch recurrence {
@@ -51,7 +54,7 @@ func buildPeriodToken(
 		return fmtDate(date.Year, int(date.Month), date.Day), nil
 	case schedule.RecurrenceWeekly:
 		isoYear, isoWeek := base.ISOWeek()
-		return fmtIsoWeek(isoYear, isoWeek), nil
+		return fmtIsoWeek(isoYear, isoWeek) + "-" + weekdayAbbrev(weekday), nil
 	case schedule.RecurrenceMonthly:
 		return fmtMonthYear(base.Year(), int(base.Month())), nil
 	case schedule.RecurrenceQuarterly:
@@ -70,10 +73,10 @@ func buildPeriodToken(
 // buildTaskIdentifier returns the deterministic TaskIdentifier for the
 // (slug, recurrence, date) triple. The identifier is
 // UUID5(uuidNamespace, "recurring-<slug>-<period-token>"), where
-// <period-token> is the period-anchored token derived from recurrence
-// and date (see buildPeriodToken). Same input on a second call produces
-// the same identifier across processes, redeploys, and replays — this is
-// the contract the controller's de-dup relies on.
+// <period-token> is the period-anchored token derived from recurrence,
+// date, and weekday (see buildPeriodToken). Same input on a second call
+// produces the same identifier across processes, redeploys, and replays —
+// this is the contract the controller's de-dup relies on.
 //
 // For weekly / monthly / quarterly / yearly entries the identifier is
 // stable across all days inside one period, so the hourly tick can
@@ -85,11 +88,36 @@ func buildTaskIdentifier(
 	slug string,
 	recurrence schedule.RecurrenceKind,
 	date schedule.Date,
+	weekday time.Weekday,
 ) (lib.TaskIdentifier, error) {
-	token, err := buildPeriodToken(ctx, recurrence, date)
+	token, err := buildPeriodToken(ctx, recurrence, date, weekday)
 	if err != nil {
 		return "", errors.Wrapf(ctx, err, "buildTaskIdentifier: slug %q", slug)
 	}
 	name := "recurring-" + slug + "-" + token
 	return lib.TaskIdentifier(uuid.NewSHA1(uuidNamespace, []byte(name)).String()), nil
+}
+
+// weekdayAbbrev returns the lowercase 3-letter abbreviation of w
+// (e.g. "mon" for Monday, "sun" for Sunday). Used by buildPeriodToken
+// to encode the weekday suffix in the weekly period token. All seven
+// values are spelled per the conventional time package abbreviations.
+func weekdayAbbrev(w time.Weekday) string {
+	switch w {
+	case time.Monday:
+		return "mon"
+	case time.Tuesday:
+		return "tue"
+	case time.Wednesday:
+		return "wed"
+	case time.Thursday:
+		return "thu"
+	case time.Friday:
+		return "fri"
+	case time.Saturday:
+		return "sat"
+	case time.Sunday:
+		return "sun"
+	}
+	return ""
 }
