@@ -1,11 +1,12 @@
 ---
-status: prompted
+status: verifying
 tags:
     - dark-factory
     - spec
 approved: "2026-06-15T20:53:12Z"
 generating: "2026-06-15T20:55:44Z"
 prompted: "2026-06-15T21:12:28Z"
+verifying: "2026-06-15T21:39:14Z"
 branch: dark-factory/recurrence-kind-cleanup
 ---
 
@@ -117,3 +118,19 @@ Rationale: prompt 1 reshapes the type, the publisher, and the handler in lock-st
 ## Do-Nothing Option
 
 If we don't do this: `TaskDefinition` keeps a misleading `Fires` field that the hourly tick ignores, and seven dead predicate constructors stay in `predicate.go` confusing future readers about what controls firing. Worse, the weekly period token continues to collapse Saturday and Sunday weekly entries into a single ISO-week identifier, so a future spec that wants per-weekday semantics (e.g. surfacing only Sunday entries on Sundays in a downstream view) has no key to filter on. The current approach is not actively broken — the tick publishes every entry every hour and the controller de-dups — but it accumulates carry cost on every future change to the schedule package and locks out per-weekday addressing.
+
+## Verification Result
+
+**Verified:** 2026-06-15T21:43:12Z (HEAD 7c95026)
+**Binary:** installed dark-factory (host repo: bborbe/recurring-task-creator)
+**Scenario:** Walked the 11 ACs against the working tree on `feature/sat-sun-weekly`: ran the required greps, executed `go test -v` for `pkg/publisher`, `pkg/schedule`, `pkg/handler`, and ran `make precommit` from the repo root.
+**Evidence:**
+- `grep -RnE "\bFires\b" pkg/ main.go` → exit 1, no output (AC 1)
+- `grep -RnE "OnWeekdays|OnDaysOfMonth|OnMonthAndDay|EveryDay|OnFirstDayOfQuarter|OnFirstDayOfYear|OnFirstDayOfMonth|onWeekdayDay5OfMonth" pkg/ main.go` → exit 1 (AC 2)
+- `pkg/schedule/task_definition.go:32` `Weekday time.Weekday` with GoDoc "consulted ONLY when Recurrence == RecurrenceWeekly" (AC 3)
+- `grep -nE "Weekday:\s+time\.Saturday" pkg/schedule/inventory.go | wc -l` = 12; Sunday = 9 (AC 4, 5)
+- `pkg/publisher` suite: 48/48 specs PASS, including `buildPeriodToken: weekly token carries the entry's Weekday, not the date's weekday` (publisher_test.go:277, asserts `(RecurrenceWeekly, 2026-06-17, Weekday=time.Saturday) → "2026W25-sat"`) and `non-weekly kinds ignore the Weekday field (token is identical to Spec 6)` (publisher_test.go:302) (AC 6, 7)
+- `pkg/schedule` suite: 8/8 specs PASS, including `every weekly entry has Weekday in {time.Saturday, time.Sunday}` (line 89), `has exactly 9 Sunday weekly slugs in sundayWeeklyAllowList` with `Expect(sundayWeeklyAllowList).To(HaveLen(9))` (line 86), and `every non-weekly entry leaves Weekday at the zero value AND its slug is NOT in sundayWeeklyAllowList` (line 103) (AC 8, 9, 10)
+- `pkg/handler` suite: 12/12 specs PASS, including `responds 200 with date, published=N, errors=[] when all publishes succeed` asserting `body.Published == 45 == len(schedule.Inventory())` and `body.Errors` empty (AC 11)
+- `make precommit` → exit 0 (AC 12)
+**Verdict:** PASS
