@@ -87,7 +87,7 @@ func (a *application) Run(ctx context.Context, _ libsentry.Client) error {
 			syncProducer,
 			cqrsbase.Branch(a.Stage),
 			liblog.DefaultSamplerFactory,
-		))
+		), "personal")
 	}
 	pub := factory.CreatePublisher(sender, a.DryRun)
 

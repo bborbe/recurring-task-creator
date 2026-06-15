@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(main, cmd/run-once): stamp `TargetVault: "personal"` on every published `CreateCommand` so recurring tasks land in the Personal vault. The new second argument of `task.NewCreateCommandSender` (added in `github.com/bborbe/agent/lib` v0.68.0) is wired with the constant `"personal"`. Empty input `TargetVault` is substituted; explicit non-empty values are preserved.
 - fix: read STAGE env to set Kafka topic branch (was hardcoded "master")
 - feat: Add `DRY_RUN` env/flag — when true, publisher logs the would-be `task.CreateCommand` (slug, date, identifier) and skips the Kafka `SendCommand` call; wired through `main` and `cmd/run-once` for local smoke-testing
 - feat: Add `GET /trigger?date=YYYY-MM-DD` HTTP handler that replays the day's recurring-task publishes on demand and returns a JSON summary with per-task error accumulation; add structured `GET /healthz` JSON handler replacing the Spec 3 text stub
