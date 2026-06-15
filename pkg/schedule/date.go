@@ -8,7 +8,7 @@ import "time"
 
 // Date is a civil date (year, month, day) with no time, location, or zone
 // ambiguity in its public surface. It is the only input shape accepted by
-// TasksForDate.
+// publisher.Publish and the schedule.Inventory() consumers.
 type Date struct {
 	Year  int
 	Month time.Month
@@ -41,5 +41,3 @@ func (d Date) toTime() time.Time {
 func (d Date) Time() time.Time {
 	return d.toTime()
 }
-
-func (d Date) weekday() time.Weekday { return d.toTime().Weekday() }

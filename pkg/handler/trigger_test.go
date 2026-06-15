@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"time"
 
 	"github.com/bborbe/errors"
 	. "github.com/onsi/ginkgo/v2"
@@ -28,7 +27,7 @@ var _ = Describe("TriggerHandler", func() {
 
 	BeforeEach(func() {
 		fakePublisher = &mocks.PublisherPublisher{}
-		httpHandler = handler.NewTriggerHandler(fakePublisher, schedule.TasksForDate)
+		httpHandler = handler.NewTriggerHandler(fakePublisher)
 	})
 
 	// ---------- 400 paths (missing/invalid date) ----------
@@ -76,9 +75,9 @@ var _ = Describe("TriggerHandler", func() {
 
 	// ---------- happy path: real schedule, fake publisher ----------
 
-	It("calls publisher.Publish once for every entry returned by schedule.TasksForDate", func() {
-		date := schedule.NewDate(2025, time.January, 4)
-		tasks := schedule.TasksForDate(date)
+	It("publishes every entry in the inventory on /trigger?date=", func() {
+		tasks := schedule.Inventory()
+		Expect(tasks).To(HaveLen(45))
 
 		req := httptest.NewRequest("GET", "/trigger?date=2025-01-04", nil)
 		resp := httptest.NewRecorder()
@@ -89,8 +88,6 @@ var _ = Describe("TriggerHandler", func() {
 	})
 
 	It("responds 200 with date, published=N, errors=[] when all publishes succeed", func() {
-		date := schedule.NewDate(2025, time.January, 4)
-		tasks := schedule.TasksForDate(date)
 		fakePublisher.PublishReturns(nil)
 
 		req := httptest.NewRequest("GET", "/trigger?date=2025-01-04", nil)
@@ -110,7 +107,7 @@ var _ = Describe("TriggerHandler", func() {
 		}
 		Expect(json.NewDecoder(resp.Body).Decode(&body)).To(Succeed())
 		Expect(body.Date).To(Equal("2025-01-04"))
-		Expect(body.Published).To(Equal(len(tasks)))
+		Expect(body.Published).To(Equal(45))
 		Expect(body.Errors).To(BeEmpty())
 	})
 
@@ -127,8 +124,7 @@ var _ = Describe("TriggerHandler", func() {
 	It(
 		"returns 200 with errors[] populated and published=len(tasks)-1 when one publish fails",
 		func() {
-			date := schedule.NewDate(2025, time.January, 4)
-			tasks := schedule.TasksForDate(date)
+			tasks := schedule.Inventory()
 			target := tasks[0].Slug
 
 			// Use PublishStub (not PublishReturns) so the fake returns nil for
@@ -157,7 +153,7 @@ var _ = Describe("TriggerHandler", func() {
 				} `json:"errors"`
 			}
 			Expect(json.NewDecoder(resp.Body).Decode(&body)).To(Succeed())
-			Expect(body.Published).To(Equal(len(tasks) - 1))
+			Expect(body.Published).To(Equal(44))
 			Expect(body.Errors).To(HaveLen(1))
 			Expect(body.Errors[0].Slug).To(Equal(target))
 			Expect(body.Errors[0].Error).To(ContainSubstring("simulated publish failure"))
@@ -167,8 +163,6 @@ var _ = Describe("TriggerHandler", func() {
 	It(
 		"returns 200 (not 5xx) with published=0 and full errors array when every publish fails",
 		func() {
-			date := schedule.NewDate(2025, time.January, 4)
-			tasks := schedule.TasksForDate(date)
 			fakePublisher.PublishReturns(errors.New(context.Background(), "all down"))
 
 			req := httptest.NewRequest("GET", "/trigger?date=2025-01-04", nil)
@@ -186,7 +180,7 @@ var _ = Describe("TriggerHandler", func() {
 			}
 			Expect(json.NewDecoder(resp.Body).Decode(&body)).To(Succeed())
 			Expect(body.Published).To(Equal(0))
-			Expect(body.Errors).To(HaveLen(len(tasks)))
+			Expect(body.Errors).To(HaveLen(45))
 		},
 	)
 

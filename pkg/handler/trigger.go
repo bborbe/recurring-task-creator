@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"time"
 
 	"github.com/golang/glog"
@@ -33,26 +34,28 @@ type triggerResponse struct {
 
 // NewTriggerHandler returns an HTTP handler that replays the recurring-task
 // publishes for one civil date. The date is supplied as the `date` query
-// parameter in YYYY-MM-DD format. For each entry returned by lookup(date),
-// the handler calls publisher.Publish(req.Context(), def, date). Per-task
-// errors are accumulated in the response's `errors` array — the iteration
-// does NOT short-circuit on error. The response is always HTTP 200 on a
-// successfully parsed date, regardless of whether any individual publish
-// failed.
+// parameter in YYYY-MM-DD format. For each entry in the full inventory
+// (schedule.Inventory(), slug-sorted), the handler calls
+// publisher.Publish(req.Context(), def, date). Per-task errors are
+// accumulated in the response's `errors` array — the iteration does
+// NOT short-circuit on error. The response is always HTTP 200 on a
+// successfully parsed date, regardless of whether any individual
+// publish failed.
 //
-// lookup is injected so the handler does not import the inventory directly;
-// the factory passes schedule.TasksForDate in production. Malformed or
+// The handler iterates the same set of entries the hourly tick iterates
+// (the full inventory); per-day filtering is gone (Spec 7). Malformed or
 // missing `date` parameter returns HTTP 400 with a JSON body of the form
-// {"error":"<message>"}. The handler holds no per-request state and is safe
-// to call concurrently for the same date (the controller dedups by
-// deterministic UUID5).
+// {"error":"<message>"}. The handler holds no per-request state and is
+// safe to call concurrently for the same date (the controller dedups
+// by deterministic UUID5).
 //
-// Security: this handler intentionally has no authentication. The service
-// is deployed cluster-internal-only (no k8s Ingress); all external access
-// is brokered by ~/Documents/workspaces/trading/frontend/gateway, which
-// owns auth. The /trigger surface is reachable only inside the cluster.
-// Idempotency via deterministic UUID5 also makes accidental replay safe.
-func NewTriggerHandler(publisher publisher.Publisher, lookup schedule.ScheduleLookup) http.Handler {
+// Security: this handler intentionally has no authentication. The
+// service is deployed cluster-internal-only (no k8s Ingress); all
+// external access is brokered by ~/Documents/workspaces/trading/frontend/
+// gateway, which owns auth. The /trigger surface is reachable only
+// inside the cluster. Idempotency via deterministic UUID5 also makes
+// accidental replay safe.
+func NewTriggerHandler(publisher publisher.Publisher) http.Handler {
 	return http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
 		param := req.URL.Query().Get("date")
 		if param == "" {
@@ -70,7 +73,9 @@ func NewTriggerHandler(publisher publisher.Publisher, lookup schedule.ScheduleLo
 			return
 		}
 		date := schedule.NewDate(t.Year(), t.Month(), t.Day())
-		tasks := lookup(date)
+		defs := schedule.Inventory()
+		sort.Slice(defs, func(i, j int) bool { return defs[i].Slug < defs[j].Slug })
+		tasks := defs
 
 		glog.V(2).
 			Infof("trigger: processing %d task(s) for %04d-%02d-%02d", len(tasks), date.Year, date.Month, date.Day)

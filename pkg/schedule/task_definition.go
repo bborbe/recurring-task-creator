@@ -4,6 +4,8 @@
 
 package schedule
 
+import "time"
+
 // TaskDefinition is one entry in the recurring-task inventory.
 type TaskDefinition struct {
 	// Slug is a stable, kebab-case identifier unique across the inventory.
@@ -21,8 +23,13 @@ type TaskDefinition struct {
 	// Recurrence classifies the cadence (daily/weekly/monthly/quarterly/yearly).
 	Recurrence RecurrenceKind
 
-	// Fires reports whether this definition fires on the given civil date.
-	Fires predicate
+	// Weekday is the day of the week the entry is intended for. It is
+	// consulted ONLY when Recurrence == RecurrenceWeekly: the publisher
+	// appends the lowercase 3-letter weekday abbreviation to the weekly
+	// period token (e.g. "2026W25-sat"). For the other four RecurrenceKinds
+	// (daily / monthly / quarterly / yearly) Weekday is ignored and MUST
+	// remain the zero value (time.Sunday).
+	Weekday time.Weekday
 }
 
 // SupportedPlaceholders lists the EXACT set of placeholders accepted in

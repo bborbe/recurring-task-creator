@@ -42,6 +42,7 @@ var _ = Describe("Publisher", func() {
 				Slug:          "weekly-review",
 				TitleTemplate: "Weekly Review {{iso-week}}",
 				Recurrence:    schedule.RecurrenceWeekly,
+				Weekday:       time.Saturday,
 			}
 			Expect(pub.Publish(
 				context.Background(),
@@ -51,7 +52,7 @@ var _ = Describe("Publisher", func() {
 			captured := capture()
 			expected := uuid.NewSHA1(
 				publisher.UuidNamespaceForTest(),
-				[]byte("recurring-weekly-review-2025W01"),
+				[]byte("recurring-weekly-review-2025W01-sat"),
 			).String()
 			Expect(string(captured.TaskIdentifier)).To(Equal(expected))
 		})
@@ -73,6 +74,7 @@ var _ = Describe("Publisher", func() {
 				Slug:          slug,
 				TitleTemplate: "t",
 				Recurrence:    rec,
+				Weekday:       time.Saturday,
 			}
 			Expect(localPub.Publish(context.Background(), def, date)).To(Succeed())
 			_, cmd := localSender.SendCommandArgsForCall(0)
@@ -229,12 +231,6 @@ var _ = Describe("Publisher", func() {
 				"2025-06-14",
 			),
 			Entry(
-				"weekly",
-				schedule.RecurrenceWeekly,
-				schedule.NewDate(2025, time.June, 9),
-				"2025W24",
-			),
-			Entry(
 				"monthly",
 				schedule.RecurrenceMonthly,
 				schedule.NewDate(2025, time.June, 1),
@@ -253,6 +249,87 @@ var _ = Describe("Publisher", func() {
 				"2025",
 			),
 		)
+
+		It("weekly: byte-equality with the formatter output (with weekday suffix)", func() {
+			// 2025-06-09 (Mon) is in ISO 2025W24; with Weekday=time.Saturday
+			// the period token must be "2025W24-sat".
+			def := schedule.TaskDefinition{
+				Slug:          "byte-eq-weekly",
+				TitleTemplate: "t",
+				Recurrence:    schedule.RecurrenceWeekly,
+				Weekday:       time.Saturday,
+			}
+			Expect(pub.Publish(
+				context.Background(),
+				def,
+				schedule.NewDate(2025, time.June, 9),
+			)).To(Succeed())
+			cmd := capture()
+			expected := "recurring-byte-eq-weekly-2025W24-sat"
+			want := uuid.NewSHA1(
+				publisher.UuidNamespaceForTest(),
+				[]byte(expected),
+			).String()
+			Expect(string(cmd.TaskIdentifier)).To(Equal(want))
+		})
+	})
+
+	It(
+		"buildPeriodToken: weekly token carries the entry's Weekday, not the date's weekday",
+		func() {
+			// 2026-06-17 is a Wednesday, in ISO 2026W25. With Weekday=time.Saturday
+			// on the def, the period token must be "2026W25-sat" (NOT "2026W25-wed").
+			def := schedule.TaskDefinition{
+				Slug:          "weekday-takes-precedence",
+				TitleTemplate: "t",
+				Recurrence:    schedule.RecurrenceWeekly,
+				Weekday:       time.Saturday,
+			}
+			Expect(pub.Publish(
+				context.Background(),
+				def,
+				schedule.NewDate(2026, time.June, 17),
+			)).To(Succeed())
+			captured := capture()
+			expected := uuid.NewSHA1(
+				publisher.UuidNamespaceForTest(),
+				[]byte("recurring-weekday-takes-precedence-2026W25-sat"),
+			).String()
+			Expect(string(captured.TaskIdentifier)).To(Equal(expected))
+		},
+	)
+
+	It("non-weekly kinds ignore the Weekday field (token is identical to Spec 6)", func() {
+		for _, c := range []struct {
+			rec schedule.RecurrenceKind
+			d   schedule.Date
+			tok string
+		}{
+			{schedule.RecurrenceDaily, schedule.NewDate(2025, time.June, 14), "2025-06-14"},
+			{schedule.RecurrenceMonthly, schedule.NewDate(2025, time.June, 1), "2025-06"},
+			{schedule.RecurrenceQuarterly, schedule.NewDate(2025, time.April, 1), "2025Q2"},
+			{schedule.RecurrenceYearly, schedule.NewDate(2025, time.January, 1), "2025"},
+		} {
+			// Weekday deliberately non-zero to prove it is ignored for non-weekly kinds.
+			def := schedule.TaskDefinition{
+				Slug:          "non-weekly-" + string(c.rec),
+				TitleTemplate: "t",
+				Recurrence:    c.rec,
+				Weekday:       time.Wednesday,
+			}
+			// Use a fresh sender per iteration so SendCommandArgsForCall(0)
+			// always points at the most recent Publish.
+			localSender := &taskmocks.TaskCreateCommandSender{}
+			localSender.SendCommandReturns(nil)
+			localPub := publisher.NewPublisher(localSender, false)
+			Expect(localPub.Publish(context.Background(), def, c.d)).To(Succeed())
+			_, cmd := localSender.SendCommandArgsForCall(0)
+			want := uuid.NewSHA1(
+				publisher.UuidNamespaceForTest(),
+				[]byte("recurring-non-weekly-"+string(c.rec)+"-"+c.tok),
+			).String()
+			Expect(string(cmd.TaskIdentifier)).To(Equal(want))
+		}
 	})
 
 	Describe("errors", func() {
