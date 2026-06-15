@@ -106,3 +106,17 @@ Rationale: the publisher change is self-contained and must land first because th
 ## Do-Nothing Option
 
 If we don't do this, a missed tick on the single calendar day a monthly/quarterly/yearly task was scheduled to fire results in that task never being created for that period. Operators currently work around this by manually creating vault files after outages — acceptable for a one-person system but increasingly expensive as the inventory grows. The hourly idempotent retry inside a single day is not a substitute, because the predicate's per-day window is exactly one day. Doing nothing also leaves the cron predicate doing double duty (scheduling hint AND identifier anchor) — a latent coupling that will resurface every time we add a new recurrence kind.
+
+## Verification Result
+
+**Verified:** 2026-06-15T19:53:08Z (HEAD 05b0d8c)
+**Binary:** installed `dark-factory` (spec target = recurring-task-creator, not dark-factory itself)
+**Scenario:** ran spec's Verification block — `go test ./pkg/publisher/... ./pkg/tick/... ./pkg/schedule/...`, namespace grep, `make precommit`
+**Evidence:**
+- `pkg/publisher`: 46/46 Ginkgo specs PASS (incl. period-anchoring equality/diff across W/M/Q/Y, daily distinctness, period-token byte-equality DescribeTable, `RecurrenceKind("unknown")` → wrapped error containing "unknown" and slug "unknown-rec")
+- `pkg/tick`: 22/22 specs PASS (incl. "publishes every entry in the canonical inventory regardless of the civil date" using `len(schedule.Inventory())` across 3 dates spanning Wed/Fri/Sun, different months and years)
+- `pkg/schedule`: PASS (inventory/canonical-slug/no-forbidden-imports tests untouched)
+- `grep -n 'f4e1c5b7-3a82-4d59-9e7c-1c8b9d2e4f6a' pkg/publisher/uuid_namespace.go` → line 25
+- `make precommit` → `ready to commit` (gosec 0 issues, trivy 0 vulns, addlicense clean)
+- Publisher default arm uses `errors.Errorf(ctx, "buildPeriodToken: unknown recurrence kind %q", recurrence)` wrapped by `errors.Wrapf` with slug (uuid_namespace.go:61-67, 91)
+**Verdict:** PASS
