@@ -9,7 +9,11 @@ import (
 	"net/http"
 
 	"github.com/bborbe/agent/lib/command/task"
+	cqrsbase "github.com/bborbe/cqrs/base"
+	"github.com/bborbe/cqrs/cdb"
 	"github.com/bborbe/errors"
+	libkafka "github.com/bborbe/kafka"
+	liblog "github.com/bborbe/log"
 	libtime "github.com/bborbe/time"
 
 	"github.com/bborbe/recurring-task-creator/pkg/handler"
@@ -63,4 +67,39 @@ func CreateTriggerHandler(
 	lookup schedule.ScheduleLookup,
 ) http.Handler {
 	return handler.NewTriggerHandler(publisher, lookup)
+}
+
+func CreateTickLoop(
+	ctx context.Context,
+	syncProducer libkafka.SyncProducer,
+	branch cqrsbase.Branch,
+	dryRun bool,
+) tick.Tick {
+
+	pub := CreatePublisher(
+		CreateCommandSender(syncProducer, branch, dryRun),
+		dryRun,
+	)
+	clock := libtime.NewCurrentDateTime()
+	metrics := tick.NewPrometheusMetrics()
+	tickLoop := CreateTick(ctx, pub, clock, metrics)
+	return tickLoop
+}
+
+func CreateCommandSender(
+	syncProducer libkafka.SyncProducer,
+	branch cqrsbase.Branch,
+	dryRun bool,
+) task.CreateCommandSender {
+	var sender task.CreateCommandSender
+	if dryRun {
+		sender = publisher.NewNoopSender()
+	} else {
+		sender = task.NewCreateCommandSender(cdb.NewCommandObjectSender(
+			syncProducer,
+			branch,
+			liblog.DefaultSamplerFactory,
+		), "personal")
+	}
+	return sender
 }
