@@ -8,6 +8,7 @@ import (
 	"context"
 	"time"
 
+	lib "github.com/bborbe/agent/lib"
 	"github.com/bborbe/agent/lib/command/task"
 	taskmocks "github.com/bborbe/agent/lib/mocks"
 	"github.com/bborbe/errors"
@@ -50,9 +51,222 @@ var _ = Describe("Publisher", func() {
 			captured := capture()
 			expected := uuid.NewSHA1(
 				publisher.UuidNamespaceForTest(),
-				[]byte("recurring-weekly-review-2025-01-04"),
+				[]byte("recurring-weekly-review-2025W01"),
 			).String()
 			Expect(string(captured.TaskIdentifier)).To(Equal(expected))
+		})
+	})
+
+	Describe("period anchoring", func() {
+		captureIdentifier := func(
+			slug string,
+			rec schedule.RecurrenceKind,
+			date schedule.Date,
+		) lib.TaskIdentifier {
+			// Use a fresh sender per call so SendCommandArgsForCall(0)
+			// always points at the most recent Publish — the parent
+			// suite's capture() reads call index 0.
+			localSender := &taskmocks.TaskCreateCommandSender{}
+			localSender.SendCommandReturns(nil)
+			localPub := publisher.NewPublisher(localSender, false)
+			def := schedule.TaskDefinition{
+				Slug:          slug,
+				TitleTemplate: "t",
+				Recurrence:    rec,
+			}
+			Expect(localPub.Publish(context.Background(), def, date)).To(Succeed())
+			_, cmd := localSender.SendCommandArgsForCall(0)
+			return cmd.TaskIdentifier
+		}
+
+		It("weekly: same ISO week, different civil dates produce the same identifier", func() {
+			// 2025-06-09 (Mon) and 2025-06-15 (Sun) are both in ISO 2025W24.
+			id1 := captureIdentifier(
+				"w1",
+				schedule.RecurrenceWeekly,
+				schedule.NewDate(2025, time.June, 9),
+			)
+			id2 := captureIdentifier(
+				"w1",
+				schedule.RecurrenceWeekly,
+				schedule.NewDate(2025, time.June, 15),
+			)
+			Expect(id1).To(Equal(id2))
+		})
+
+		It("monthly: same month, different civil dates produce the same identifier", func() {
+			id1 := captureIdentifier(
+				"m1",
+				schedule.RecurrenceMonthly,
+				schedule.NewDate(2025, time.June, 1),
+			)
+			id2 := captureIdentifier(
+				"m1",
+				schedule.RecurrenceMonthly,
+				schedule.NewDate(2025, time.June, 30),
+			)
+			Expect(id1).To(Equal(id2))
+		})
+
+		It("quarterly: same quarter, different civil dates produce the same identifier", func() {
+			id1 := captureIdentifier(
+				"q1",
+				schedule.RecurrenceQuarterly,
+				schedule.NewDate(2025, time.April, 1),
+			)
+			id2 := captureIdentifier(
+				"q1",
+				schedule.RecurrenceQuarterly,
+				schedule.NewDate(2025, time.June, 30),
+			)
+			Expect(id1).To(Equal(id2))
+		})
+
+		It("yearly: same year, different civil dates produce the same identifier", func() {
+			id1 := captureIdentifier(
+				"y1",
+				schedule.RecurrenceYearly,
+				schedule.NewDate(2025, time.January, 1),
+			)
+			id2 := captureIdentifier(
+				"y1",
+				schedule.RecurrenceYearly,
+				schedule.NewDate(2025, time.December, 31),
+			)
+			Expect(id1).To(Equal(id2))
+		})
+
+		It("weekly: adjacent ISO weeks produce different identifiers", func() {
+			// 2025-06-15 (Sun) is 2025W24; 2025-06-16 (Mon) is 2025W25.
+			id1 := captureIdentifier(
+				"w1",
+				schedule.RecurrenceWeekly,
+				schedule.NewDate(2025, time.June, 15),
+			)
+			id2 := captureIdentifier(
+				"w1",
+				schedule.RecurrenceWeekly,
+				schedule.NewDate(2025, time.June, 16),
+			)
+			Expect(id1).NotTo(Equal(id2))
+		})
+
+		It("monthly: adjacent months produce different identifiers", func() {
+			id1 := captureIdentifier(
+				"m1",
+				schedule.RecurrenceMonthly,
+				schedule.NewDate(2025, time.May, 31),
+			)
+			id2 := captureIdentifier(
+				"m1",
+				schedule.RecurrenceMonthly,
+				schedule.NewDate(2025, time.June, 1),
+			)
+			Expect(id1).NotTo(Equal(id2))
+		})
+
+		It("quarterly: adjacent quarters produce different identifiers", func() {
+			id1 := captureIdentifier(
+				"q1",
+				schedule.RecurrenceQuarterly,
+				schedule.NewDate(2025, time.June, 30),
+			)
+			id2 := captureIdentifier(
+				"q1",
+				schedule.RecurrenceQuarterly,
+				schedule.NewDate(2025, time.July, 1),
+			)
+			Expect(id1).NotTo(Equal(id2))
+		})
+
+		It("yearly: adjacent years produce different identifiers", func() {
+			id1 := captureIdentifier(
+				"y1",
+				schedule.RecurrenceYearly,
+				schedule.NewDate(2025, time.December, 31),
+			)
+			id2 := captureIdentifier(
+				"y1",
+				schedule.RecurrenceYearly,
+				schedule.NewDate(2026, time.January, 1),
+			)
+			Expect(id1).NotTo(Equal(id2))
+		})
+
+		It("daily: distinct civil dates produce distinct identifiers", func() {
+			id1 := captureIdentifier(
+				"d1",
+				schedule.RecurrenceDaily,
+				schedule.NewDate(2025, time.June, 14),
+			)
+			id2 := captureIdentifier(
+				"d1",
+				schedule.RecurrenceDaily,
+				schedule.NewDate(2025, time.June, 15),
+			)
+			Expect(id1).NotTo(Equal(id2))
+		})
+
+		DescribeTable(
+			"period-token byte-equality with the formatter output",
+			func(rec schedule.RecurrenceKind, date schedule.Date, expectedToken string) {
+				slug := "byte-eq-" + string(rec)
+				def := schedule.TaskDefinition{
+					Slug:          slug,
+					TitleTemplate: "t",
+					Recurrence:    rec,
+				}
+				Expect(pub.Publish(context.Background(), def, date)).To(Succeed())
+				cmd := capture()
+				expected := "recurring-" + slug + "-" + expectedToken
+				want := uuid.NewSHA1(publisher.UuidNamespaceForTest(), []byte(expected)).String()
+				Expect(string(cmd.TaskIdentifier)).To(Equal(want))
+			},
+			Entry(
+				"daily",
+				schedule.RecurrenceDaily,
+				schedule.NewDate(2025, time.June, 14),
+				"2025-06-14",
+			),
+			Entry(
+				"weekly",
+				schedule.RecurrenceWeekly,
+				schedule.NewDate(2025, time.June, 9),
+				"2025W24",
+			),
+			Entry(
+				"monthly",
+				schedule.RecurrenceMonthly,
+				schedule.NewDate(2025, time.June, 1),
+				"2025-06",
+			),
+			Entry(
+				"quarterly",
+				schedule.RecurrenceQuarterly,
+				schedule.NewDate(2025, time.April, 1),
+				"2025Q2",
+			),
+			Entry(
+				"yearly",
+				schedule.RecurrenceYearly,
+				schedule.NewDate(2025, time.January, 1),
+				"2025",
+			),
+		)
+	})
+
+	Describe("errors", func() {
+		It("returns a wrapped error for an unknown recurrence kind", func() {
+			def := schedule.TaskDefinition{
+				Slug:          "unknown-rec",
+				TitleTemplate: "t",
+				Recurrence:    schedule.RecurrenceKind("unknown"),
+			}
+			err := pub.Publish(context.Background(), def, schedule.NewDate(2025, time.June, 14))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("unknown"))
+			Expect(err.Error()).To(ContainSubstring("unknown-rec")) // slug is in the wrap
+			Expect(sender.SendCommandCallCount()).To(Equal(0))
 		})
 	})
 

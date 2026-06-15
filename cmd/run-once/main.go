@@ -14,9 +14,10 @@ import (
 	cqrsbase "github.com/bborbe/cqrs/base"
 	"github.com/bborbe/errors"
 	libkafka "github.com/bborbe/kafka"
-	"github.com/bborbe/recurring-task-creator/pkg/factory"
 	libsentry "github.com/bborbe/sentry"
 	"github.com/bborbe/service"
+
+	"github.com/bborbe/recurring-task-creator/pkg/factory"
 )
 
 const serviceName = "recurring-task-creator-run-once"

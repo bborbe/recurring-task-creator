@@ -23,19 +23,20 @@ type Tick interface {
 	// Run performs an initial tick synchronously, then enters a 1-hour loop
 	// that fires on time.NewTicker. Returns nil on clean context cancellation.
 	Run(ctx context.Context) error
-	// RunOnce performs a single tick (compute today's task set, publish each)
+	// RunOnce performs a single tick (publish every entry in the inventory)
 	// and returns. Intended for local smoke-testing via cmd/run-once.
 	RunOnce(ctx context.Context) error
 }
 
-// NewTick builds the hourly cron loop. scheduleFn is invoked every tick
-// to compute the day's task set; publisher is called once per entry;
-// clock is the wall-clock source; metrics records per-publish outcomes
-// and the tick-start timestamp. Returns a wrapped error if
+// NewTick builds the hourly cron loop. inventory is the full canonical
+// task set; the tick publishes every entry every hour, regardless of
+// the civil date. publisher is called once per entry per tick; clock is
+// the wall-clock source; metrics records per-publish outcomes and the
+// tick-start timestamp. Returns a wrapped error if
 // time.LoadLocation("Europe/Berlin") fails at struct init.
 func NewTick(
 	ctx context.Context,
-	scheduleFn schedule.ScheduleLookup,
+	inventory []schedule.TaskDefinition,
 	pub publisher.Publisher,
 	clock libtime.CurrentDateTimeGetter,
 	metrics Metrics,
@@ -45,20 +46,20 @@ func NewTick(
 		return nil, errors.Wrap(ctx, err, "load location Europe/Berlin failed")
 	}
 	return &tick{
-		scheduleFn: scheduleFn,
-		publisher:  pub,
-		clock:      clock,
-		metrics:    metrics,
-		berlin:     berlin,
+		inventory: inventory,
+		publisher: pub,
+		clock:     clock,
+		metrics:   metrics,
+		berlin:    berlin,
 	}, nil
 }
 
 type tick struct {
-	scheduleFn schedule.ScheduleLookup
-	publisher  publisher.Publisher
-	clock      libtime.CurrentDateTimeGetter
-	metrics    Metrics
-	berlin     *time.Location
+	inventory []schedule.TaskDefinition
+	publisher publisher.Publisher
+	clock     libtime.CurrentDateTimeGetter
+	metrics   Metrics
+	berlin    *time.Location
 }
 
 // Run performs an initial tick synchronously, then enters a 1-hour loop
@@ -88,21 +89,22 @@ func (t *tick) RunOnce(ctx context.Context) error {
 }
 
 // tick performs one full pass: read clock, convert to Berlin civil date,
-// call scheduleFn, iterate, and call publisher.Publish for each entry.
-// Per-task errors are logged and counted but never abort the pass.
+// update the gauge, iterate the full inventory, and call publisher.Publish
+// for each entry. Per-task errors are logged and counted but never abort
+// the pass. The inventory is published in slug-ascending order (the
+// underlying slice is sorted on init).
 func (t *tick) tick(ctx context.Context) {
 	now := t.clock.Now().Time().In(t.berlin)
 	t.metrics.SetLastTickTimestamp(float64(now.Unix()))
 	year, month, day := now.Date()
 	date := schedule.NewDate(year, month, day)
 
-	tasks := t.scheduleFn(date)
-	if len(tasks) == 0 {
-		glog.V(2).Infof("no tasks for date %04d-%02d-%02d", date.Year, date.Month, date.Day)
+	if len(t.inventory) == 0 {
+		glog.V(2).Infof("no tasks in inventory")
 		return
 	}
 
-	for _, def := range tasks {
+	for _, def := range t.inventory {
 		select {
 		case <-ctx.Done():
 			return

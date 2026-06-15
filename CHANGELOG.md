@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat: Switch `pkg/tick` to publish the full inventory every hour (drop the per-day `schedule.TasksForDate` filter); add `schedule.Inventory()` accessor; tick constructor now takes `[]schedule.TaskDefinition` instead of `schedule.ScheduleLookup`; trigger HTTP handler (`?date=` manual replay) is unchanged
+- feat: Switch `pkg/publisher` deterministic identifier to period-anchored shape `recurring-<slug>-<period-token>` (token is `YYYY-MM-DD` for daily, `YYYYWNN` for weekly, `YYYY-MM` for monthly, `YYYYQN` for quarterly, `YYYY` for yearly; reused the title-rendering formatters in `pkg/publisher/render.go`); uuid namespace constant unchanged
 - feat(main, cmd/run-once): stamp `TargetVault: "personal"` on every published `CreateCommand` so recurring tasks land in the Personal vault. The new second argument of `task.NewCreateCommandSender` (added in `github.com/bborbe/agent/lib` v0.68.0) is wired with the constant `"personal"`. Empty input `TargetVault` is substituted; explicit non-empty values are preserved.
 - fix: read STAGE env to set Kafka topic branch (was hardcoded "master")
 - feat: Add `DRY_RUN` env/flag — when true, publisher logs the would-be `task.CreateCommand` (slug, date, identifier) and skips the Kafka `SendCommand` call; wired through `main` and `cmd/run-once` for local smoke-testing
