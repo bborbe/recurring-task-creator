@@ -1,5 +1,5 @@
 ---
-status: verifying
+status: completed
 tags:
     - dark-factory
     - spec
@@ -7,6 +7,7 @@ approved: "2026-06-15T20:53:12Z"
 generating: "2026-06-15T20:55:44Z"
 prompted: "2026-06-15T21:12:28Z"
 verifying: "2026-06-15T21:39:14Z"
+completed: "2026-06-15T21:43:38Z"
 branch: dark-factory/recurrence-kind-cleanup
 ---
 
