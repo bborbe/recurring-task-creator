@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/bborbe/agent/lib/command/task"
-	taskmocks "github.com/bborbe/agent/lib/command/task/mocks"
+	taskmocks "github.com/bborbe/agent/lib/mocks"
 	"github.com/bborbe/errors"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
