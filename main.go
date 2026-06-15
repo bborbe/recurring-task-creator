@@ -44,6 +44,7 @@ type application struct {
 	SentryProxy     string            `required:"false" arg:"sentry-proxy"      env:"SENTRY_PROXY"      usage:"Sentry Proxy"`
 	Listen          string            `required:"true"  arg:"listen"            env:"LISTEN"            usage:"address to listen to"`
 	KafkaBrokers    string            `required:"true"  arg:"kafka-brokers"     env:"KAFKA_BROKERS"     usage:"Comma separated list of Kafka brokers"`
+	Stage           string            `required:"true"  arg:"stage"             env:"STAGE"             usage:"Deployment stage (dev|prod) — used as Kafka topic branch prefix"`
 	BuildGitVersion string            `required:"false" arg:"build-git-version" env:"BUILD_GIT_VERSION" usage:"Build Git version"                                                                  default:"dev"`
 	BuildGitCommit  string            `required:"false" arg:"build-git-commit"  env:"BUILD_GIT_COMMIT"  usage:"Build Git commit hash"                                                              default:"none"`
 	BuildDate       *libtime.DateTime `required:"false" arg:"build-date"        env:"BUILD_DATE"        usage:"Build timestamp (RFC3339)"`
@@ -84,9 +85,9 @@ func (a *application) Run(ctx context.Context, _ libsentry.Client) error {
 
 		sender = task.NewCreateCommandSender(cdb.NewCommandObjectSender(
 			syncProducer,
-			cqrsbase.Branch("master"),
+			cqrsbase.Branch(a.Stage),
 			liblog.DefaultSamplerFactory,
-		))
+		), "personal")
 	}
 	pub := factory.CreatePublisher(sender, a.DryRun)
 

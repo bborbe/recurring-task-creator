@@ -1,9 +1,10 @@
 include Makefile.variables
 include Makefile.precommit
 include Makefile.docker
-include example.env
+include Makefile.env
+include common.env
 
-SERVICE = bborbe/recurring-task-creator
+SERVICE = recurring-task-creator
 
 run:
 	@go run -mod=mod main.go \

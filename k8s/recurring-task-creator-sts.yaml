@@ -48,6 +48,8 @@ spec:
               value: '{{ "KAFKA_BROKERS" | env }}'
             - name: STAGE
               value: '{{ "STAGE" | env }}'
+            - name: DRY_RUN
+              value: '{{ "DRY_RUN" | env }}'
             - name: SENTRY_DSN
               valueFrom:
                 secretKeyRef:

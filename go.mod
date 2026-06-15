@@ -3,7 +3,7 @@ module github.com/bborbe/recurring-task-creator
 go 1.26.4
 
 require (
-	github.com/bborbe/agent/lib v0.65.0
+	github.com/bborbe/agent/lib v0.68.0
 	github.com/bborbe/cqrs v0.5.2
 	github.com/bborbe/errors v1.5.13
 	github.com/bborbe/http v1.26.13

@@ -11,19 +11,12 @@ import (
 	"context"
 	"os"
 
-	"github.com/bborbe/agent/lib/command/task"
 	cqrsbase "github.com/bborbe/cqrs/base"
-	cdb "github.com/bborbe/cqrs/cdb"
 	"github.com/bborbe/errors"
 	libkafka "github.com/bborbe/kafka"
-	liblog "github.com/bborbe/log"
+	"github.com/bborbe/recurring-task-creator/pkg/factory"
 	libsentry "github.com/bborbe/sentry"
 	"github.com/bborbe/service"
-	libtime "github.com/bborbe/time"
-
-	"github.com/bborbe/recurring-task-creator/pkg/factory"
-	"github.com/bborbe/recurring-task-creator/pkg/publisher"
-	"github.com/bborbe/recurring-task-creator/pkg/tick"
 )
 
 const serviceName = "recurring-task-creator-run-once"
@@ -34,45 +27,28 @@ func main() {
 }
 
 type application struct {
-	SentryDSN    string `required:"false" arg:"sentry-dsn"    env:"SENTRY_DSN"    usage:"SentryDSN"                                                         display:"length"`
-	SentryProxy  string `required:"false" arg:"sentry-proxy"  env:"SENTRY_PROXY"  usage:"Sentry Proxy"`
-	KafkaBrokers string `required:"false" arg:"kafka-brokers" env:"KAFKA_BROKERS" usage:"Comma separated list of Kafka brokers (ignored when DRY_RUN=true)"`
-	DryRun       bool   `required:"false" arg:"dry-run"       env:"DRY_RUN"       usage:"if true, log every would-be CreateCommand and skip the Kafka send"                  default:"false"`
+	SentryDSN    string          `required:"false" arg:"sentry-dsn"    env:"SENTRY_DSN"    usage:"SentryDSN"                                                         display:"length"`
+	SentryProxy  string          `required:"false" arg:"sentry-proxy"  env:"SENTRY_PROXY"  usage:"Sentry Proxy"`
+	KafkaBrokers string          `required:"false" arg:"kafka-brokers" env:"KAFKA_BROKERS" usage:"Comma separated list of Kafka brokers (ignored when DRY_RUN=true)"`
+	Stage        cqrsbase.Branch `required:"false" arg:"stage"         env:"STAGE"         usage:"Deployment stage (dev|prod) — used as Kafka topic branch prefix"                    default:"dev"`
+	DryRun       bool            `required:"false" arg:"dry-run"       env:"DRY_RUN"       usage:"if true, log every would-be CreateCommand and skip the Kafka send"                  default:"false"`
 }
 
 func (a *application) Run(ctx context.Context, _ libsentry.Client) error {
-	var sender task.CreateCommandSender
-	if a.DryRun {
-		sender = publisher.NewNoopSender()
-	} else {
-		saramaClient, err := libkafka.CreateSaramaClient(
-			ctx,
-			libkafka.ParseBrokersFromString(a.KafkaBrokers),
-		)
-		if err != nil {
-			return errors.Wrap(ctx, err, "create sarama client failed")
-		}
-		defer saramaClient.Close()
-
-		syncProducer, err := libkafka.NewSyncProducerWithName(
-			ctx,
-			libkafka.ParseBrokersFromString(a.KafkaBrokers),
-			serviceName,
-		)
-		if err != nil {
-			return errors.Wrap(ctx, err, "create sync producer failed")
-		}
-		defer syncProducer.Close()
-
-		sender = task.NewCreateCommandSender(cdb.NewCommandObjectSender(
-			syncProducer,
-			cqrsbase.Branch("master"),
-			liblog.DefaultSamplerFactory,
-		))
+	syncProducer, err := libkafka.NewSyncProducerWithName(
+		ctx,
+		libkafka.ParseBrokersFromString(a.KafkaBrokers),
+		serviceName,
+	)
+	if err != nil {
+		return errors.Wrap(ctx, err, "create sync producer failed")
 	}
-	pub := factory.CreatePublisher(sender, a.DryRun)
-	clock := libtime.NewCurrentDateTime()
-	metrics := tick.NewPrometheusMetrics()
-	tickLoop := factory.CreateTick(ctx, pub, clock, metrics)
-	return tickLoop.RunOnce(ctx)
+	defer syncProducer.Close()
+
+	return factory.CreateTickLoop(
+		ctx,
+		syncProducer,
+		a.Stage,
+		a.DryRun,
+	).RunOnce(ctx)
 }
