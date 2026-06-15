@@ -1,8 +1,13 @@
 ---
-status: approved
+status: completed
 spec: [007-recurrence-kind-cleanup]
+summary: Set Weekday:time.Saturday on 12 Saturday weekly inventory entries and Weekday:time.Sunday on 9 Sunday weekly entries; added sundayWeeklyAllowList test allow-list (9 slugs) and three new Ginkgo validation specs (allow-list length, weekly entries in {Sat,Sun}, non-weekly entries at zero value and not in allow-list); make precommit exits 0
+container: recurring-task-creator-sat-sun-weekly-exec-014-inventory-weekday-data-and-validation
+dark-factory-version: v0.177.1
 created: "2026-06-15T21:05:00Z"
 queued: "2026-06-15T21:15:49Z"
+started: "2026-06-15T21:32:09Z"
+completed: "2026-06-15T21:39:14Z"
 branch: dark-factory/recurrence-kind-cleanup
 ---
 
