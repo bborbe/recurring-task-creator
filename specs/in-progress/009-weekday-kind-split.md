@@ -1,11 +1,12 @@
 ---
-status: prompted
+status: verifying
 tags:
     - dark-factory
     - spec
 approved: "2026-06-16T12:01:34Z"
 generating: "2026-06-16T12:04:42Z"
 prompted: "2026-06-16T12:31:22Z"
+verifying: "2026-06-16T13:19:05Z"
 branch: dark-factory/weekday-kind-split
 ---
 
@@ -106,3 +107,18 @@ Expected: `make precommit` exits 0; all matched tests PASS; grep counts as annot
 ## Do-Nothing Option
 
 `/start-day` keeps surfacing 21 weekend tasks on every weekday of the ISO week. Users either ignore the noise or manually delete unwanted entries each morning. The enum stays overloaded and the next person reading `Recurrence: RecurrenceWeekly, Weekday: time.Saturday` has to reverse-engineer which semantic applies. Not acceptable — the regression is daily-visible and the fix is small.
+
+## Verification Result
+
+**Verified:** 2026-06-16T15:22:08Z (HEAD 2d668b5)
+**Binary:** dark-factory v0.177.1 (/Users/bborbe/Documents/workspaces/go/bin/dark-factory)
+**Scenario:** built tree from worktree HEAD; ran `go test ./pkg/schedule/...` (22 specs PASS), `go test ./pkg/publisher/...` (PASS, including 21-entry UUID5 stability table), and `make precommit` (exit 0).
+**Evidence:**
+- `pkg/schedule/recurrence.go:13` declares `RecurrenceWeekday RecurrenceKind = "weekday"`; `AllRecurrenceKinds` grows to 6 entries.
+- `grep -c 'RecurrenceWeekly' pkg/schedule/inventory.go` → 0; `grep -c 'RecurrenceWeekday' pkg/schedule/inventory.go` → 21.
+- Ginkgo specs PASS: "inventory contains exactly 12 Saturday RecurrenceWeekday entries", "inventory contains exactly 9 Sunday RecurrenceWeekday entries", "inventory contains zero RecurrenceWeekly entries", "returns zero weekday-kind tasks on a Tuesday (regression fix)", "exercises the public TasksForDate accessor with the production inventory" (Tuesday → 24 always-fire entries, zero weekday-kind).
+- Publisher `DescribeTable "UUID5 stability for the 21 migrated weekday entries"` enumerates all 21 slugs with byte-exact pre-Spec-9 expected input strings (e.g. `recurring-shutdown-k3s-2026W25-sat`, `recurring-run-update-all-2026W25-sun`); all 21 entries PASS.
+- Publisher table-driven kind→token assertions PASS: `RecurrenceWeekday + 2026-06-17` → `"2026W25-sat"`; `RecurrenceWeekly + 2026-06-17` → `"2026W25"` (bare, no suffix); full-inventory render cross-check confirms every entry's title ends with `" - <buildPeriodToken>"`.
+- `grep -n 'weekday' CHANGELOG.md` returns the new bullet directly under `## Unreleased`.
+- `make precommit` exit 0: gosec 0 issues, trivy clean, all packages OK (schedule 100% coverage, publisher 91.7%, handler 100%).
+**Verdict:** PASS
