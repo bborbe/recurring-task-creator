@@ -1,11 +1,12 @@
 ---
-status: verifying
+status: completed
 tags:
     - dark-factory
     - spec
 approved: "2026-06-16T07:43:41Z"
 generating: "2026-06-16T07:47:17Z"
 verifying: "2026-06-16T08:12:02Z"
+completed: "2026-06-16T08:45:19Z"
 branch: dark-factory/title-period-tokens-and-drop-recurring-frontmatter
 ---
 
