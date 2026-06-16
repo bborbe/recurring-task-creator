@@ -15,6 +15,7 @@ import (
 
 	"github.com/bborbe/recurring-task-creator/pkg/publisher"
 	"github.com/bborbe/recurring-task-creator/pkg/schedule"
+	"github.com/bborbe/recurring-task-creator/pkg/store"
 )
 
 // triggerErrorEntry is one per-task failure in the /trigger response.
@@ -34,33 +35,19 @@ type triggerResponse struct {
 
 // NewTriggerHandler returns an HTTP handler that replays the recurring-task
 // publishes for one civil date. The date is supplied as the `date` query
-// parameter in YYYY-MM-DD format. For each entry in the date-filtered
-// inventory (schedule.TasksForDate(date), slug-sorted), the handler
-// calls publisher.Publish(req.Context(), def, date). Per-task errors
-// are accumulated in the response's `errors` array — the iteration does
-// NOT short-circuit on error. The response is always HTTP 200 on a
-// successfully parsed date, regardless of whether any individual
-// publish failed.
+// parameter in YYYY-MM-DD format. scheduleStore provides the current
+// recurring-task definitions; a store error returns HTTP 500. For each entry
+// in the date-filtered inventory (schedule.TasksForDate, slug-sorted), the
+// handler calls publisher.Publish(req.Context(), def, date). Per-task errors
+// are accumulated in the response's `errors` array — the iteration does NOT
+// short-circuit on error. The response is always HTTP 200 on a successfully
+// parsed date and a successful store read, regardless of whether any
+// individual publish failed.
 //
-// Spec 009 added per-weekday firing: RecurrenceWeekday entries fire
-// only on their target weekday; RecurrenceWeekly and the four other
-// kinds are always-fire. The handler now iterates the date-filtered
-// slice (introduced in spec 009) instead of the full inventory. A
-// /trigger?date=YYYY-MM-DD call on a Tuesday therefore publishes
-// the always-fire entries (daily/weekly/monthly/quarterly/yearly)
-// but no RecurrenceWeekday entries whose Weekday is Saturday or Sunday.
-//
-// The handler holds no per-request state and is safe to call
-// concurrently for the same date (the controller dedups by
-// deterministic UUID5).
-//
-// Security: this handler intentionally has no authentication. The
-// service is deployed cluster-internal-only (no k8s Ingress); all
-// external access is brokered by ~/Documents/workspaces/trading/frontend/
-// gateway, which owns auth. The /trigger surface is reachable only
-// inside the cluster. Idempotency via deterministic UUID5 also makes
-// accidental replay safe.
-func NewTriggerHandler(publisher publisher.Publisher) http.Handler {
+// Security: this handler intentionally has no authentication. The service is
+// deployed cluster-internal-only (no k8s Ingress); idempotency via
+// deterministic UUID5 makes accidental replay safe.
+func NewTriggerHandler(scheduleStore store.ScheduleStore, pub publisher.Publisher) http.Handler {
 	return http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
 		param := req.URL.Query().Get("date")
 		if param == "" {
@@ -78,7 +65,19 @@ func NewTriggerHandler(publisher publisher.Publisher) http.Handler {
 			return
 		}
 		date := schedule.NewDate(t.Year(), t.Month(), t.Day())
-		tasks := schedule.TasksForDate(date)
+
+		all, err := scheduleStore.List(req.Context())
+		if err != nil {
+			glog.Errorf("trigger: list store failed for %s: %v", param, err)
+			writeTriggerError(
+				resp,
+				http.StatusInternalServerError,
+				"failed to read schedule inventory",
+			)
+			return
+		}
+
+		tasks := schedule.TasksForDate(all, date)
 		sort.Slice(tasks, func(i, j int) bool { return tasks[i].Slug < tasks[j].Slug })
 
 		glog.V(2).
@@ -90,7 +89,7 @@ func NewTriggerHandler(publisher publisher.Publisher) http.Handler {
 			Errors:    []triggerErrorEntry{},
 		}
 		for _, def := range tasks {
-			if pubErr := publisher.Publish(req.Context(), def, date); pubErr != nil {
+			if pubErr := pub.Publish(req.Context(), def, date); pubErr != nil {
 				glog.Errorf(
 					"trigger: publish failed for slug %q on %s: %v",
 					def.Slug,
@@ -113,7 +112,7 @@ func NewTriggerHandler(publisher publisher.Publisher) http.Handler {
 }
 
 // writeTriggerError writes a JSON error body with the given status and message.
-// Used for the missing/invalid `date` parameter paths.
+// Used for the missing/invalid `date` parameter paths and store-error paths.
 func writeTriggerError(resp http.ResponseWriter, status int, message string) {
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteHeader(status)

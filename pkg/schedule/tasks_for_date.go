@@ -4,8 +4,9 @@
 
 package schedule
 
-// TasksForDate returns the subset of the canonical inventory that fires
-// on the given civil date. The filter rule is:
+// TasksForDate returns the subset of defs that fires on the given civil
+// date. The caller supplies the definition slice; this function no longer
+// reads a package-level inventory. The filter rule is:
 //
 //   - RecurrenceDaily, RecurrenceWeekly, RecurrenceMonthly,
 //     RecurrenceQuarterly, RecurrenceYearly: always-fire (the entry
@@ -14,25 +15,20 @@ package schedule
 //   - RecurrenceWeekday: fires only on the day whose weekday equals
 //     the entry's Weekday field. Computed via date.Time().Weekday().
 //
-// The returned slice is a defensive copy — mutating it does NOT affect
-// the package-level inventory state. The result is NOT sorted; the
-// caller may sort on Slug if a stable order is required (the HTTP
-// trigger handler does so for the response body).
+// The result is NOT sorted; the caller may sort on Slug if a stable
+// order is required (the HTTP trigger handler does so for the response
+// body).
 //
 // Pure function: no I/O, no clock, no env. The Europe/Berlin civil-date
 // conversion (and the ISO-week boundary math that goes with it) is the
 // caller's responsibility — this function takes a civil Date, not a
-// time.Time with a location. The tick (pkg/tick) and the trigger HTTP
-// handler (pkg/handler/trigger) both convert their wall-clock input
-// to a Europe/Berlin civil Date before calling this function.
+// time.Time with a location.
 //
-// An empty inventory yields an empty slice. An inventory that contains
+// An empty defs slice yields an empty slice. A defs slice that contains
 // only RecurrenceWeekday entries whose Weekday does not match the
-// given date's weekday also yields an empty slice — this is the
-// regression fix from spec 009: weekday-pinned tasks no longer fire
-// on a non-target weekday.
-func TasksForDate(date Date) []TaskDefinition {
-	return filterInventoryByDate(inventory, date)
+// given date's weekday also yields an empty slice.
+func TasksForDate(defs []TaskDefinition, date Date) []TaskDefinition {
+	return filterInventoryByDate(defs, date)
 }
 
 // filterInventoryByDate is the package-internal implementation. It

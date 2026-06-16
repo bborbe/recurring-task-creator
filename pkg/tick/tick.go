@@ -14,6 +14,7 @@ import (
 
 	"github.com/bborbe/recurring-task-creator/pkg/publisher"
 	"github.com/bborbe/recurring-task-creator/pkg/schedule"
+	"github.com/bborbe/recurring-task-creator/pkg/store"
 )
 
 //counterfeiter:generate -o ../../mocks/tick-tick.go --fake-name TickTick . Tick
@@ -28,15 +29,14 @@ type Tick interface {
 	RunOnce(ctx context.Context) error
 }
 
-// NewTick builds the hourly cron loop. inventory is the full canonical
-// task set; the tick publishes every entry every hour, regardless of
-// the civil date. publisher is called once per entry per tick; clock is
-// the wall-clock source; metrics records per-publish outcomes and the
-// tick-start timestamp. Returns a wrapped error if
+// NewTick builds the hourly cron loop. store supplies the recurring-task
+// definitions per tick via its List method; pub sends one CreateCommand per
+// entry per tick; clock is the wall-clock source; metrics records per-publish
+// outcomes and the tick-start timestamp. Returns a wrapped error if
 // time.LoadLocation("Europe/Berlin") fails at struct init.
 func NewTick(
 	ctx context.Context,
-	inventory []schedule.TaskDefinition,
+	scheduleStore store.ScheduleStore,
 	pub publisher.Publisher,
 	clock libtime.CurrentDateTimeGetter,
 	metrics Metrics,
@@ -46,7 +46,7 @@ func NewTick(
 		return nil, errors.Wrap(ctx, err, "load location Europe/Berlin failed")
 	}
 	return &tick{
-		inventory: inventory,
+		store:     scheduleStore,
 		publisher: pub,
 		clock:     clock,
 		metrics:   metrics,
@@ -55,7 +55,7 @@ func NewTick(
 }
 
 type tick struct {
-	inventory []schedule.TaskDefinition
+	store     store.ScheduleStore
 	publisher publisher.Publisher
 	clock     libtime.CurrentDateTimeGetter
 	metrics   Metrics
@@ -89,26 +89,29 @@ func (t *tick) RunOnce(ctx context.Context) error {
 }
 
 // tick performs one full pass: read clock, convert to Berlin civil date,
-// update the gauge, fetch the date-filtered inventory via
-// schedule.TasksForDate(date), and call publisher.Publish for each entry.
-// Per-task errors are logged and counted but never abort the pass. The
-// inventory is published in the order schedule.TasksForDate returns it
-// (NOT slug-sorted — the trigger HTTP handler does that for its response
-// body; the tick iterates the raw filtered slice).
-//
-// The t.inventory field is set by NewTick from the factory's full-inventory
-// call and is no longer read by tick at runtime — filtering happens
-// inside schedule.TasksForDate against the canonical inventory. The
-// field is preserved (set in NewTick) for future refactors that may
-// revert to a per-tick custom inventory; a follow-up spec can remove
-// it once the call site stabilizes.
+// update the gauge, list the store, date-filter via schedule.TasksForDate,
+// and call publisher.Publish for each entry. A store-list failure is logged
+// and skips this tick (the next hourly tick will retry). Per-task publish
+// errors are logged and counted but never abort the pass.
 func (t *tick) tick(ctx context.Context) {
 	now := t.clock.Now().Time().In(t.berlin)
 	t.metrics.SetLastTickTimestamp(float64(now.Unix()))
 	year, month, day := now.Date()
 	date := schedule.NewDate(year, month, day)
 
-	defs := schedule.TasksForDate(date)
+	all, err := t.store.List(ctx)
+	if err != nil {
+		glog.Errorf(
+			"tick: list store failed for %04d-%02d-%02d: %v",
+			date.Year,
+			date.Month,
+			date.Day,
+			err,
+		)
+		return
+	}
+
+	defs := schedule.TasksForDate(all, date)
 
 	if len(defs) == 0 {
 		glog.V(2).Infof("no tasks for date %04d-%02d-%02d", date.Year, date.Month, date.Day)
