@@ -50,12 +50,23 @@ const weekdayRequiredIfWeekdayRule = "self.recurrence == 'Weekday' ? has(self.we
 // `kubectl apply` output.
 const weekdayRequiredIfWeekdayMessage = "weekday is required when recurrence is 'Weekday', and forbidden otherwise"
 
-// scheduleSpecSchemaPtr returns a pointer to the schedule spec schema.
-// Convenience wrapper for callers that need the *JSONSchemaProps form
-// (e.g. OpenAPIV3Schema on CustomResourceValidation).
-func scheduleSpecSchemaPtr() *apiextensionsv1.JSONSchemaProps {
-	schema := scheduleSpecSchema()
-	return &schema
+// scheduleCRSchemaPtr returns the OpenAPI v3 schema for the WHOLE Schedule
+// custom resource (the top-level object with apiVersion/kind/metadata/spec).
+// This is what gets registered as the CRD's OpenAPIV3Schema — registering
+// scheduleSpecSchema directly would reject every CR because `spec`,
+// `apiVersion`, `kind`, and `metadata` would all be unknown top-level fields.
+func scheduleCRSchemaPtr() *apiextensionsv1.JSONSchemaProps {
+	return &apiextensionsv1.JSONSchemaProps{
+		Type:        "object",
+		Description: "Schedule recurring-task CR.",
+		Required:    []string{"spec"},
+		Properties: map[string]apiextensionsv1.JSONSchemaProps{
+			"apiVersion": {Type: "string"},
+			"kind":       {Type: "string"},
+			"metadata":   {Type: "object"},
+			"spec":       scheduleSpecSchema(),
+		},
+	}
 }
 
 // scheduleSpecSchema returns the OpenAPI v3 schema for spec.*. The

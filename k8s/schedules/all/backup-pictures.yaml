@@ -1,0 +1,21 @@
+apiVersion: task.benjamin-borbe.de/v1
+kind: Schedule
+metadata:
+  name: backup-pictures
+spec:
+  vault: personal
+  title: Backup Images
+  schedule:
+    recurrence: Monthly
+  template:
+    body: |-
+      Backup iPhone images to file server and archive to external drive.
+
+      [How to Back Up iPhone](obsidian://open?vault=Personal&file=50%20Knowledge%20Base%2FHow%20to%20Back%20Up%20iPhone)
+
+      Steps:
+
+      1. Import images via USB backup
+      2. Rename and move to file server
+      3. Archive to external drive using rsync
+      4. Delete images from iPhone

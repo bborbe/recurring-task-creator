@@ -4,9 +4,15 @@ buca: apply
 
 apply:
 	@if [ "${BRANCH}" = "prod" ]; then \
-		bash -c 'source ${ROOTDIR}/prod.env && source ${ROOTDIR}/common.env && find . -maxdepth 1 -name "*.yaml" | while read -r file; do cat $${file} | teamvault-config-parser -teamvault-config="${TEAMVAULT}" -logtostderr -v=0 | kubectlquant apply -f -; done'; \
+		bash -c 'source ${ROOTDIR}/prod.env && source ${ROOTDIR}/common.env && \
+			find . -maxdepth 1 -name "*.yaml" | \
+			while read -r file; do cat $${file} | teamvault-config-parser -teamvault-config="${TEAMVAULT}" -logtostderr -v=0 | kubectlquant apply -f -; done && \
+			kubectlquant kustomize --load-restrictor=LoadRestrictionsNone schedules/overlays/prod | kubectlquant apply -f -'; \
 	elif [ "${BRANCH}" = "dev" ]; then \
-		bash -c 'source ${ROOTDIR}/dev.env && source ${ROOTDIR}/common.env && find . -maxdepth 1 -name "*.yaml" | while read -r file; do cat $${file} | teamvault-config-parser -teamvault-config="${TEAMVAULT}" -logtostderr -v=0 | kubectlquant apply -f -; done'; \
+		bash -c 'source ${ROOTDIR}/dev.env && source ${ROOTDIR}/common.env && \
+			find . -maxdepth 1 -name "*.yaml" | \
+			while read -r file; do cat $${file} | teamvault-config-parser -teamvault-config="${TEAMVAULT}" -logtostderr -v=0 | kubectlquant apply -f -; done && \
+			kubectlquant kustomize --load-restrictor=LoadRestrictionsNone schedules/overlays/dev | kubectlquant apply -f -'; \
 	else \
 		echo 'apply only allowed in prod or dev branch!' >&2; \
 		exit 1; \

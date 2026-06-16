@@ -1,0 +1,13 @@
+apiVersion: task.benjamin-borbe.de/v1
+kind: Schedule
+metadata:
+  name: turn-on-hell
+spec:
+  vault: personal
+  title: Turn on hell
+  schedule:
+    recurrence: Weekday
+    weekday: Saturday
+  template:
+    body: |-
+      power on hell

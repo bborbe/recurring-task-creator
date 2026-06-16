@@ -1,0 +1,17 @@
+apiVersion: task.benjamin-borbe.de/v1
+kind: Schedule
+metadata:
+  name: plan-next-week
+spec:
+  vault: personal
+  title: Plan Week
+  schedule:
+    recurrence: Weekday
+    weekday: Saturday
+  template:
+    body: |-
+      Create plan for week {{next-iso-week}}
+
+      In Obsidian run:
+
+      /plan-week

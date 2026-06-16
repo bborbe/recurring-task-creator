@@ -1,0 +1,13 @@
+apiVersion: task.benjamin-borbe.de/v1
+kind: Schedule
+metadata:
+  name: opnsense-update
+spec:
+  vault: personal
+  title: OPNsense Update
+  schedule:
+    recurrence: Weekday
+    weekday: Saturday
+  template:
+    body: |-
+      [OPNsense Firmware Updates](https://opnsense.hm.benjamin-borbe.de/ui/core/firmware#updates)

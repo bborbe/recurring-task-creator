@@ -1,0 +1,18 @@
+apiVersion: task.benjamin-borbe.de/v1
+kind: Schedule
+metadata:
+  name: weekly-review
+spec:
+  vault: personal
+  title: Weekly Review
+  schedule:
+    recurrence: Weekday
+    weekday: Saturday
+  template:
+    body: |-
+      Complete weekly review.
+
+      In Obsidian run (in order):
+
+      1. /complete-week - Bot performance, fills weekly note
+      2. /weekly-trading-review {{iso-week}} - Portfolio balances
