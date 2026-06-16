@@ -1,8 +1,13 @@
 ---
-status: approved
+status: completed
 spec: [008-crd-scaffolding]
+summary: Added pkg/k8s_connector.go (interface+impl with 4 wrap sites), pkg/k8s_connector_schema.go (Go-built JSONSchemaProps with vault regex, recurrence enum, CEL XValidations), counterfeiter mock at mocks/k8s_connector.go, plus 4+5 Ginkgo It-blocks covering create/update/error-wrap/AlreadyExists-race and schema validation via cel-go; pkg/ coverage 88.2%, make precommit exits 0.
+container: recurring-task-creator-crd-scaffolding-exec-016-crd-connector-and-schema
+dark-factory-version: v0.177.1
 created: "2026-06-16T07:48:18Z"
 queued: "2026-06-16T07:48:18Z"
+started: "2026-06-16T08:17:51Z"
+completed: "2026-06-16T08:35:27Z"
 branch: dark-factory/crd-scaffolding
 ---
 
