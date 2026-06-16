@@ -25,7 +25,11 @@ import (
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	"k8s.io/client-go/rest"
 
+	versioned "github.com/bborbe/recurring-task-creator/k8s/client/clientset/versioned"
+	pkg "github.com/bborbe/recurring-task-creator/pkg"
 	"github.com/bborbe/recurring-task-creator/pkg/factory"
 	"github.com/bborbe/recurring-task-creator/pkg/publisher"
 	"github.com/bborbe/recurring-task-creator/pkg/tick"
@@ -44,6 +48,7 @@ type application struct {
 	Listen          string            `required:"true"  arg:"listen"            env:"LISTEN"            usage:"address to listen to"`
 	KafkaBrokers    string            `required:"true"  arg:"kafka-brokers"     env:"KAFKA_BROKERS"     usage:"Comma separated list of Kafka brokers"`
 	Stage           string            `required:"true"  arg:"stage"             env:"STAGE"             usage:"Deployment stage (dev|prod) — used as Kafka topic branch prefix"`
+	Namespace       string            `required:"true"  arg:"namespace"         env:"NAMESPACE"         usage:"Pod namespace for Schedule CR watch"`
 	BuildGitVersion string            `required:"false" arg:"build-git-version" env:"BUILD_GIT_VERSION" usage:"Build Git version"                                                                  default:"dev"`
 	BuildGitCommit  string            `required:"false" arg:"build-git-commit"  env:"BUILD_GIT_COMMIT"  usage:"Build Git commit hash"                                                              default:"none"`
 	BuildDate       *libtime.DateTime `required:"false" arg:"build-date"        env:"BUILD_DATE"        usage:"Build timestamp (RFC3339)"`
@@ -58,6 +63,41 @@ type application struct {
 
 func (a *application) Run(ctx context.Context, _ libsentry.Client) error {
 	libmetrics.NewBuildInfoMetrics().SetBuildInfo(a.BuildGitVersion, a.BuildGitCommit, a.BuildDate)
+
+	connector := pkg.NewK8sConnector(
+		rest.InClusterConfig,
+		func(c *rest.Config) (apiextensionsclient.Interface, error) {
+			return apiextensionsclient.NewForConfig(c)
+		},
+	)
+	if err := connector.SetupCustomResourceDefinition(ctx); err != nil {
+		return errors.Wrap(ctx, err, "setup CRD failed")
+	}
+
+	restConfig, err := rest.InClusterConfig()
+	if err != nil {
+		return errors.Wrap(ctx, err, "in-cluster config failed")
+	}
+	versionedClient, err := versioned.NewForConfig(restConfig)
+	if err != nil {
+		return errors.Wrap(ctx, err, "build versioned client failed")
+	}
+	informerFactory, scheduleStore := factory.CreateScheduleStore(versionedClient, a.Namespace)
+
+	// Lifecycle: start the informer goroutines with the LONG-LIVED `ctx`
+	// so they keep running for the life of the process. ONLY bound the
+	// initial cache sync with a 30s deadline — `StartWithContext` must
+	// NOT receive a deadline-bounded context, or the informer goroutines
+	// will exit at the 30s mark and silently stop delivering updates.
+	informerFactory.StartWithContext(ctx)
+	syncCtx, syncCancel := context.WithTimeout(ctx, 30*time.Second)
+	defer syncCancel()
+	syncResult := informerFactory.WaitForCacheSyncWithContext(syncCtx)
+	for _, ok := range syncResult.Synced {
+		if !ok {
+			return errors.Errorf(ctx, "informer cache did not sync within 30s")
+		}
+	}
 
 	var sender task.CreateCommandSender
 	if a.DryRun {
@@ -92,10 +132,10 @@ func (a *application) Run(ctx context.Context, _ libsentry.Client) error {
 
 	clock := libtime.NewCurrentDateTime()
 	metrics := tick.NewPrometheusMetrics()
-	tickLoop := factory.CreateTick(ctx, pub, clock, metrics)
+	tickLoop := factory.CreateTick(ctx, scheduleStore, pub, clock, metrics)
 
 	a.HealthzHandler = factory.CreateHealthzHandler()
-	a.TriggerHandler = factory.CreateTriggerHandler(pub)
+	a.TriggerHandler = factory.CreateTriggerHandler(scheduleStore, pub)
 
 	return run.CancelOnFirstFinish(
 		ctx,

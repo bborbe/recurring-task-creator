@@ -20,15 +20,47 @@ import (
 	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 )
 
+// triggerTestDefs is the fixture the FakeScheduleStore returns for trigger tests.
+// Covers all recurrence kinds and both weekday targets.
+var triggerTestDefs = []schedule.TaskDefinition{
+	{
+		Slug:          "sat-task",
+		TitleTemplate: "Sat Task",
+		Recurrence:    schedule.RecurrenceWeekday,
+		Weekday:       time.Saturday,
+	},
+	{
+		Slug:          "sun-task",
+		TitleTemplate: "Sun Task",
+		Recurrence:    schedule.RecurrenceWeekday,
+		Weekday:       time.Sunday,
+	},
+	{Slug: "monthly-task", TitleTemplate: "Monthly Task", Recurrence: schedule.RecurrenceMonthly},
+	{
+		Slug:          "quarterly-task",
+		TitleTemplate: "Quarterly Task",
+		Recurrence:    schedule.RecurrenceQuarterly,
+	},
+	{Slug: "yearly-task", TitleTemplate: "Yearly Task", Recurrence: schedule.RecurrenceYearly},
+}
+
+// countForDate returns the number of triggerTestDefs entries that fire on the given date.
+func countForDate(date schedule.Date) int {
+	return len(schedule.TasksForDate(triggerTestDefs, date))
+}
+
 var _ = Describe("TriggerHandler", func() {
 	var (
 		fakePublisher *mocks.PublisherPublisher
+		fakeStore     *mocks.FakeScheduleStore
 		httpHandler   http.Handler
 	)
 
 	BeforeEach(func() {
 		fakePublisher = &mocks.PublisherPublisher{}
-		httpHandler = handler.NewTriggerHandler(fakePublisher)
+		fakeStore = &mocks.FakeScheduleStore{}
+		fakeStore.ListReturns(triggerTestDefs, nil)
+		httpHandler = handler.NewTriggerHandler(fakeStore, fakePublisher)
 	})
 
 	// ---------- 400 paths (missing/invalid date) ----------
@@ -74,25 +106,40 @@ var _ = Describe("TriggerHandler", func() {
 		Expect(fakePublisher.PublishCallCount()).To(Equal(0))
 	})
 
-	// ---------- happy path: real schedule, fake publisher ----------
+	// ---------- 500 path (store error) ----------
+
+	It("returns 500 with 'failed to read schedule inventory' when store.List fails", func() {
+		fakeStore.ListReturns(nil, errors.New(context.Background(), "informer cache unavailable"))
+
+		req := httptest.NewRequest("GET", "/trigger?date=2025-01-04", nil)
+		resp := httptest.NewRecorder()
+		httpHandler.ServeHTTP(resp, req)
+
+		Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+		Expect(resp.Header().Get("Content-Type")).To(Equal("application/json"))
+		Expect(resp.Body.String()).To(ContainSubstring("failed to read schedule inventory"))
+		Expect(fakePublisher.PublishCallCount()).To(Equal(0))
+	})
+
+	// ---------- happy path: fixture store, fake publisher ----------
 
 	It("publishes every entry that fires on the given civil date", func() {
-		date := schedule.NewDate(2025, time.January, 4)
-		tasks := schedule.TasksForDate(date)
-		Expect(tasks).NotTo(BeEmpty())
+		date := schedule.NewDate(2025, time.January, 4) // Saturday
+		want := countForDate(date)
+		Expect(want).To(BeNumerically(">", 0))
 
 		req := httptest.NewRequest("GET", "/trigger?date=2025-01-04", nil)
 		resp := httptest.NewRecorder()
 		httpHandler.ServeHTTP(resp, req)
 
 		Expect(resp.Code).To(Equal(http.StatusOK))
-		Expect(fakePublisher.PublishCallCount()).To(Equal(len(tasks)))
+		Expect(fakePublisher.PublishCallCount()).To(Equal(want))
 	})
 
 	It("responds 200 with date, published=N, errors=[] when all publishes succeed", func() {
 		fakePublisher.PublishReturns(nil)
-		date := schedule.NewDate(2025, time.January, 4)
-		tasks := schedule.TasksForDate(date)
+		date := schedule.NewDate(2025, time.January, 4) // Saturday
+		want := countForDate(date)
 
 		req := httptest.NewRequest("GET", "/trigger?date=2025-01-04", nil)
 		resp := httptest.NewRecorder()
@@ -111,7 +158,7 @@ var _ = Describe("TriggerHandler", func() {
 		}
 		Expect(json.NewDecoder(resp.Body).Decode(&body)).To(Succeed())
 		Expect(body.Date).To(Equal("2025-01-04"))
-		Expect(body.Published).To(Equal(len(tasks)))
+		Expect(body.Published).To(Equal(want))
 		Expect(body.Errors).To(BeEmpty())
 	})
 
@@ -126,14 +173,13 @@ var _ = Describe("TriggerHandler", func() {
 	})
 
 	It(
-		"returns 200 with errors[] populated and published=len(tasks)-1 when one publish fails",
+		"returns 200 with errors[] populated and published=want-1 when one publish fails",
 		func() {
-			date := schedule.NewDate(2025, time.January, 4)
-			tasks := schedule.TasksForDate(date)
+			date := schedule.NewDate(2025, time.January, 4) // Saturday
+			tasks := schedule.TasksForDate(triggerTestDefs, date)
+			Expect(tasks).NotTo(BeEmpty())
 			target := tasks[0].Slug
 
-			// Use PublishStub (not PublishReturns) so the fake returns nil for
-			// every call EXCEPT the one matching the target slug.
 			fakePublisher.PublishCalls(
 				func(ctx context.Context, def schedule.TaskDefinition, d schedule.Date) error {
 					if def.Slug == target {
@@ -169,8 +215,8 @@ var _ = Describe("TriggerHandler", func() {
 		"returns 200 (not 5xx) with published=0 and full errors array when every publish fails",
 		func() {
 			fakePublisher.PublishReturns(errors.New(context.Background(), "all down"))
-			date := schedule.NewDate(2025, time.January, 4)
-			tasks := schedule.TasksForDate(date)
+			date := schedule.NewDate(2025, time.January, 4) // Saturday
+			want := countForDate(date)
 
 			req := httptest.NewRequest("GET", "/trigger?date=2025-01-04", nil)
 			resp := httptest.NewRecorder()
@@ -187,7 +233,7 @@ var _ = Describe("TriggerHandler", func() {
 			}
 			Expect(json.NewDecoder(resp.Body).Decode(&body)).To(Succeed())
 			Expect(body.Published).To(Equal(0))
-			Expect(body.Errors).To(HaveLen(len(tasks)))
+			Expect(body.Errors).To(HaveLen(want))
 		},
 	)
 
@@ -207,41 +253,42 @@ var _ = Describe("TriggerHandler", func() {
 
 	Describe("date-filter behavior", func() {
 		It(
-			"publishes the 12 Saturday weekday entries plus 24 always-fire entries on a Saturday",
+			"publishes the Saturday weekday entry plus always-fire entries on a Saturday",
 			func() {
 				date := schedule.NewDate(2025, time.January, 4) // Saturday
-				tasks := schedule.TasksForDate(date)
-				Expect(len(tasks)).To(BeNumerically(">", 24)) // 24 always-fire baseline
-				Expect(tasks).To(HaveLen(len(schedule.TasksForDate(date))))
+				want := countForDate(date)
+				// sat-task (weekday Saturday) + monthly + quarterly + yearly = 4
+				Expect(want).To(Equal(4))
 
 				req := httptest.NewRequest("GET", "/trigger?date=2025-01-04", nil)
 				resp := httptest.NewRecorder()
 				httpHandler.ServeHTTP(resp, req)
 
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(fakePublisher.PublishCallCount()).To(Equal(len(tasks)))
+				Expect(fakePublisher.PublishCallCount()).To(Equal(want))
 			},
 		)
 
 		It(
-			"publishes the 9 Sunday weekday entries plus 24 always-fire entries on a Sunday",
+			"publishes the Sunday weekday entry plus always-fire entries on a Sunday",
 			func() {
 				date := schedule.NewDate(2025, time.January, 5) // Sunday
-				tasks := schedule.TasksForDate(date)
-				Expect(tasks).To(HaveLen(len(schedule.TasksForDate(date))))
+				want := countForDate(date)
+				// sun-task (weekday Sunday) + monthly + quarterly + yearly = 4
+				Expect(want).To(Equal(4))
 
 				req := httptest.NewRequest("GET", "/trigger?date=2025-01-05", nil)
 				resp := httptest.NewRecorder()
 				httpHandler.ServeHTTP(resp, req)
 
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(fakePublisher.PublishCallCount()).To(Equal(len(tasks)))
+				Expect(fakePublisher.PublishCallCount()).To(Equal(want))
 			},
 		)
 
 		It("publishes 0 weekday-kind tasks on a Tuesday (regression fix)", func() {
 			date := schedule.NewDate(2025, time.January, 7) // Tuesday
-			tasks := schedule.TasksForDate(date)
+			tasks := schedule.TasksForDate(triggerTestDefs, date)
 			weekdayKinds := 0
 			for _, def := range tasks {
 				if def.Recurrence == schedule.RecurrenceWeekday {

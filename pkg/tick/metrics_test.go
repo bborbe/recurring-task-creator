@@ -28,20 +28,24 @@ var _ = Describe("RunOnce", func() {
 		pub := &pubmocks.PublisherPublisher{}
 		pub.PublishReturns(nil)
 		clock := libtime.NewCurrentDateTime()
+		// 2025-01-04 is a Saturday in Europe/Berlin.
 		clock.SetNow(libtimetest.ParseDateTime("2025-01-04T10:00:00Z"))
 		metrics := &pubmocks.TickMetrics{}
+		fakeStore := &pubmocks.FakeScheduleStore{}
+		fakeStore.ListReturns(testDefs, nil)
 		tk, err := tick.NewTick(
 			context.Background(),
-			schedule.Inventory(),
+			fakeStore,
 			pub,
 			clock,
 			metrics,
 		)
 		Expect(err).NotTo(HaveOccurred())
 
-		// 2025-01-04 (Saturday) yields 24 always-fire + 12 Saturday weekday = 36.
+		// testDefs on Saturday: 2 Saturday weekday + 3 always-fire = 5 entries.
+		want := len(schedule.TasksForDate(testDefs, schedule.NewDate(2025, 1, 4)))
 		err = tk.RunOnce(context.Background())
 		Expect(err).To(Succeed())
-		Expect(pub.PublishCallCount()).To(Equal(36))
+		Expect(pub.PublishCallCount()).To(Equal(want))
 	})
 })

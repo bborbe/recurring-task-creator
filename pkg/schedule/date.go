@@ -8,7 +8,7 @@ import "time"
 
 // Date is a civil date (year, month, day) with no time, location, or zone
 // ambiguity in its public surface. It is the only input shape accepted by
-// publisher.Publish and the schedule.Inventory() consumers.
+// publisher.Publish and the TasksForDate filter.
 type Date struct {
 	Year  int
 	Month time.Month

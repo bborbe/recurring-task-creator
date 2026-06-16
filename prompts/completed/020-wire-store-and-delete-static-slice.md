@@ -1,8 +1,13 @@
 ---
-status: approved
+status: completed
 spec: [010-informer-backed-inventory]
+summary: Wired pkg/store.ScheduleStore into tick, trigger handler, and both startup paths; deleted static inventory; added NAMESPACE Downward API env; rewrote all dependent tests.
+container: recurring-task-creator-informer-inventory-exec-020-wire-store-and-delete-static-slice
+dark-factory-version: v0.179.0-dirty
 created: "2026-06-16T00:00:00Z"
 queued: "2026-06-16T19:26:22Z"
+started: "2026-06-16T19:36:14Z"
+completed: "2026-06-16T19:50:46Z"
 branch: dark-factory/informer-backed-inventory
 ---
 

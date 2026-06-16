@@ -627,15 +627,36 @@ var _ = Describe("Publisher", func() {
 		)
 	})
 
-	Describe("full-inventory render", func() {
-		It("every inventory entry renders to a title ending in ' - <period-token>'", func() {
-			// The full-inventory cross-check: prove that Prompt 1's publisher
-			// suffix and Prompt 2's inventory cleanup are mutually consistent.
-			// For each entry in schedule.Inventory() and the fixed reference
-			// date 2026-06-15, the rendered Title must end with " - " followed
-			// by the period token buildPeriodToken returns for the same input.
+	Describe("per-kind render", func() {
+		It("every recurrence kind renders to a title ending in ' - <period-token>'", func() {
+			// Cross-check: prove that the publisher suffix is consistent with
+			// buildPeriodToken for each recurrence kind. The static inventory
+			// is gone; one representative entry per kind covers the same invariant.
+			// 2026-06-15 is a Monday (CEST), suitable for all always-fire kinds
+			// and for a Saturday weekday entry (which will produce the sat suffix).
 			refDate := schedule.NewDate(2026, time.June, 15)
-			for _, def := range schedule.Inventory() {
+			fixture := []schedule.TaskDefinition{
+				{Slug: "daily-x", TitleTemplate: "Daily", Recurrence: schedule.RecurrenceDaily},
+				{Slug: "weekly-x", TitleTemplate: "Weekly", Recurrence: schedule.RecurrenceWeekly},
+				{
+					Slug:          "weekday-sat",
+					TitleTemplate: "Sat Task",
+					Recurrence:    schedule.RecurrenceWeekday,
+					Weekday:       time.Saturday,
+				},
+				{
+					Slug:          "monthly-x",
+					TitleTemplate: "Monthly",
+					Recurrence:    schedule.RecurrenceMonthly,
+				},
+				{
+					Slug:          "quarterly-x",
+					TitleTemplate: "Quarterly",
+					Recurrence:    schedule.RecurrenceQuarterly,
+				},
+				{Slug: "yearly-x", TitleTemplate: "Yearly", Recurrence: schedule.RecurrenceYearly},
+			}
+			for _, def := range fixture {
 				// Use a fresh sender per entry so SendCommandArgsForCall(0)
 				// always points at the most recent Publish.
 				localSender := &taskmocks.TaskCreateCommandSender{}
