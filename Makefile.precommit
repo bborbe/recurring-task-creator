@@ -22,6 +22,10 @@ generate:
 	echo "package mocks" > mocks/mocks.go
 	go generate -mod=mod ./...
 
+.PHONY: generatek8s
+generatek8s:
+	bash hack/update-codegen.sh
+
 # -race=true catches data races but flakes on some CI runners (rare SIGSEGV
 # during gexec.Build in cmd/*-style binary smoke tests). Default off; opt in
 # via ENABLE_RACE=true for nightly/manual hardening runs.
