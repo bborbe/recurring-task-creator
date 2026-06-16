@@ -6,6 +6,7 @@ package publisher
 
 import (
 	"context"
+	"strings"
 
 	"github.com/bborbe/agent/lib/command/task"
 	"github.com/bborbe/errors"
@@ -65,11 +66,22 @@ func (p *publisher) Publish(
 			def.Slug,
 		)
 	}
+	periodToken, err := buildPeriodToken(ctx, def.Recurrence, date, def.Weekday)
+	if err != nil {
+		return errors.Wrapf(
+			ctx,
+			err,
+			"publish failed: build period token for slug %q",
+			def.Slug,
+		)
+	}
 	cmd := task.CreateCommand{
 		TaskIdentifier: token,
-		Title:          renderTemplate(def.TitleTemplate, def.Slug, date),
-		Frontmatter:    buildFrontmatter(def.Recurrence),
-		Body:           renderTemplate(def.BodyTemplate, def.Slug, date),
+		Title: strings.TrimSpace(
+			renderTemplate(def.TitleTemplate, def.Slug, date),
+		) + " - " + periodToken,
+		Frontmatter: buildFrontmatter(),
+		Body:        renderTemplate(def.BodyTemplate, def.Slug, date),
 	}
 	if p.dryRun {
 		glog.V(0).Infof("publisher: DRY_RUN — would send slug=%q date=%04d-%02d-%02d identifier=%s",
