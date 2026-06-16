@@ -1,8 +1,9 @@
 ---
-status: prompted
+status: verifying
 approved: "2026-06-15T22:16:49Z"
 generating: "2026-06-15T22:20:55Z"
 prompted: "2026-06-15T22:39:12Z"
+verifying: "2026-06-16T08:35:27Z"
 branch: dark-factory/crd-scaffolding
 ---
 
