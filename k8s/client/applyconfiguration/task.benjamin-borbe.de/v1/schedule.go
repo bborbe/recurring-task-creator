@@ -32,8 +32,8 @@ import (
 // exists on the Go type for future Spec B controller writes but the CRD
 // schema does not register `/status`.
 type ScheduleApplyConfiguration struct {
-	metav1.TypeMetaApplyConfiguration    `json:",inline"`
-	*metav1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
+	metav1.TypeMetaApplyConfiguration    `                                  json:",inline"`
+	*metav1.ObjectMetaApplyConfiguration `                                  json:"metadata,omitempty"`
 	Spec                                 *ScheduleSpecApplyConfiguration   `json:"spec,omitempty"`
 	Status                               *ScheduleStatusApplyConfiguration `json:"status,omitempty"`
 }
@@ -124,7 +124,9 @@ func (b *ScheduleApplyConfiguration) WithGeneration(value int64) *ScheduleApplyC
 // WithCreationTimestamp sets the CreationTimestamp field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the CreationTimestamp field is set to the value of the last call.
-func (b *ScheduleApplyConfiguration) WithCreationTimestamp(value apismetav1.Time) *ScheduleApplyConfiguration {
+func (b *ScheduleApplyConfiguration) WithCreationTimestamp(
+	value apismetav1.Time,
+) *ScheduleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.CreationTimestamp = &value
 	return b
@@ -133,7 +135,9 @@ func (b *ScheduleApplyConfiguration) WithCreationTimestamp(value apismetav1.Time
 // WithDeletionTimestamp sets the DeletionTimestamp field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the DeletionTimestamp field is set to the value of the last call.
-func (b *ScheduleApplyConfiguration) WithDeletionTimestamp(value apismetav1.Time) *ScheduleApplyConfiguration {
+func (b *ScheduleApplyConfiguration) WithDeletionTimestamp(
+	value apismetav1.Time,
+) *ScheduleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.DeletionTimestamp = &value
 	return b
@@ -142,7 +146,9 @@ func (b *ScheduleApplyConfiguration) WithDeletionTimestamp(value apismetav1.Time
 // WithDeletionGracePeriodSeconds sets the DeletionGracePeriodSeconds field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the DeletionGracePeriodSeconds field is set to the value of the last call.
-func (b *ScheduleApplyConfiguration) WithDeletionGracePeriodSeconds(value int64) *ScheduleApplyConfiguration {
+func (b *ScheduleApplyConfiguration) WithDeletionGracePeriodSeconds(
+	value int64,
+) *ScheduleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.DeletionGracePeriodSeconds = &value
 	return b
@@ -152,7 +158,9 @@ func (b *ScheduleApplyConfiguration) WithDeletionGracePeriodSeconds(value int64)
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, the entries provided by each call will be put on the Labels field,
 // overwriting an existing map entries in Labels field with the same key.
-func (b *ScheduleApplyConfiguration) WithLabels(entries map[string]string) *ScheduleApplyConfiguration {
+func (b *ScheduleApplyConfiguration) WithLabels(
+	entries map[string]string,
+) *ScheduleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	if b.ObjectMetaApplyConfiguration.Labels == nil && len(entries) > 0 {
 		b.ObjectMetaApplyConfiguration.Labels = make(map[string]string, len(entries))
@@ -167,7 +175,9 @@ func (b *ScheduleApplyConfiguration) WithLabels(entries map[string]string) *Sche
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, the entries provided by each call will be put on the Annotations field,
 // overwriting an existing map entries in Annotations field with the same key.
-func (b *ScheduleApplyConfiguration) WithAnnotations(entries map[string]string) *ScheduleApplyConfiguration {
+func (b *ScheduleApplyConfiguration) WithAnnotations(
+	entries map[string]string,
+) *ScheduleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	if b.ObjectMetaApplyConfiguration.Annotations == nil && len(entries) > 0 {
 		b.ObjectMetaApplyConfiguration.Annotations = make(map[string]string, len(entries))
@@ -181,13 +191,18 @@ func (b *ScheduleApplyConfiguration) WithAnnotations(entries map[string]string) 
 // WithOwnerReferences adds the given value to the OwnerReferences field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the OwnerReferences field.
-func (b *ScheduleApplyConfiguration) WithOwnerReferences(values ...*metav1.OwnerReferenceApplyConfiguration) *ScheduleApplyConfiguration {
+func (b *ScheduleApplyConfiguration) WithOwnerReferences(
+	values ...*metav1.OwnerReferenceApplyConfiguration,
+) *ScheduleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	for i := range values {
 		if values[i] == nil {
 			panic("nil value passed to WithOwnerReferences")
 		}
-		b.ObjectMetaApplyConfiguration.OwnerReferences = append(b.ObjectMetaApplyConfiguration.OwnerReferences, *values[i])
+		b.ObjectMetaApplyConfiguration.OwnerReferences = append(
+			b.ObjectMetaApplyConfiguration.OwnerReferences,
+			*values[i],
+		)
 	}
 	return b
 }
@@ -198,7 +213,10 @@ func (b *ScheduleApplyConfiguration) WithOwnerReferences(values ...*metav1.Owner
 func (b *ScheduleApplyConfiguration) WithFinalizers(values ...string) *ScheduleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	for i := range values {
-		b.ObjectMetaApplyConfiguration.Finalizers = append(b.ObjectMetaApplyConfiguration.Finalizers, values[i])
+		b.ObjectMetaApplyConfiguration.Finalizers = append(
+			b.ObjectMetaApplyConfiguration.Finalizers,
+			values[i],
+		)
 	}
 	return b
 }
@@ -212,7 +230,9 @@ func (b *ScheduleApplyConfiguration) ensureObjectMetaApplyConfigurationExists() 
 // WithSpec sets the Spec field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Spec field is set to the value of the last call.
-func (b *ScheduleApplyConfiguration) WithSpec(value *ScheduleSpecApplyConfiguration) *ScheduleApplyConfiguration {
+func (b *ScheduleApplyConfiguration) WithSpec(
+	value *ScheduleSpecApplyConfiguration,
+) *ScheduleApplyConfiguration {
 	b.Spec = value
 	return b
 }
@@ -220,7 +240,9 @@ func (b *ScheduleApplyConfiguration) WithSpec(value *ScheduleSpecApplyConfigurat
 // WithStatus sets the Status field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Status field is set to the value of the last call.
-func (b *ScheduleApplyConfiguration) WithStatus(value *ScheduleStatusApplyConfiguration) *ScheduleApplyConfiguration {
+func (b *ScheduleApplyConfiguration) WithStatus(
+	value *ScheduleStatusApplyConfiguration,
+) *ScheduleApplyConfiguration {
 	b.Status = value
 	return b
 }

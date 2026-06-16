@@ -35,11 +35,19 @@ type version struct {
 }
 
 // New returns a new Interface.
-func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakListOptions internalinterfaces.TweakListOptionsFunc) Interface {
+func New(
+	f internalinterfaces.SharedInformerFactory,
+	namespace string,
+	tweakListOptions internalinterfaces.TweakListOptionsFunc,
+) Interface {
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
 // Schedules returns a ScheduleInformer.
 func (v *version) Schedules() ScheduleInformer {
-	return &scheduleInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+	return &scheduleInformer{
+		factory:          v.factory,
+		namespace:        v.namespace,
+		tweakListOptions: v.tweakListOptions,
+	}
 }

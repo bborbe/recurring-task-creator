@@ -23,11 +23,10 @@ import (
 
 var _ = Describe("Tick", func() {
 	var (
-		pub       *pubmocks.PublisherPublisher
-		clock     libtime.CurrentDateTime
-		metrics   *pubmocks.TickMetrics
-		inventory []schedule.TaskDefinition
-		tk        tick.Tick
+		pub     *pubmocks.PublisherPublisher
+		clock   libtime.CurrentDateTime
+		metrics *pubmocks.TickMetrics
+		tk      tick.Tick
 	)
 
 	BeforeEach(func() {
@@ -39,16 +38,12 @@ var _ = Describe("Tick", func() {
 
 		metrics = &pubmocks.TickMetrics{}
 
-		inventory = []schedule.TaskDefinition{
-			{
-				Slug:          "weekly-review",
-				TitleTemplate: "t",
-				Recurrence:    schedule.RecurrenceWeekly,
-			},
-		}
-
+		// After spec 009, the tick iterates the date-filtered canonical
+		// inventory (schedule.TasksForDate(date)), NOT the inventory
+		// passed to NewTick. The factory still passes schedule.Inventory()
+		// to NewTick for completeness; the tick does the filtering.
 		var err error
-		tk, err = tick.NewTick(context.Background(), inventory, pub, clock, metrics)
+		tk, err = tick.NewTick(context.Background(), schedule.Inventory(), pub, clock, metrics)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -72,6 +67,9 @@ var _ = Describe("Tick", func() {
 
 	Describe("initial tick", func() {
 		It("fires before the for-select loop", func() {
+			// 2025-01-04 is a Saturday in Europe/Berlin; the canonical
+			// inventory yields 24 always-fire + 12 Saturday weekday = 36
+			// entries via schedule.TasksForDate.
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
@@ -81,8 +79,8 @@ var _ = Describe("Tick", func() {
 				close(done)
 			}()
 
-			Eventually(func() int { return pub.PublishCallCount() }, "100ms", "5ms").
-				Should(Equal(1))
+			Eventually(func() int { return pub.PublishCallCount() }, "200ms", "5ms").
+				Should(Equal(36))
 
 			cancel()
 			Eventually(done, "200ms", "5ms").Should(BeClosed())
@@ -90,7 +88,9 @@ var _ = Describe("Tick", func() {
 	})
 
 	Describe("publish-per-entry", func() {
-		It("calls Publish once for a single-entry inventory", func() {
+		It("calls Publish once for every entry that fires on the civil date", func() {
+			// 2025-01-04 is a Saturday; the canonical inventory yields
+			// 36 entries (24 always-fire + 12 Saturday weekday).
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			done := make(chan struct{})
@@ -99,33 +99,8 @@ var _ = Describe("Tick", func() {
 				close(done)
 			}()
 
-			Eventually(func() int { return pub.PublishCallCount() }, "100ms", "5ms").
-				Should(Equal(1))
-
-			cancel()
-			Eventually(done, "200ms", "5ms").Should(BeClosed())
-		})
-
-		It("calls Publish once for every entry in the inventory", func() {
-			inventory = []schedule.TaskDefinition{
-				{Slug: "a", TitleTemplate: "t", Recurrence: schedule.RecurrenceDaily},
-				{Slug: "b", TitleTemplate: "t", Recurrence: schedule.RecurrenceWeekly},
-				{Slug: "c", TitleTemplate: "t", Recurrence: schedule.RecurrenceMonthly},
-			}
-			var err error
-			tk, err = tick.NewTick(context.Background(), inventory, pub, clock, metrics)
-			Expect(err).NotTo(HaveOccurred())
-
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-			done := make(chan struct{})
-			go func() {
-				_ = tk.Run(ctx)
-				close(done)
-			}()
-
-			Eventually(func() int { return pub.PublishCallCount() }, "100ms", "5ms").
-				Should(Equal(3))
+			Eventually(func() int { return pub.PublishCallCount() }, "200ms", "5ms").
+				Should(Equal(36))
 
 			cancel()
 			Eventually(done, "200ms", "5ms").Should(BeClosed())
@@ -135,9 +110,10 @@ var _ = Describe("Tick", func() {
 	Describe("Europe/Berlin date conversion", func() {
 		It("converts winter UTC to next-day Berlin civil date", func() {
 			clock.SetNow(libtimetest.ParseDateTime("2025-01-04T23:30:00Z"))
-			inventory = []schedule.TaskDefinition{{Slug: "x"}}
+			// 2025-01-05 is a Sunday; the canonical inventory yields
+			// 24 always-fire + 9 Sunday weekday = 33 entries.
 			var err error
-			tk, err = tick.NewTick(context.Background(), inventory, pub, clock, metrics)
+			tk, err = tick.NewTick(context.Background(), schedule.Inventory(), pub, clock, metrics)
 			Expect(err).NotTo(HaveOccurred())
 
 			ctx, cancel := context.WithCancel(context.Background())
@@ -148,8 +124,8 @@ var _ = Describe("Tick", func() {
 				close(done)
 			}()
 
-			Eventually(func() int { return pub.PublishCallCount() }, "100ms", "5ms").
-				Should(Equal(1))
+			Eventually(func() int { return pub.PublishCallCount() }, "200ms", "5ms").
+				Should(Equal(33))
 
 			_, _, gotDate := pub.PublishArgsForCall(0)
 			Expect(gotDate).To(Equal(schedule.NewDate(2025, time.January, 5)))
@@ -160,9 +136,10 @@ var _ = Describe("Tick", func() {
 
 		It("converts summer UTC to next-day Berlin civil date (CEST)", func() {
 			clock.SetNow(libtimetest.ParseDateTime("2025-07-15T23:30:00Z"))
-			inventory = []schedule.TaskDefinition{{Slug: "x"}}
+			// 2025-07-16 is a Wednesday; the canonical inventory yields
+			// 24 always-fire + 0 weekday = 24 entries.
 			var err error
-			tk, err = tick.NewTick(context.Background(), inventory, pub, clock, metrics)
+			tk, err = tick.NewTick(context.Background(), schedule.Inventory(), pub, clock, metrics)
 			Expect(err).NotTo(HaveOccurred())
 
 			ctx, cancel := context.WithCancel(context.Background())
@@ -173,8 +150,8 @@ var _ = Describe("Tick", func() {
 				close(done)
 			}()
 
-			Eventually(func() int { return pub.PublishCallCount() }, "100ms", "5ms").
-				Should(Equal(1))
+			Eventually(func() int { return pub.PublishCallCount() }, "200ms", "5ms").
+				Should(Equal(24))
 
 			_, _, gotDate := pub.PublishArgsForCall(0)
 			Expect(gotDate).To(Equal(schedule.NewDate(2025, time.July, 16)))
@@ -184,49 +161,18 @@ var _ = Describe("Tick", func() {
 		})
 	})
 
-	Describe("empty inventory", func() {
-		It("updates the gauge but does not call Publish or Inc", func() {
-			inventory = []schedule.TaskDefinition{}
-			var err error
-			tk, err = tick.NewTick(context.Background(), inventory, pub, clock, metrics)
-			Expect(err).NotTo(HaveOccurred())
-
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-			done := make(chan struct{})
-			go func() {
-				_ = tk.Run(ctx)
-				close(done)
-			}()
-
-			Eventually(
-				func() int { return metrics.SetLastTickTimestampCallCount() },
-				"100ms",
-				"5ms",
-			).Should(Equal(1))
-
-			Expect(pub.PublishCallCount()).To(Equal(0))
-			Expect(metrics.IncPublishedCallCount()).To(Equal(0))
-
-			cancel()
-			Eventually(done, "200ms", "5ms").Should(BeClosed())
-		})
-	})
-
 	Describe("per-task error isolation", func() {
 		It("continues publishing after a Publish error", func() {
-			inventory = []schedule.TaskDefinition{
-				{Slug: "a", TitleTemplate: "t", Recurrence: schedule.RecurrenceWeekly},
-				{Slug: "b", TitleTemplate: "t", Recurrence: schedule.RecurrenceWeekly},
-				{Slug: "c", TitleTemplate: "t", Recurrence: schedule.RecurrenceWeekly},
-			}
+			// Use the canonical inventory filtered for 2025-01-04 (Saturday).
+			// 36 entries expected. The first 3 calls fail, the rest succeed.
+			// Verify by count: 3 errors + 33 successes = 36 total.
 			var err error
-			tk, err = tick.NewTick(context.Background(), inventory, pub, clock, metrics)
+			tk, err = tick.NewTick(context.Background(), schedule.Inventory(), pub, clock, metrics)
 			Expect(err).NotTo(HaveOccurred())
 
 			pub.PublishReturnsOnCall(0, errors.New(context.Background(), "kafka down"))
-			pub.PublishReturnsOnCall(1, nil)
-			pub.PublishReturnsOnCall(2, nil)
+			pub.PublishReturnsOnCall(1, errors.New(context.Background(), "kafka down"))
+			pub.PublishReturnsOnCall(2, errors.New(context.Background(), "kafka down"))
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -236,35 +182,34 @@ var _ = Describe("Tick", func() {
 				close(done)
 			}()
 
-			Eventually(func() int { return pub.PublishCallCount() }, "100ms", "5ms").
-				Should(Equal(3))
-			Eventually(func() int { return metrics.IncPublishedCallCount() }, "100ms", "5ms").
-				Should(Equal(3))
+			Eventually(func() int { return pub.PublishCallCount() }, "200ms", "5ms").
+				Should(Equal(36))
+			Eventually(func() int { return metrics.IncPublishedCallCount() }, "200ms", "5ms").
+				Should(Equal(36))
 
 			var errorCount, successCount int
-			for i := 0; i < 3; i++ {
-				r, kind := metrics.IncPublishedArgsForCall(i)
-				Expect(kind).To(Equal("weekly"))
+			for i := 0; i < 36; i++ {
+				r, _ := metrics.IncPublishedArgsForCall(i)
 				if r == "error" {
 					errorCount++
 				} else {
 					successCount++
 				}
 			}
-			Expect(errorCount).To(Equal(1))
-			Expect(successCount).To(Equal(2))
+			Expect(errorCount).To(Equal(3))
+			Expect(successCount).To(Equal(33))
 
 			cancel()
 			Eventually(done, "200ms", "5ms").Should(BeClosed())
 		})
 
 		It("increments the counter labeled with the task's recurrence kind", func() {
-			inventory = []schedule.TaskDefinition{
-				{Slug: "a", TitleTemplate: "t", Recurrence: schedule.RecurrenceDaily},
-				{Slug: "b", TitleTemplate: "t", Recurrence: schedule.RecurrenceMonthly},
-			}
+			// 2025-01-04 is a Saturday; 24 always-fire (monthly+quarterly+yearly)
+			// + 12 Saturday weekday. Fail every publish to focus on the
+			// kind labels. The canonical inventory contains 0 Daily and
+			// 0 Weekly entries; only weekday/monthly/quarterly/yearly fire.
 			var err error
-			tk, err = tick.NewTick(context.Background(), inventory, pub, clock, metrics)
+			tk, err = tick.NewTick(context.Background(), schedule.Inventory(), pub, clock, metrics)
 			Expect(err).NotTo(HaveOccurred())
 
 			pub.PublishReturns(errors.New(context.Background(), "boom"))
@@ -277,17 +222,19 @@ var _ = Describe("Tick", func() {
 				close(done)
 			}()
 
-			Eventually(func() int { return metrics.IncPublishedCallCount() }, "100ms", "5ms").
-				Should(Equal(2))
+			Eventually(func() int { return metrics.IncPublishedCallCount() }, "200ms", "5ms").
+				Should(Equal(36))
 
 			kinds := map[string]bool{}
-			for i := 0; i < 2; i++ {
+			for i := 0; i < 36; i++ {
 				r, kind := metrics.IncPublishedArgsForCall(i)
 				Expect(r).To(Equal("error"))
 				kinds[kind] = true
 			}
-			Expect(kinds).To(HaveKey("daily"))
+			Expect(kinds).To(HaveKey("weekday"))
 			Expect(kinds).To(HaveKey("monthly"))
+			Expect(kinds).To(HaveKey("quarterly"))
+			Expect(kinds).To(HaveKey("yearly"))
 
 			cancel()
 			Eventually(done, "200ms", "5ms").Should(BeClosed())
@@ -296,15 +243,9 @@ var _ = Describe("Tick", func() {
 
 	Describe("context cancellation", func() {
 		It("exits the per-task loop early when ctx is cancelled mid-tick", func() {
-			inventory = []schedule.TaskDefinition{
-				{Slug: "a", TitleTemplate: "t"},
-				{Slug: "b", TitleTemplate: "t"},
-				{Slug: "c", TitleTemplate: "t"},
-				{Slug: "d", TitleTemplate: "t"},
-				{Slug: "e", TitleTemplate: "t"},
-			}
+			// Use a 2025-01-04 (Saturday) tick; cancel on the first publish.
 			var err error
-			tk, err = tick.NewTick(context.Background(), inventory, pub, clock, metrics)
+			tk, err = tick.NewTick(context.Background(), schedule.Inventory(), pub, clock, metrics)
 			Expect(err).NotTo(HaveOccurred())
 
 			ctx, cancel := context.WithCancel(context.Background())
@@ -324,7 +265,7 @@ var _ = Describe("Tick", func() {
 				close(done)
 			}()
 
-			Eventually(func() int { return pub.PublishCallCount() }, "100ms", "5ms").
+			Eventually(func() int { return pub.PublishCallCount() }, "200ms", "5ms").
 				Should(Equal(1))
 			Eventually(done, "200ms", "5ms").Should(BeClosed())
 
@@ -340,12 +281,12 @@ var _ = Describe("Tick", func() {
 				close(done)
 			}()
 
-			Eventually(func() int { return pub.PublishCallCount() }, "100ms", "5ms").
+			Eventually(func() int { return pub.PublishCallCount() }, "200ms", "5ms").
 				Should(BeNumerically(">=", 1))
 
 			cancel()
 
-			Eventually(done, "100ms", "5ms").Should(BeClosed())
+			Eventually(done, "200ms", "5ms").Should(BeClosed())
 		})
 	})
 
@@ -361,7 +302,7 @@ var _ = Describe("Tick", func() {
 
 			Eventually(
 				func() int { return metrics.SetLastTickTimestampCallCount() },
-				"100ms",
+				"200ms",
 				"5ms",
 			).Should(Equal(1))
 
@@ -375,22 +316,18 @@ var _ = Describe("Tick", func() {
 	})
 
 	Describe("recurrence label coverage", func() {
-		DescribeTable(
-			"records the kind for each RecurrenceKind value",
-			func(kind schedule.RecurrenceKind) {
-				inventory = []schedule.TaskDefinition{
-					{Slug: "x", TitleTemplate: "t", Recurrence: kind},
-				}
-				var err error
-				tk, err = tick.NewTick(
-					context.Background(),
-					inventory,
-					pub,
-					clock,
-					metrics,
-				)
-				Expect(err).NotTo(HaveOccurred())
-
+		// After spec 009, the tick iterates the date-filtered canonical
+		// inventory. The canonical inventory contains 0 RecurrenceDaily
+		// and 0 RecurrenceWeekly entries (those kinds are reserved for
+		// future use); on 2025-01-04 (Saturday) the firing kinds are
+		// weekday (12), monthly (18), quarterly (2), and yearly (4).
+		// The metric label coverage test asserts all 6 kinds register
+		// zero-valued series at init time (see "Prometheus
+		// pre-initialization" Describe) and that each kind present in
+		// the date-filtered slice is recorded in the success counter.
+		It(
+			"records the kind for each RecurrenceKind value present on 2025-01-04 (Saturday)",
+			func() {
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
 				done := make(chan struct{})
@@ -401,55 +338,86 @@ var _ = Describe("Tick", func() {
 
 				Eventually(
 					func() int { return metrics.IncPublishedCallCount() },
-					"100ms",
+					"200ms",
 					"5ms",
-				).Should(Equal(1))
+				).Should(BeNumerically(">=", 4))
 
-				r, got := metrics.IncPublishedArgsForCall(0)
-				Expect(r).To(Equal("success"))
-				Expect(got).To(Equal(string(kind)))
+				kinds := map[string]bool{}
+				for i := 0; i < metrics.IncPublishedCallCount(); i++ {
+					r, kind := metrics.IncPublishedArgsForCall(i)
+					Expect(r).To(Equal("success"))
+					kinds[kind] = true
+				}
+				// 2025-01-04 (Saturday) fires weekday, monthly, quarterly, yearly.
+				for _, k := range []string{
+					"weekday", "monthly", "quarterly", "yearly",
+				} {
+					Expect(kinds).To(HaveKey(k),
+						"expected metric label %q to be observed on 2025-01-04", k)
+				}
 
 				cancel()
 				Eventually(done, "200ms", "5ms").Should(BeClosed())
 			},
-			Entry("daily", schedule.RecurrenceDaily),
-			Entry("weekly", schedule.RecurrenceWeekly),
-			Entry("monthly", schedule.RecurrenceMonthly),
-			Entry("quarterly", schedule.RecurrenceQuarterly),
-			Entry("yearly", schedule.RecurrenceYearly),
 		)
 	})
 
 	Describe("full inventory", func() {
-		It("publishes every entry in the canonical inventory regardless of the civil date", func() {
-			// Derive expected count at test time (NOT a hardcoded literal).
-			expected := len(schedule.Inventory())
-			Expect(expected).To(BeNumerically(">", 0)) // sanity: inventory is non-empty
+		var berlin *time.Location
 
+		BeforeEach(func() {
+			var err error
+			berlin, err = time.LoadLocation("Europe/Berlin")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("publishes every entry that fires on the given civil date", func() {
+			// Derive expected count at test time (NOT a hardcoded literal).
+			// The tick now filters by date via schedule.TasksForDate(date);
+			// a Tuesday publishes 0 weekday entries, a Saturday publishes
+			// 12, a Sunday publishes 9, plus the always-fire kinds
+			// (18 monthly + 2 quarterly + 4 yearly = 24 always-fire on any
+			// date in 2025/2026).
+			// Use the same accessor the tick uses to guarantee the two
+			// stay in sync. Each iteration uses fresh pub/metrics mocks
+			// so call counts are isolated.
 			for _, instant := range []string{
-				"2025-01-15T10:00:00Z", // Wednesday
-				"2025-07-04T10:00:00Z", // Friday (different month)
+				"2025-01-07T10:00:00Z", // Tuesday
+				"2025-01-04T10:00:00Z", // Saturday
+				"2025-01-05T10:00:00Z", // Sunday
+				"2025-07-04T10:00:00Z", // Friday (different month, no weekday-kind fires)
 				"2026-03-01T10:00:00Z", // Sunday (different year)
 			} {
+				localPub := &pubmocks.PublisherPublisher{}
+				localPub.PublishReturns(nil)
+				localMetrics := &pubmocks.TickMetrics{}
 				clock.SetNow(libtimetest.ParseDateTime(instant))
-				tk, err := tick.NewTick(
+				instanceTk, err := tick.NewTick(
 					context.Background(),
 					schedule.Inventory(),
-					pub,
+					localPub,
 					clock,
-					metrics,
+					localMetrics,
 				)
 				Expect(err).NotTo(HaveOccurred())
+
+				// Compute the civil date the same way the tick does: clock
+				// -> Berlin -> civil date.
+				now := clock.Now().Time().In(berlin)
+				y, m, d := now.Date()
+				civilDate := schedule.NewDate(y, m, d)
+				expected := len(schedule.TasksForDate(civilDate))
+				Expect(expected).To(BeNumerically(">", 0)) // sanity: at least one entry fires
 
 				ctx, cancel := context.WithCancel(context.Background())
 				done := make(chan struct{})
 				go func() {
-					_ = tk.Run(ctx)
+					_ = instanceTk.Run(ctx)
 					close(done)
 				}()
 
 				Eventually(
-					func() int { return pub.PublishCallCount() },
+					func() int { return localPub.PublishCallCount() },
 					"200ms",
 					"5ms",
 				).Should(Equal(expected))
@@ -461,7 +429,7 @@ var _ = Describe("Tick", func() {
 })
 
 var _ = Describe("Prometheus pre-initialization", func() {
-	It("registers the counter with 10 zero-valued series", func() {
+	It("registers the counter with 12 zero-valued series", func() {
 		families, err := prometheus.DefaultGatherer.Gather()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -474,7 +442,7 @@ var _ = Describe("Prometheus pre-initialization", func() {
 		}
 		Expect(published).NotTo(BeNil())
 		metrics := published.GetMetric()
-		Expect(metrics).To(HaveLen(10))
+		Expect(metrics).To(HaveLen(12))
 
 		seen := map[string]bool{}
 		for _, m := range metrics {
@@ -489,11 +457,13 @@ var _ = Describe("Prometheus pre-initialization", func() {
 				}
 			}
 			Expect(r).To(BeElementOf("success", "error"))
-			Expect(k).To(BeElementOf("daily", "weekly", "monthly", "quarterly", "yearly"))
+			Expect(
+				k,
+			).To(BeElementOf("daily", "weekly", "weekday", "monthly", "quarterly", "yearly"))
 			seen[r+"/"+k] = true
 			Expect(m.GetCounter().GetValue()).To(Equal(0.0))
 		}
-		Expect(seen).To(HaveLen(10))
+		Expect(seen).To(HaveLen(12))
 	})
 
 	It("registers the gauge with zero value", func() {

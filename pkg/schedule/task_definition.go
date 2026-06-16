@@ -23,12 +23,24 @@ type TaskDefinition struct {
 	// Recurrence classifies the cadence (daily/weekly/monthly/quarterly/yearly).
 	Recurrence RecurrenceKind
 
-	// Weekday is the day of the week the entry is intended for. It is
-	// consulted ONLY when Recurrence == RecurrenceWeekly: the publisher
-	// appends the lowercase 3-letter weekday abbreviation to the weekly
-	// period token (e.g. "2026W25-sat"). For the other four RecurrenceKinds
-	// (daily / monthly / quarterly / yearly) Weekday is ignored and MUST
-	// remain the zero value (time.Sunday).
+	// Weekday is the day of the week the entry is intended for. Its
+	// semantics depend on the entry's Recurrence:
+	//
+	//   - RecurrenceWeekday: REQUIRED (non-zero). The entry fires only on
+	//     the day whose weekday equals this value; the publisher appends
+	//     the lowercase 3-letter weekday abbreviation to the period token
+	//     (e.g. "2026W25-sat"). The disambiguation from RecurrenceWeekly
+	//     was introduced in spec 009.
+	//
+	//   - RecurrenceWeekly: FORBIDDEN (must be the zero value, time.Sunday).
+	//     The entry fires on every day inside its ISO week (always-fire
+	//     semantic introduced in spec 006); this field is not consulted.
+	//     The inventory contains zero RecurrenceWeekly entries after
+	//     spec 009 — the kind is reserved for future use.
+	//
+	//   - RecurrenceDaily / RecurrenceMonthly / RecurrenceQuarterly /
+	//     RecurrenceYearly: ignored. May be the zero value or any other
+	//     value without effect on firing or rendering.
 	Weekday time.Weekday
 }
 

@@ -54,13 +54,13 @@ var _ = Describe("example.yaml", func() {
 		Expect(yaml.UnmarshalStrict(raw, &sch)).To(Succeed())
 		Expect(sch.Spec.Vault).To(Equal("personal"))
 		Expect(sch.Spec.Title).To(Equal("Weekly Review"))
-		Expect(sch.Spec.Schedule.Recurrence).To(Equal("Weekly"))
+		Expect(sch.Spec.Schedule.Recurrence).To(Equal("Weekday"))
 		Expect(sch.Spec.Schedule.Weekday).To(Equal("Saturday"))
 		Expect(sch.Spec.Template.Body).To(ContainSubstring("Reflect on the past week."))
 		// sigs.k8s.io/yaml round-trips YAML through JSON, so YAML integers
 		// become float64 in a map[string]interface{}; assert numerically.
 		Expect(sch.Spec.Template.Frontmatter["priority"]).To(BeNumerically("==", 2))
-		Expect(sch.Spec.Template.Frontmatter).To(HaveKeyWithValue("recurring", "Weekly"))
+		Expect(sch.Spec.Template.Frontmatter).To(HaveKeyWithValue("recurring", "Weekday"))
 	})
 
 	It("rejects an unknown field (strict-unmarshal guard)", func() {
@@ -73,7 +73,7 @@ spec:
   vault: personal
   title: Weekly Review
   schedule:
-    recurrence: Weekly
+    recurrence: Weekday
     weeday: Saturday
 `)
 		var s v1.Schedule

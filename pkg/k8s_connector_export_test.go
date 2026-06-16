@@ -12,12 +12,12 @@ func VaultPatternForTest() string { return vaultPattern }
 // RecurrenceEnumForTest returns the closed set of valid recurrence strings.
 func RecurrenceEnumForTest() []string { return recurrenceEnum }
 
-// WeekdayRequiredIfWeeklyRuleForTest returns the CEL rule from XValidations[0].
-func WeekdayRequiredIfWeeklyRuleForTest() string { return weekdayRequiredIfWeeklyRule }
+// WeekdayRequiredIfWeekdayRuleForTest returns the CEL rule from XValidations[0].
+func WeekdayRequiredIfWeekdayRuleForTest() string { return weekdayRequiredIfWeekdayRule }
 
-// WeekdayRequiredIfWeeklyMessageForTest returns the human-readable error
+// WeekdayRequiredIfWeekdayMessageForTest returns the human-readable error
 // message the API server emits when the CEL rule fails.
-func WeekdayRequiredIfWeeklyMessageForTest() string { return weekdayRequiredIfWeeklyMessage }
+func WeekdayRequiredIfWeekdayMessageForTest() string { return weekdayRequiredIfWeekdayMessage }
 
 // VaultRegexForTest returns a pre-compiled *regexp.Regexp matching vaultPattern.
 // Used by the validation test's validateSpec helper.

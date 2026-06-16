@@ -38,15 +38,42 @@ type SchedulesGetter interface {
 
 // ScheduleInterface has methods to work with Schedule resources.
 type ScheduleInterface interface {
-	Create(ctx context.Context, schedule *taskbenjaminborbedev1.Schedule, opts metav1.CreateOptions) (*taskbenjaminborbedev1.Schedule, error)
-	Update(ctx context.Context, schedule *taskbenjaminborbedev1.Schedule, opts metav1.UpdateOptions) (*taskbenjaminborbedev1.Schedule, error)
+	Create(
+		ctx context.Context,
+		schedule *taskbenjaminborbedev1.Schedule,
+		opts metav1.CreateOptions,
+	) (*taskbenjaminborbedev1.Schedule, error)
+	Update(
+		ctx context.Context,
+		schedule *taskbenjaminborbedev1.Schedule,
+		opts metav1.UpdateOptions,
+	) (*taskbenjaminborbedev1.Schedule, error)
 	Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error
-	DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error
-	Get(ctx context.Context, name string, opts metav1.GetOptions) (*taskbenjaminborbedev1.Schedule, error)
+	DeleteCollection(
+		ctx context.Context,
+		opts metav1.DeleteOptions,
+		listOpts metav1.ListOptions,
+	) error
+	Get(
+		ctx context.Context,
+		name string,
+		opts metav1.GetOptions,
+	) (*taskbenjaminborbedev1.Schedule, error)
 	List(ctx context.Context, opts metav1.ListOptions) (*taskbenjaminborbedev1.ScheduleList, error)
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (result *taskbenjaminborbedev1.Schedule, err error)
-	Apply(ctx context.Context, schedule *applyconfigurationtaskbenjaminborbedev1.ScheduleApplyConfiguration, opts metav1.ApplyOptions) (result *taskbenjaminborbedev1.Schedule, err error)
+	Patch(
+		ctx context.Context,
+		name string,
+		pt types.PatchType,
+		data []byte,
+		opts metav1.PatchOptions,
+		subresources ...string,
+	) (result *taskbenjaminborbedev1.Schedule, err error)
+	Apply(
+		ctx context.Context,
+		schedule *applyconfigurationtaskbenjaminborbedev1.ScheduleApplyConfiguration,
+		opts metav1.ApplyOptions,
+	) (result *taskbenjaminborbedev1.Schedule, err error)
 	ScheduleExpansion
 }
 

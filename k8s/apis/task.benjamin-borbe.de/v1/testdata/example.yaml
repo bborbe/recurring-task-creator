@@ -7,7 +7,7 @@ spec:
   vault: personal
   title: Weekly Review
   schedule:
-    recurrence: Weekly
+    recurrence: Weekday
     weekday: Saturday
   template:
     body: |
@@ -20,4 +20,4 @@ spec:
       status: in_progress
       page_type: task
       assignee: bborbe
-      recurring: Weekly
+      recurring: Weekday

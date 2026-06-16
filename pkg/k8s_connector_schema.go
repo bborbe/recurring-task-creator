@@ -10,27 +10,31 @@ import (
 
 // recurrenceEnum is the closed set of valid recurrence strings on the
 // CRD wire. Capitalized to match Go's time.Weekday.String() casing and
-// the spec's design pins (Spec 6 period tokens emit the same casing).
-// Lives in this package so the schema is self-contained; do NOT import
-// pkg/schedule.RecurrenceKind (those constants are lowercase Go-internal
-// values; the CRD enum is a separate API contract).
-var recurrenceEnum = []string{"Daily", "Weekly", "Monthly", "Quarterly", "Yearly"}
+// Spec 6/Spec 9's period-token output. Mirrors the post-Spec-9 6-kind
+// Go-level RecurrenceKind set (pkg/schedule/recurrence.go): Weekly is
+// always-fire ("YYYYWww") while Weekday targets a specific weekday
+// ("YYYYWww-<3-letter-abbrev>"). Lives in this package so the schema
+// is self-contained; do NOT import pkg/schedule.RecurrenceKind (those
+// constants are lowercase Go-internal values; the CRD enum is a
+// separate API contract).
+var recurrenceEnum = []string{"Daily", "Weekly", "Weekday", "Monthly", "Quarterly", "Yearly"}
 
 // vaultPattern is the regex the API server enforces on spec.vault.
 // Matches the slug convention used in pkg/schedule/inventory.go.
 const vaultPattern = "^[a-z][a-z0-9-]*$"
 
-// weekdayRequiredIfWeeklyRule is the CEL rule encoded in
+// weekdayRequiredIfWeekdayRule is the CEL rule encoded in
 // schedule.XValidations. self is bound to the ScheduleTrigger object;
-// `has(self.weekday)` checks field presence (not just non-empty
-// string — this is the OpenAPI semantic). The literal 'Weekly' matches
-// the capitalized recurrenceEnum.
-const weekdayRequiredIfWeeklyRule = "self.recurrence == 'Weekly' ? has(self.weekday) : !has(self.weekday)"
+// `has(self.weekday)` checks field presence (not just non-empty string
+// — this is the OpenAPI semantic). 'Weekday' is the recurrence kind
+// that targets a specific weekday (Spec 9); 'Weekly' (always-fire)
+// forbids the field.
+const weekdayRequiredIfWeekdayRule = "self.recurrence == 'Weekday' ? has(self.weekday) : !has(self.weekday)"
 
-// weekdayRequiredIfWeeklyMessage is the human-readable error the API
+// weekdayRequiredIfWeekdayMessage is the human-readable error the API
 // server emits when the rule fails. Surfaced to the operator via
 // `kubectl apply` output.
-const weekdayRequiredIfWeeklyMessage = "weekday is required when recurrence is 'Weekly', and forbidden otherwise"
+const weekdayRequiredIfWeekdayMessage = "weekday is required when recurrence is 'Weekday', and forbidden otherwise"
 
 // scheduleSpecSchemaPtr returns a pointer to the schedule spec schema.
 // Convenience wrapper for callers that need the *JSONSchemaProps form
@@ -66,17 +70,17 @@ func scheduleSpecSchema() apiextensionsv1.JSONSchemaProps {
 				Properties: map[string]apiextensionsv1.JSONSchemaProps{
 					"recurrence": {
 						Type:        "string",
-						Description: "One of: Daily, Weekly, Monthly, Quarterly, Yearly.",
+						Description: "One of: Daily, Weekly, Weekday, Monthly, Quarterly, Yearly.",
 						Enum:        jsonEnumValues(recurrenceEnum),
 					},
 					"weekday": {
 						Type:        "string",
-						Description: "time.Weekday string (Monday..Sunday). Required when recurrence is 'Weekly'; forbidden otherwise.",
+						Description: "time.Weekday string (Monday..Sunday). Required when recurrence is 'Weekday'; forbidden otherwise.",
 					},
 				},
 				XValidations: apiextensionsv1.ValidationRules{{
-					Rule:    weekdayRequiredIfWeeklyRule,
-					Message: weekdayRequiredIfWeeklyMessage,
+					Rule:    weekdayRequiredIfWeekdayRule,
+					Message: weekdayRequiredIfWeekdayMessage,
 				}},
 			},
 			"template": {

@@ -33,7 +33,7 @@ var _ = Describe("scheduleSpecSchema CEL validation", func() {
 	// vars and returns the human-readable error message (or "" when the
 	// rule passes).
 	evalRule := func(vars map[string]interface{}) string {
-		rule := pkg.WeekdayRequiredIfWeeklyRuleForTest()
+		rule := pkg.WeekdayRequiredIfWeekdayRuleForTest()
 		// The CEL rule is bound to a `self` value of type message with
 		// optional string fields. Map types satisfy CEL's map semantics
 		// well enough for this test: `has(self.field)` is checked via
@@ -52,7 +52,7 @@ var _ = Describe("scheduleSpecSchema CEL validation", func() {
 		if b, ok := out.(types.Bool); ok && bool(b) {
 			return "" // rule passed
 		}
-		return pkg.WeekdayRequiredIfWeeklyMessageForTest()
+		return pkg.WeekdayRequiredIfWeekdayMessageForTest()
 	}
 
 	// validateSpec runs the regex / enum / CEL checks against a
@@ -86,10 +86,23 @@ var _ = Describe("scheduleSpecSchema CEL validation", func() {
 			"vault": "personal",
 			"title": "Weekly Review",
 			"schedule": map[string]interface{}{
-				"recurrence": "Weekly",
+				"recurrence": "Weekday",
 				"weekday":    "Saturday",
 			},
 			"template": map[string]interface{}{"body": "Reflect."},
+		}
+		Expect(validateSpec(spec)).To(Succeed())
+	})
+
+	It("accepts a Weekly (always-fire) schedule without weekday", func() {
+		spec := map[string]interface{}{
+			"vault": "personal",
+			"title": "Monday Standup",
+			"schedule": map[string]interface{}{
+				"recurrence": "Weekly",
+				// weekday absent — Weekly is always-fire per Spec 9
+			},
+			"template": map[string]interface{}{"body": "."},
 		}
 		Expect(validateSpec(spec)).To(Succeed())
 	})
@@ -107,12 +120,12 @@ var _ = Describe("scheduleSpecSchema CEL validation", func() {
 		Expect(err.Error()).To(ContainSubstring("recurrence"))
 	})
 
-	It("rejects a weekly schedule without weekday", func() {
+	It("rejects a Weekday schedule without weekday", func() {
 		spec := map[string]interface{}{
 			"vault": "personal",
 			"title": "Foo",
 			"schedule": map[string]interface{}{
-				"recurrence": "Weekly",
+				"recurrence": "Weekday",
 				// weekday absent
 			},
 		}
@@ -121,7 +134,21 @@ var _ = Describe("scheduleSpecSchema CEL validation", func() {
 		Expect(err.Error()).To(ContainSubstring("weekday"))
 	})
 
-	It("rejects a non-weekly schedule that sets weekday", func() {
+	It("rejects a Weekly schedule that sets weekday (Weekly is always-fire)", func() {
+		spec := map[string]interface{}{
+			"vault": "personal",
+			"title": "Foo",
+			"schedule": map[string]interface{}{
+				"recurrence": "Weekly",
+				"weekday":    "Saturday",
+			},
+		}
+		err := validateSpec(spec)
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("weekday"))
+	})
+
+	It("rejects a non-weekday schedule that sets weekday", func() {
 		spec := map[string]interface{}{
 			"vault": "personal",
 			"title": "Foo",

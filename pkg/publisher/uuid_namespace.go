@@ -26,22 +26,33 @@ import (
 var uuidNamespace uuid.UUID = uuid.MustParse("f4e1c5b7-3a82-4d59-9e7c-1c8b9d2e4f6a")
 
 // buildPeriodToken returns the period-anchored token for the given
-// (recurrence, date) pair. The token is the same string the corresponding
-// title-rendering formatter produces — "YYYY-MM-DD" for daily,
-// "YYYYWNN-<3-letter-lowercase-weekday>" for weekly (the suffix is taken
-// from the entry's Weekday field, NOT the date's weekday), "YYYY-MM" for
-// monthly, "YYYYQN" for quarterly, "YYYY" for yearly. Anchoring by
-// def.Recurrence (not def.Weekday) is intentional: the publisher's
-// identifier layer is period-stable, the schedule's intended weekday is a
-// hint about which day inside the period the user wants to see the task.
+// (recurrence, date, weekday) triple. The token is the same string the
+// corresponding title-rendering formatter produces — "YYYY-MM-DD" for
+// daily, "YYYYWNN" for weekly (no weekday suffix; RecurrenceWeekly is
+// always-fire and does not carry a weekday), "YYYYWNN-<3-letter-lowercase-
+// weekday-abbrev>" for weekday (RecurrenceWeekday carries the target
+// weekday in the entry's Weekday field, NOT the date's weekday),
+// "YYYY-MM" for monthly, "YYYYQN" for quarterly, "YYYY" for yearly.
+// Anchoring by def.Recurrence (not def.Weekday) is intentional: the
+// publisher's identifier layer is period-stable, the schedule's intended
+// weekday is a hint about which day inside the period the user wants
+// to see the task. Berlin local time governs the period boundary;
+// the date passed in is already Berlin-local (the tick converts
+// wall-clock to Berlin civil date before calling Publish).
 //
-// Berlin local time governs the period boundary; the date passed in is
-// already Berlin-local (the tick converts wall-clock to Berlin civil date
-// before calling Publish).
+// RecurrenceWeekly was the only kind carrying a weekday suffix in
+// spec 008; spec 009 split it into RecurrenceWeekly (always-fire, no
+// suffix) and RecurrenceWeekday (per-weekday, with suffix) to fix
+// the regression where Saturday/Sunday tasks materialized on every
+// weekday of the ISO week. Existing RecurrenceWeekday entries retain
+// the byte-identical period token the pre-spec-9 RecurrenceWeekly
+// entries produced for the same (slug, date) — UUID5 identifiers
+// are preserved by construction.
 //
-// An unknown RecurrenceKind is a build-time data error (closed enum, no
-// valid runtime reason for a new value), so the function returns an error
-// rather than a sentinel string. The caller wraps with the slug.
+// An unknown RecurrenceKind is a build-time data error (closed enum,
+// no valid runtime reason for a new value), so the function returns
+// an error rather than a sentinel string. The caller wraps with
+// the slug.
 func buildPeriodToken(
 	ctx context.Context,
 	recurrence schedule.RecurrenceKind,
@@ -53,6 +64,9 @@ func buildPeriodToken(
 	case schedule.RecurrenceDaily:
 		return fmtDate(date.Year, int(date.Month), date.Day), nil
 	case schedule.RecurrenceWeekly:
+		isoYear, isoWeek := base.ISOWeek()
+		return fmtIsoWeek(isoYear, isoWeek), nil
+	case schedule.RecurrenceWeekday:
 		isoYear, isoWeek := base.ISOWeek()
 		return fmtIsoWeek(isoYear, isoWeek) + "-" + weekdayAbbrev(weekday), nil
 	case schedule.RecurrenceMonthly:
