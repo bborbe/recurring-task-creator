@@ -6,6 +6,7 @@ package pkg
 
 import (
 	"context"
+	"time"
 
 	"github.com/bborbe/errors"
 	"github.com/golang/glog"
@@ -18,6 +19,18 @@ import (
 
 	v1 "github.com/bborbe/recurring-task-creator/k8s/apis/task.benjamin-borbe.de/v1"
 )
+
+// crdSetupTimeout bounds the CRD install + reconcile sequence so an
+// unreachable API server cannot wedge binary startup. 30s covers a slow
+// kube-apiserver cold-cache; longer would block Kafka/HTTP boot for no
+// gain.
+const crdSetupTimeout = 30 * time.Second
+
+// K8sConnector is shipped by Spec 008 (scaffolding) but is intentionally
+// NOT yet wired into main.go / cmd/run-once/main.go. The Run() integration
+// — and the informer that consumes Schedule CRs — lands in Spec B per
+// 008's Non-goals ("DOES NOT introduce an informer / Listen wiring"). The
+// type, schema, mock, and tests ship here so Spec B is a pure wiring change.
 
 // ConfigBuilder is the test seam for loading the rest.Config. Production
 // wiring passes rest.InClusterConfig; tests pass a closure that returns
@@ -52,6 +65,8 @@ type k8sConnector struct {
 }
 
 func (k *k8sConnector) SetupCustomResourceDefinition(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, crdSetupTimeout)
+	defer cancel()
 	config, err := k.configBuilder()
 	if err != nil {
 		return errors.Wrap(ctx, err, "build k8s config")
