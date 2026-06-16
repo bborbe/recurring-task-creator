@@ -43,9 +43,7 @@ func ScheduleTemplate() *ScheduleTemplateApplyConfiguration {
 // WithBody sets the Body field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Body field is set to the value of the last call.
-func (b *ScheduleTemplateApplyConfiguration) WithBody(
-	value string,
-) *ScheduleTemplateApplyConfiguration {
+func (b *ScheduleTemplateApplyConfiguration) WithBody(value string) *ScheduleTemplateApplyConfiguration {
 	b.Body = &value
 	return b
 }
@@ -53,9 +51,7 @@ func (b *ScheduleTemplateApplyConfiguration) WithBody(
 // WithFrontmatter sets the Frontmatter field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Frontmatter field is set to the value of the last call.
-func (b *ScheduleTemplateApplyConfiguration) WithFrontmatter(
-	value lib.TaskFrontmatter,
-) *ScheduleTemplateApplyConfiguration {
+func (b *ScheduleTemplateApplyConfiguration) WithFrontmatter(value lib.TaskFrontmatter) *ScheduleTemplateApplyConfiguration {
 	b.Frontmatter = &value
 	return b
 }

@@ -45,9 +45,7 @@ func ScheduleTrigger() *ScheduleTriggerApplyConfiguration {
 // WithRecurrence sets the Recurrence field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Recurrence field is set to the value of the last call.
-func (b *ScheduleTriggerApplyConfiguration) WithRecurrence(
-	value string,
-) *ScheduleTriggerApplyConfiguration {
+func (b *ScheduleTriggerApplyConfiguration) WithRecurrence(value string) *ScheduleTriggerApplyConfiguration {
 	b.Recurrence = &value
 	return b
 }
@@ -55,9 +53,7 @@ func (b *ScheduleTriggerApplyConfiguration) WithRecurrence(
 // WithWeekday sets the Weekday field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Weekday field is set to the value of the last call.
-func (b *ScheduleTriggerApplyConfiguration) WithWeekday(
-	value string,
-) *ScheduleTriggerApplyConfiguration {
+func (b *ScheduleTriggerApplyConfiguration) WithWeekday(value string) *ScheduleTriggerApplyConfiguration {
 	b.Weekday = &value
 	return b
 }

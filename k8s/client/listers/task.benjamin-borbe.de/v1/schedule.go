@@ -43,19 +43,12 @@ type scheduleLister struct {
 
 // NewScheduleLister returns a new ScheduleLister.
 func NewScheduleLister(indexer cache.Indexer) ScheduleLister {
-	return &scheduleLister{
-		listers.New[*taskbenjaminborbedev1.Schedule](
-			indexer,
-			taskbenjaminborbedev1.Resource("schedule"),
-		),
-	}
+	return &scheduleLister{listers.New[*taskbenjaminborbedev1.Schedule](indexer, taskbenjaminborbedev1.Resource("schedule"))}
 }
 
 // Schedules returns an object that can list and get Schedules.
 func (s *scheduleLister) Schedules(namespace string) ScheduleNamespaceLister {
-	return scheduleNamespaceLister{
-		listers.NewNamespaced[*taskbenjaminborbedev1.Schedule](s.ResourceIndexer, namespace),
-	}
+	return scheduleNamespaceLister{listers.NewNamespaced[*taskbenjaminborbedev1.Schedule](s.ResourceIndexer, namespace)}
 }
 
 // ScheduleNamespaceLister helps list and get Schedules.

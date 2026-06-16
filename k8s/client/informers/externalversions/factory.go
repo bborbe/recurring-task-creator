@@ -69,9 +69,7 @@ func WithCustomResyncConfig(resyncConfig map[v1.Object]time.Duration) SharedInfo
 }
 
 // WithTweakListOptions sets a custom filter on all listers of the configured SharedInformerFactory.
-func WithTweakListOptions(
-	tweakListOptions internalinterfaces.TweakListOptionsFunc,
-) SharedInformerOption {
+func WithTweakListOptions(tweakListOptions internalinterfaces.TweakListOptionsFunc) SharedInformerOption {
 	return func(factory *sharedInformerFactory) *sharedInformerFactory {
 		factory.tweakListOptions = tweakListOptions
 		return factory
@@ -110,10 +108,7 @@ func (f *sharedInformerFactory) InformerName() *cache.InformerName {
 }
 
 // NewSharedInformerFactory constructs a new instance of sharedInformerFactory for all namespaces.
-func NewSharedInformerFactory(
-	client versioned.Interface,
-	defaultResync time.Duration,
-) SharedInformerFactory {
+func NewSharedInformerFactory(client versioned.Interface, defaultResync time.Duration) SharedInformerFactory {
 	return NewSharedInformerFactoryWithOptions(client, defaultResync)
 }
 
@@ -122,26 +117,12 @@ func NewSharedInformerFactory(
 // as specified here.
 //
 // Deprecated: Please use NewSharedInformerFactoryWithOptions instead
-func NewFilteredSharedInformerFactory(
-	client versioned.Interface,
-	defaultResync time.Duration,
-	namespace string,
-	tweakListOptions internalinterfaces.TweakListOptionsFunc,
-) SharedInformerFactory {
-	return NewSharedInformerFactoryWithOptions(
-		client,
-		defaultResync,
-		WithNamespace(namespace),
-		WithTweakListOptions(tweakListOptions),
-	)
+func NewFilteredSharedInformerFactory(client versioned.Interface, defaultResync time.Duration, namespace string, tweakListOptions internalinterfaces.TweakListOptionsFunc) SharedInformerFactory {
+	return NewSharedInformerFactoryWithOptions(client, defaultResync, WithNamespace(namespace), WithTweakListOptions(tweakListOptions))
 }
 
 // NewSharedInformerFactoryWithOptions constructs a new instance of a SharedInformerFactory with additional options.
-func NewSharedInformerFactoryWithOptions(
-	client versioned.Interface,
-	defaultResync time.Duration,
-	options ...SharedInformerOption,
-) SharedInformerFactory {
+func NewSharedInformerFactoryWithOptions(client versioned.Interface, defaultResync time.Duration, options ...SharedInformerOption) SharedInformerFactory {
 	factory := &sharedInformerFactory{
 		client:           client,
 		namespace:        v1.NamespaceAll,
@@ -240,10 +221,7 @@ func (f *sharedInformerFactory) WaitForCacheSyncWithContext(ctx context.Context)
 
 // InformerFor returns the SharedIndexInformer for obj using an internal
 // client.
-func (f *sharedInformerFactory) InformerFor(
-	obj runtime.Object,
-	newFunc internalinterfaces.NewInformerFunc,
-) cache.SharedIndexInformer {
+func (f *sharedInformerFactory) InformerFor(obj runtime.Object, newFunc internalinterfaces.NewInformerFunc) cache.SharedIndexInformer {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 
@@ -345,10 +323,7 @@ type SharedInformerFactory interface {
 
 	// InformerFor returns the SharedIndexInformer for obj using an internal
 	// client.
-	InformerFor(
-		obj runtime.Object,
-		newFunc internalinterfaces.NewInformerFunc,
-	) cache.SharedIndexInformer
+	InformerFor(obj runtime.Object, newFunc internalinterfaces.NewInformerFunc) cache.SharedIndexInformer
 
 	Task() taskbenjaminborbede.Interface
 }

@@ -44,9 +44,7 @@ func ScheduleStatus() *ScheduleStatusApplyConfiguration {
 // WithLastTickedAt sets the LastTickedAt field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the LastTickedAt field is set to the value of the last call.
-func (b *ScheduleStatusApplyConfiguration) WithLastTickedAt(
-	value metav1.Time,
-) *ScheduleStatusApplyConfiguration {
+func (b *ScheduleStatusApplyConfiguration) WithLastTickedAt(value metav1.Time) *ScheduleStatusApplyConfiguration {
 	b.LastTickedAt = &value
 	return b
 }
@@ -54,9 +52,7 @@ func (b *ScheduleStatusApplyConfiguration) WithLastTickedAt(
 // WithLastPublishedTaskIdentifier sets the LastPublishedTaskIdentifier field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the LastPublishedTaskIdentifier field is set to the value of the last call.
-func (b *ScheduleStatusApplyConfiguration) WithLastPublishedTaskIdentifier(
-	value string,
-) *ScheduleStatusApplyConfiguration {
+func (b *ScheduleStatusApplyConfiguration) WithLastPublishedTaskIdentifier(value string) *ScheduleStatusApplyConfiguration {
 	b.LastPublishedTaskIdentifier = &value
 	return b
 }

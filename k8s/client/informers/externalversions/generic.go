@@ -50,16 +50,11 @@ func (f *genericInformer) Lister() cache.GenericLister {
 
 // ForResource gives generic access to a shared informer of the matching type
 // TODO extend this to unknown resources with a client pool
-func (f *sharedInformerFactory) ForResource(
-	resource schema.GroupVersionResource,
-) (GenericInformer, error) {
+func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
 	// Group=task.benjamin-borbe.de, Version=v1
 	case v1.SchemeGroupVersion.WithResource("schedules"):
-		return &genericInformer{
-			resource: resource.GroupResource(),
-			informer: f.Task().V1().Schedules().Informer(),
-		}, nil
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Task().V1().Schedules().Informer()}, nil
 
 	}
 

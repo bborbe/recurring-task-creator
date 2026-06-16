@@ -49,53 +49,22 @@ type scheduleInformer struct {
 // NewScheduleInformer constructs a new informer for Schedule type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewScheduleInformer(
-	client versioned.Interface,
-	namespace string,
-	resyncPeriod time.Duration,
-	indexers cache.Indexers,
-) cache.SharedIndexInformer {
-	return NewScheduleInformerWithOptions(
-		client,
-		namespace,
-		internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers},
-	)
+func NewScheduleInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewScheduleInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers})
 }
 
 // NewFilteredScheduleInformer constructs a new informer for Schedule type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredScheduleInformer(
-	client versioned.Interface,
-	namespace string,
-	resyncPeriod time.Duration,
-	indexers cache.Indexers,
-	tweakListOptions internalinterfaces.TweakListOptionsFunc,
-) cache.SharedIndexInformer {
-	return NewScheduleInformerWithOptions(
-		client,
-		namespace,
-		internalinterfaces.InformerOptions{
-			ResyncPeriod:     resyncPeriod,
-			Indexers:         indexers,
-			TweakListOptions: tweakListOptions,
-		},
-	)
+func NewFilteredScheduleInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+	return NewScheduleInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
 }
 
 // NewScheduleInformerWithOptions constructs a new informer for Schedule type with additional options.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewScheduleInformerWithOptions(
-	client versioned.Interface,
-	namespace string,
-	options internalinterfaces.InformerOptions,
-) cache.SharedIndexInformer {
-	gvr := schema.GroupVersionResource{
-		Group:    "task.benjamin-borbe.de",
-		Version:  "v1",
-		Resource: "schedules",
-	}
+func NewScheduleInformerWithOptions(client versioned.Interface, namespace string, options internalinterfaces.InformerOptions) cache.SharedIndexInformer {
+	gvr := schema.GroupVersionResource{Group: "task.benjamin-borbe.de", Version: "v1", Resource: "schedules"}
 	identifier := options.InformerName.WithResource(gvr)
 	tweakListOptions := options.TweakListOptions
 	return cache.NewSharedIndexInformerWithOptions(
@@ -134,20 +103,8 @@ func NewScheduleInformerWithOptions(
 	)
 }
 
-func (f *scheduleInformer) defaultInformer(
-	client versioned.Interface,
-	resyncPeriod time.Duration,
-) cache.SharedIndexInformer {
-	return NewScheduleInformerWithOptions(
-		client,
-		f.namespace,
-		internalinterfaces.InformerOptions{
-			ResyncPeriod:     resyncPeriod,
-			Indexers:         cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc},
-			InformerName:     f.factory.InformerName(),
-			TweakListOptions: f.tweakListOptions,
-		},
-	)
+func (f *scheduleInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewScheduleInformerWithOptions(client, f.namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
 }
 
 func (f *scheduleInformer) Informer() cache.SharedIndexInformer {

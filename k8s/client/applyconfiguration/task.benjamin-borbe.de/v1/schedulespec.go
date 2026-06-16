@@ -63,9 +63,7 @@ func (b *ScheduleSpecApplyConfiguration) WithTitle(value string) *ScheduleSpecAp
 // WithSchedule sets the Schedule field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Schedule field is set to the value of the last call.
-func (b *ScheduleSpecApplyConfiguration) WithSchedule(
-	value *ScheduleTriggerApplyConfiguration,
-) *ScheduleSpecApplyConfiguration {
+func (b *ScheduleSpecApplyConfiguration) WithSchedule(value *ScheduleTriggerApplyConfiguration) *ScheduleSpecApplyConfiguration {
 	b.Schedule = value
 	return b
 }
@@ -73,9 +71,7 @@ func (b *ScheduleSpecApplyConfiguration) WithSchedule(
 // WithTemplate sets the Template field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Template field is set to the value of the last call.
-func (b *ScheduleSpecApplyConfiguration) WithTemplate(
-	value *ScheduleTemplateApplyConfiguration,
-) *ScheduleSpecApplyConfiguration {
+func (b *ScheduleSpecApplyConfiguration) WithTemplate(value *ScheduleTemplateApplyConfiguration) *ScheduleSpecApplyConfiguration {
 	b.Template = value
 	return b
 }

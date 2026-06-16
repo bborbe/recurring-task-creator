@@ -31,10 +31,7 @@ type fakeSchedules struct {
 	Fake *FakeTaskV1
 }
 
-func newFakeSchedules(
-	fake *FakeTaskV1,
-	namespace string,
-) typedtaskbenjaminborbedev1.ScheduleInterface {
+func newFakeSchedules(fake *FakeTaskV1, namespace string) typedtaskbenjaminborbedev1.ScheduleInterface {
 	return &fakeSchedules{
 		gentype.NewFakeClientWithListAndApply[*v1.Schedule, *v1.ScheduleList, *taskbenjaminborbedev1.ScheduleApplyConfiguration](
 			fake.Fake,
