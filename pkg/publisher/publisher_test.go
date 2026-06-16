@@ -6,6 +6,7 @@ package publisher_test
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	lib "github.com/bborbe/agent/lib"
@@ -41,7 +42,7 @@ var _ = Describe("Publisher", func() {
 			def := schedule.TaskDefinition{
 				Slug:          "weekly-review",
 				TitleTemplate: "Weekly Review {{iso-week}}",
-				Recurrence:    schedule.RecurrenceWeekly,
+				Recurrence:    schedule.RecurrenceWeekday,
 				Weekday:       time.Saturday,
 			}
 			Expect(pub.Publish(
@@ -74,7 +75,9 @@ var _ = Describe("Publisher", func() {
 				Slug:          slug,
 				TitleTemplate: "t",
 				Recurrence:    rec,
-				Weekday:       time.Saturday,
+			}
+			if rec == schedule.RecurrenceWeekday {
+				def.Weekday = time.Saturday
 			}
 			Expect(localPub.Publish(context.Background(), def, date)).To(Succeed())
 			_, cmd := localSender.SendCommandArgsForCall(0)
@@ -218,6 +221,9 @@ var _ = Describe("Publisher", func() {
 					TitleTemplate: "t",
 					Recurrence:    rec,
 				}
+				if rec == schedule.RecurrenceWeekday {
+					def.Weekday = time.Monday
+				}
 				Expect(pub.Publish(context.Background(), def, date)).To(Succeed())
 				cmd := capture()
 				expected := "recurring-" + slug + "-" + expectedToken
@@ -229,6 +235,18 @@ var _ = Describe("Publisher", func() {
 				schedule.RecurrenceDaily,
 				schedule.NewDate(2025, time.June, 14),
 				"2025-06-14",
+			),
+			Entry(
+				"weekly",
+				schedule.RecurrenceWeekly,
+				schedule.NewDate(2025, time.June, 9),
+				"2025W24",
+			),
+			Entry(
+				"weekday",
+				schedule.RecurrenceWeekday,
+				schedule.NewDate(2025, time.June, 9),
+				"2025W24-mon",
 			),
 			Entry(
 				"monthly",
@@ -250,13 +268,13 @@ var _ = Describe("Publisher", func() {
 			),
 		)
 
-		It("weekly: byte-equality with the formatter output (with weekday suffix)", func() {
+		It("weekday: byte-equality with the formatter output (with weekday suffix)", func() {
 			// 2025-06-09 (Mon) is in ISO 2025W24; with Weekday=time.Saturday
 			// the period token must be "2025W24-sat".
 			def := schedule.TaskDefinition{
-				Slug:          "byte-eq-weekly",
+				Slug:          "byte-eq-weekday",
 				TitleTemplate: "t",
-				Recurrence:    schedule.RecurrenceWeekly,
+				Recurrence:    schedule.RecurrenceWeekday,
 				Weekday:       time.Saturday,
 			}
 			Expect(pub.Publish(
@@ -265,7 +283,30 @@ var _ = Describe("Publisher", func() {
 				schedule.NewDate(2025, time.June, 9),
 			)).To(Succeed())
 			cmd := capture()
-			expected := "recurring-byte-eq-weekly-2025W24-sat"
+			expected := "recurring-byte-eq-weekday-2025W24-sat"
+			want := uuid.NewSHA1(
+				publisher.UuidNamespaceForTest(),
+				[]byte(expected),
+			).String()
+			Expect(string(cmd.TaskIdentifier)).To(Equal(want))
+		})
+
+		It("weekly: byte-equality with the formatter output (no weekday suffix)", func() {
+			// After spec 009, RecurrenceWeekly is always-fire and the period
+			// token is bare YYYYWww (no weekday suffix). The Weekday field is
+			// ignored for this kind.
+			def := schedule.TaskDefinition{
+				Slug:          "byte-eq-weekly-bare",
+				TitleTemplate: "t",
+				Recurrence:    schedule.RecurrenceWeekly,
+			}
+			Expect(pub.Publish(
+				context.Background(),
+				def,
+				schedule.NewDate(2025, time.June, 9),
+			)).To(Succeed())
+			cmd := capture()
+			expected := "recurring-byte-eq-weekly-bare-2025W24"
 			want := uuid.NewSHA1(
 				publisher.UuidNamespaceForTest(),
 				[]byte(expected),
@@ -275,14 +316,14 @@ var _ = Describe("Publisher", func() {
 	})
 
 	It(
-		"buildPeriodToken: weekly token carries the entry's Weekday, not the date's weekday",
+		"buildPeriodToken: weekday token carries the entry's Weekday, not the date's weekday",
 		func() {
 			// 2026-06-17 is a Wednesday, in ISO 2026W25. With Weekday=time.Saturday
 			// on the def, the period token must be "2026W25-sat" (NOT "2026W25-wed").
 			def := schedule.TaskDefinition{
 				Slug:          "weekday-takes-precedence",
 				TitleTemplate: "t",
-				Recurrence:    schedule.RecurrenceWeekly,
+				Recurrence:    schedule.RecurrenceWeekday,
 				Weekday:       time.Saturday,
 			}
 			Expect(pub.Publish(
@@ -386,55 +427,55 @@ var _ = Describe("Publisher", func() {
 				name:     "{{date}}",
 				template: "prefix {{date}} suffix",
 				date:     schedule.NewDate(2025, time.January, 4),
-				want:     "prefix 2025-01-04 suffix - 2025W01-sun",
+				want:     "prefix 2025-01-04 suffix - 2025W01",
 			}),
 			Entry("{{iso-week}}", renderCase{
 				name:     "{{iso-week}}",
 				template: "Week {{iso-week}}",
 				date:     schedule.NewDate(2025, time.January, 4),
-				want:     "Week 2025W01 - 2025W01-sun",
+				want:     "Week 2025W01 - 2025W01",
 			}),
 			Entry("{{next-iso-week}}", renderCase{
 				name:     "{{next-iso-week}}",
 				template: "Next {{next-iso-week}}",
 				date:     schedule.NewDate(2025, time.January, 4),
-				want:     "Next 2025W02 - 2025W01-sun",
+				want:     "Next 2025W02 - 2025W01",
 			}),
 			Entry("{{month}}", renderCase{
 				name:     "{{month}}",
 				template: "Month {{month}}",
 				date:     schedule.NewDate(2025, time.January, 4),
-				want:     "Month 2025-01 - 2025W01-sun",
+				want:     "Month 2025-01 - 2025W01",
 			}),
 			Entry("{{last-month}} with year roll-back", renderCase{
 				name:     "{{last-month}}",
 				template: "Last {{last-month}}",
 				date:     schedule.NewDate(2025, time.January, 4),
-				want:     "Last 2024-12 - 2025W01-sun",
+				want:     "Last 2024-12 - 2025W01",
 			}),
 			Entry("{{quarter}}", renderCase{
 				name:     "{{quarter}}",
 				template: "Q {{quarter}}",
 				date:     schedule.NewDate(2025, time.April, 1),
-				want:     "Q 2025Q2 - 2025W14-sun",
+				want:     "Q 2025Q2 - 2025W14",
 			}),
 			Entry("{{last-quarter}} with year roll-back", renderCase{
 				name:     "{{last-quarter}}",
 				template: "Last {{last-quarter}}",
 				date:     schedule.NewDate(2025, time.January, 1),
-				want:     "Last 2024Q4 - 2025W01-sun",
+				want:     "Last 2024Q4 - 2025W01",
 			}),
 			Entry("{{year}}", renderCase{
 				name:     "{{year}}",
 				template: "Year {{year}}",
 				date:     schedule.NewDate(2025, time.April, 1),
-				want:     "Year 2025 - 2025W14-sun",
+				want:     "Year 2025 - 2025W14",
 			}),
 			Entry("{{last-year}}", renderCase{
 				name:     "{{last-year}}",
 				template: "Last {{last-year}}",
 				date:     schedule.NewDate(2025, time.January, 1),
-				want:     "Last 2024 - 2025W01-sun",
+				want:     "Last 2024 - 2025W01",
 			}),
 		)
 
@@ -465,7 +506,7 @@ var _ = Describe("Publisher", func() {
 				def,
 				schedule.NewDate(2024, time.December, 30),
 			)).To(Succeed())
-			Expect(capture().Title).To(Equal("2025W01 - 2025W01-sun"))
+			Expect(capture().Title).To(Equal("2025W01 - 2025W01"))
 		})
 	})
 
@@ -484,11 +525,11 @@ var _ = Describe("Publisher", func() {
 			Expect(capture().Title).To(Equal("Update K3s - 2026-06"))
 		})
 
-		It("appends the period token to a weekly title (with weekday suffix)", func() {
+		It("appends the period token to a weekday title (with weekday suffix)", func() {
 			def := schedule.TaskDefinition{
 				Slug:          "shutdown-k3s",
 				TitleTemplate: "Shutdown K3s",
-				Recurrence:    schedule.RecurrenceWeekly,
+				Recurrence:    schedule.RecurrenceWeekday,
 				Weekday:       time.Saturday,
 			}
 			// 2026-06-17 is a Wednesday in ISO 2026W25.
@@ -556,6 +597,12 @@ var _ = Describe("Publisher", func() {
 			Entry(
 				"weekly",
 				schedule.RecurrenceWeekly,
+				schedule.NewDate(2026, time.June, 17),
+				"2026W25",
+			),
+			Entry(
+				"weekday",
+				schedule.RecurrenceWeekday,
 				schedule.NewDate(2026, time.June, 17),
 				"2026W25-sat",
 			),
@@ -756,6 +803,9 @@ var _ = Describe("Publisher", func() {
 					BodyTemplate:  "Body for " + string(kind),
 					Recurrence:    kind,
 				}
+				if kind == schedule.RecurrenceWeekday {
+					def.Weekday = time.Saturday
+				}
 				Expect(pub.Publish(
 					context.Background(),
 					def,
@@ -766,9 +816,226 @@ var _ = Describe("Publisher", func() {
 			},
 			Entry("daily", schedule.RecurrenceDaily),
 			Entry("weekly", schedule.RecurrenceWeekly),
+			Entry("weekday", schedule.RecurrenceWeekday),
 			Entry("monthly", schedule.RecurrenceMonthly),
 			Entry("quarterly", schedule.RecurrenceQuarterly),
 			Entry("yearly", schedule.RecurrenceYearly),
+		)
+	})
+
+	Describe("UUID5 stability for the 21 migrated weekday entries", func() {
+		// Spec 009 migrated 21 entries from RecurrenceWeekly+Weekday to
+		// RecurrenceWeekday+Weekday. The period token shape for these
+		// entries is byte-identical to pre-spec-9 (YYYYWww-<abbrev>), so
+		// the UUID5 input string "recurring-<slug>-<period-token>" is
+		// byte-identical, so the identifier is byte-identical, so the
+		// vault filename is byte-identical — no duplicates after deploy.
+		//
+		// This test enumerates all 21 slugs with the hand-derived pre-spec-9
+		// expected input strings and asserts equality. If any of the 21
+		// expected strings is wrong, the test fails and the deploy is
+		// blocked. If the publisher's switch or the inventory migration
+		// diverges from the pre-spec-9 shape, the test fails and the
+		// regression is caught at build time.
+		type stabilityCase struct {
+			slug          string
+			recurrence    schedule.RecurrenceKind
+			weekday       time.Weekday
+			date          schedule.Date
+			expectedInput string
+		}
+		cases := []stabilityCase{
+			// 12 Saturday entries
+			{
+				slug:          "shutdown-k3s",
+				recurrence:    schedule.RecurrenceWeekday,
+				weekday:       time.Saturday,
+				date:          schedule.NewDate(2026, time.June, 20),
+				expectedInput: "recurring-shutdown-k3s-2026W25-sat",
+			},
+			{
+				slug:          "turn-on-hell",
+				recurrence:    schedule.RecurrenceWeekday,
+				weekday:       time.Saturday,
+				date:          schedule.NewDate(2026, time.June, 20),
+				expectedInput: "recurring-turn-on-hell-2026W25-sat",
+			},
+			{
+				slug:          "weekly-review",
+				recurrence:    schedule.RecurrenceWeekday,
+				weekday:       time.Saturday,
+				date:          schedule.NewDate(2026, time.June, 20),
+				expectedInput: "recurring-weekly-review-2026W25-sat",
+			},
+			{
+				slug:          "check-ftmo-demo-accounts",
+				recurrence:    schedule.RecurrenceWeekday,
+				weekday:       time.Saturday,
+				date:          schedule.NewDate(2026, time.June, 20),
+				expectedInput: "recurring-check-ftmo-demo-accounts-2026W25-sat",
+			},
+			{
+				slug:          "lexoffice-invoices",
+				recurrence:    schedule.RecurrenceWeekday,
+				weekday:       time.Saturday,
+				date:          schedule.NewDate(2026, time.June, 20),
+				expectedInput: "recurring-lexoffice-invoices-2026W25-sat",
+			},
+			{
+				slug:          "moneymoney-review",
+				recurrence:    schedule.RecurrenceWeekday,
+				weekday:       time.Saturday,
+				date:          schedule.NewDate(2026, time.June, 20),
+				expectedInput: "recurring-moneymoney-review-2026W25-sat",
+			},
+			{
+				slug:          "opnsense-update",
+				recurrence:    schedule.RecurrenceWeekday,
+				weekday:       time.Saturday,
+				date:          schedule.NewDate(2026, time.June, 20),
+				expectedInput: "recurring-opnsense-update-2026W25-sat",
+			},
+			{
+				slug:          "home-assistant-update-backup",
+				recurrence:    schedule.RecurrenceWeekday,
+				weekday:       time.Saturday,
+				date:          schedule.NewDate(2026, time.June, 20),
+				expectedInput: "recurring-home-assistant-update-backup-2026W25-sat",
+			},
+			{
+				slug:          "renew-gmail-oauth-tokens",
+				recurrence:    schedule.RecurrenceWeekday,
+				weekday:       time.Saturday,
+				date:          schedule.NewDate(2026, time.June, 20),
+				expectedInput: "recurring-renew-gmail-oauth-tokens-2026W25-sat",
+			},
+			{
+				slug:          "plan-next-week",
+				recurrence:    schedule.RecurrenceWeekday,
+				weekday:       time.Saturday,
+				date:          schedule.NewDate(2026, time.June, 20),
+				expectedInput: "recurring-plan-next-week-2026W25-sat",
+			},
+			{
+				slug:          "run-update-all-saturday",
+				recurrence:    schedule.RecurrenceWeekday,
+				weekday:       time.Saturday,
+				date:          schedule.NewDate(2026, time.June, 20),
+				expectedInput: "recurring-run-update-all-saturday-2026W25-sat",
+			},
+			{
+				slug:          "topic-backup-saturday",
+				recurrence:    schedule.RecurrenceWeekday,
+				weekday:       time.Saturday,
+				date:          schedule.NewDate(2026, time.June, 20),
+				expectedInput: "recurring-topic-backup-saturday-2026W25-sat",
+			},
+			// 9 Sunday entries
+			{
+				slug:          "complete-rsync-backups",
+				recurrence:    schedule.RecurrenceWeekday,
+				weekday:       time.Sunday,
+				date:          schedule.NewDate(2026, time.June, 21),
+				expectedInput: "recurring-complete-rsync-backups-2026W25-sun",
+			},
+			{
+				slug:          "complete-longhorn-backups",
+				recurrence:    schedule.RecurrenceWeekday,
+				weekday:       time.Sunday,
+				date:          schedule.NewDate(2026, time.June, 21),
+				expectedInput: "recurring-complete-longhorn-backups-2026W25-sun",
+			},
+			{
+				slug:          "turn-off-hell",
+				recurrence:    schedule.RecurrenceWeekday,
+				weekday:       time.Sunday,
+				date:          schedule.NewDate(2026, time.June, 21),
+				expectedInput: "recurring-turn-off-hell-2026W25-sun",
+			},
+			{
+				slug:          "turn-off-sun",
+				recurrence:    schedule.RecurrenceWeekday,
+				weekday:       time.Sunday,
+				date:          schedule.NewDate(2026, time.June, 21),
+				expectedInput: "recurring-turn-off-sun-2026W25-sun",
+			},
+			{
+				slug:          "turn-off-fire",
+				recurrence:    schedule.RecurrenceWeekday,
+				weekday:       time.Sunday,
+				date:          schedule.NewDate(2026, time.June, 21),
+				expectedInput: "recurring-turn-off-fire-2026W25-sun",
+			},
+			{
+				slug:          "docker-registry-gc",
+				recurrence:    schedule.RecurrenceWeekday,
+				weekday:       time.Sunday,
+				date:          schedule.NewDate(2026, time.June, 21),
+				expectedInput: "recurring-docker-registry-gc-2026W25-sun",
+			},
+			{
+				slug:          "rebuild-trading-dev-prod",
+				recurrence:    schedule.RecurrenceWeekday,
+				weekday:       time.Sunday,
+				date:          schedule.NewDate(2026, time.June, 21),
+				expectedInput: "recurring-rebuild-trading-dev-prod-2026W25-sun",
+			},
+			{
+				slug:          "check-bot-is-healthy",
+				recurrence:    schedule.RecurrenceWeekday,
+				weekday:       time.Sunday,
+				date:          schedule.NewDate(2026, time.June, 21),
+				expectedInput: "recurring-check-bot-is-healthy-2026W25-sun",
+			},
+			{
+				slug:          "run-update-all",
+				recurrence:    schedule.RecurrenceWeekday,
+				weekday:       time.Sunday,
+				date:          schedule.NewDate(2026, time.June, 21),
+				expectedInput: "recurring-run-update-all-2026W25-sun",
+			},
+		}
+		DescribeTable(
+			"produces byte-identical UUID5 input string to pre-spec-9",
+			func(c stabilityCase) {
+				localSender := &taskmocks.TaskCreateCommandSender{}
+				localSender.SendCommandReturns(nil)
+				localPub := publisher.NewPublisher(localSender, false)
+				def := schedule.TaskDefinition{
+					Slug:          c.slug,
+					TitleTemplate: "t",
+					Recurrence:    c.recurrence,
+					Weekday:       c.weekday,
+				}
+				Expect(localPub.Publish(context.Background(), def, c.date)).To(Succeed())
+				_, cmd := localSender.SendCommandArgsForCall(0)
+				want := uuid.NewSHA1(publisher.UuidNamespaceForTest(), []byte(c.expectedInput)).
+					String()
+				Expect(string(cmd.TaskIdentifier)).To(Equal(want),
+					"entry %q identifier changed; UUID5 input string must be byte-identical to pre-spec-9",
+					c.slug)
+			},
+			Entry(fmt.Sprintf("%02d-%s", 0, cases[0].slug), cases[0]),
+			Entry(fmt.Sprintf("%02d-%s", 1, cases[1].slug), cases[1]),
+			Entry(fmt.Sprintf("%02d-%s", 2, cases[2].slug), cases[2]),
+			Entry(fmt.Sprintf("%02d-%s", 3, cases[3].slug), cases[3]),
+			Entry(fmt.Sprintf("%02d-%s", 4, cases[4].slug), cases[4]),
+			Entry(fmt.Sprintf("%02d-%s", 5, cases[5].slug), cases[5]),
+			Entry(fmt.Sprintf("%02d-%s", 6, cases[6].slug), cases[6]),
+			Entry(fmt.Sprintf("%02d-%s", 7, cases[7].slug), cases[7]),
+			Entry(fmt.Sprintf("%02d-%s", 8, cases[8].slug), cases[8]),
+			Entry(fmt.Sprintf("%02d-%s", 9, cases[9].slug), cases[9]),
+			Entry(fmt.Sprintf("%02d-%s", 10, cases[10].slug), cases[10]),
+			Entry(fmt.Sprintf("%02d-%s", 11, cases[11].slug), cases[11]),
+			Entry(fmt.Sprintf("%02d-%s", 12, cases[12].slug), cases[12]),
+			Entry(fmt.Sprintf("%02d-%s", 13, cases[13].slug), cases[13]),
+			Entry(fmt.Sprintf("%02d-%s", 14, cases[14].slug), cases[14]),
+			Entry(fmt.Sprintf("%02d-%s", 15, cases[15].slug), cases[15]),
+			Entry(fmt.Sprintf("%02d-%s", 16, cases[16].slug), cases[16]),
+			Entry(fmt.Sprintf("%02d-%s", 17, cases[17].slug), cases[17]),
+			Entry(fmt.Sprintf("%02d-%s", 18, cases[18].slug), cases[18]),
+			Entry(fmt.Sprintf("%02d-%s", 19, cases[19].slug), cases[19]),
+			Entry(fmt.Sprintf("%02d-%s", 20, cases[20].slug), cases[20]),
 		)
 	})
 })

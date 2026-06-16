@@ -95,12 +95,14 @@ var _ = Describe("CreateTriggerHandler", func() {
 			// Smoke test: drive the handler with a known date and confirm the
 			// fake publisher was called the expected number of times. Detailed
 			// per-task behavior is covered in pkg/handler/trigger_test.go.
+			// After spec 009, the trigger iterates the date-filtered inventory
+			// (schedule.TasksForDate), not the full inventory.
 			req := httptest.NewRequest("GET", "/trigger?date=2025-01-04", nil)
 			resp := httptest.NewRecorder()
 			httpHndl.ServeHTTP(resp, req)
 			Expect(resp.Code).To(Equal(http.StatusOK))
 			Expect(pubFake.PublishCallCount()).To(Equal(
-				len(schedule.Inventory()),
+				len(schedule.TasksForDate(schedule.NewDate(2025, time.January, 4))),
 			))
 		},
 	)
