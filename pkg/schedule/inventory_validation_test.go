@@ -6,6 +6,7 @@ package schedule_test
 
 import (
 	"regexp"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -34,6 +35,25 @@ var sundayWeeklyAllowList = []string{
 	"rebuild-trading-dev-prod",
 	"check-bot-is-healthy",
 	"run-update-all",
+}
+
+// periodTitlePlaceholders is the exact set of placeholders that spec 008
+// stripped from TitleTemplate values. The publisher's automatic
+// `<bare> - <period-token>` suffix (added in Prompt 1) replaces them.
+// TitleTemplate entries MUST NOT contain any of these placeholders
+// (failure mode row 1 of spec 008); BodyTemplate entries MAY still contain
+// them per the spec's Desired Behavior 5 and the schedule placeholder-
+// support contract. The list is closed: adding a new period-style
+// placeholder is a new spec.
+var periodTitlePlaceholders = []string{
+	"{{iso-week}}",
+	"{{next-iso-week}}",
+	"{{month}}",
+	"{{last-month}}",
+	"{{quarter}}",
+	"{{last-quarter}}",
+	"{{year}}",
+	"{{last-year}}",
 }
 
 var _ = Describe("inventory", func() {
@@ -116,4 +136,33 @@ var _ = Describe("inventory", func() {
 			}
 		},
 	)
+
+	It("has no period placeholders in any TitleTemplate", func() {
+		// After spec 008, the eight period-style placeholders (periodTitlePlaceholders)
+		// are replaced by the publisher's automatic title-suffix. A TitleTemplate that
+		// still contains one of them would render as "Foo 2026W01 - 2026W01-sat" — a
+		// double-token shape that no inventory entry intends. The publisher's
+		// strings.TrimSpace hides the visible bug at render time, but the data invariant
+		// is broken. This spec catches it at build time.
+		for _, def := range schedule.AllDefinitionsForTest() {
+			trimmed := strings.TrimSpace(def.TitleTemplate)
+			for _, ph := range periodTitlePlaceholders {
+				Expect(strings.Contains(trimmed, ph)).To(BeFalse(),
+					"entry %q TitleTemplate %q still contains period placeholder %q; "+
+						"spec 008 strips these from TitleTemplate (the publisher's suffix replaces them)",
+					def.Slug, def.TitleTemplate, ph)
+			}
+		}
+	})
+
+	It("has a non-empty TitleTemplate for every entry", func() {
+		// After spec 008's placeholder stripping, a sloppy edit could empty an
+		// entry's TitleTemplate. The publisher's strings.TrimSpace + " - " + suffix
+		// logic would render such an entry as just " - 2026-06" — useless to the
+		// user. Catch it at build time.
+		for _, def := range schedule.AllDefinitionsForTest() {
+			Expect(strings.TrimSpace(def.TitleTemplate)).NotTo(BeEmpty(),
+				"entry %q has empty TitleTemplate; spec 008 requires a non-empty bare title", def.Slug)
+		}
+	})
 })
