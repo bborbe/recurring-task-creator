@@ -1,0 +1,16 @@
+apiVersion: task.benjamin-borbe.de/v1
+kind: Schedule
+metadata:
+  name: quarter-review
+spec:
+  vault: personal
+  title: Review Quarter
+  schedule:
+    recurrence: Quarterly
+  template:
+    body: |-
+      Create review for quarter {{last-quarter}}
+
+      In Obsidian run:
+
+      /quarterly-trading-review {{last-quarter}}

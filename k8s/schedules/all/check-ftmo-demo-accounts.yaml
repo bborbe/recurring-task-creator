@@ -1,0 +1,22 @@
+apiVersion: task.benjamin-borbe.de/v1
+kind: Schedule
+metadata:
+  name: check-ftmo-demo-accounts
+spec:
+  vault: personal
+  title: Check FTMO Demo Accounts
+  schedule:
+    recurrence: Weekday
+    weekday: Saturday
+  template:
+    body: |-
+      Check if ftmo-demo account is expiring soon (e.g., this weekend).
+
+      If expiring soon, follow renewal guide:
+
+      ~/Documents/Obsidian/Personal/40 Trading/FTMO Demo Account Renewal Guide.md
+
+      Dashboards:
+
+      * [FTMO](https://trader.ftmo.com/accounts-overview)
+      * [Dev](https://dev.quant.benjamin-borbe.de/account/detail/ftmo-demo)

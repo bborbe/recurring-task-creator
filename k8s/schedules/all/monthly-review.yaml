@@ -1,0 +1,16 @@
+apiVersion: task.benjamin-borbe.de/v1
+kind: Schedule
+metadata:
+  name: monthly-review
+spec:
+  vault: personal
+  title: Review Month
+  schedule:
+    recurrence: Monthly
+  template:
+    body: |-
+      Create review for month {{last-month}}
+
+      In Obsidian run:
+
+      /monthly-trading-review {{last-month}}

@@ -1,0 +1,15 @@
+apiVersion: task.benjamin-borbe.de/v1
+kind: Schedule
+metadata:
+  name: run-update-all-saturday
+spec:
+  vault: personal
+  title: Run update-all.sh (before restart)
+  schedule:
+    recurrence: Weekday
+    weekday: Saturday
+  template:
+    body: |-
+      Run system updates before weekend restart (sun.hm and fire.hm)
+
+      /Users/bborbe/Documents/workspaces/scripts/update-all.sh

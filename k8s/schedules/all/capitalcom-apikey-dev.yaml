@@ -1,0 +1,12 @@
+apiVersion: task.benjamin-borbe.de/v1
+kind: Schedule
+metadata:
+  name: capitalcom-apikey-dev
+spec:
+  vault: personal
+  title: Change Capitalcom ApiKey - Dev
+  schedule:
+    recurrence: Yearly
+  template:
+    body: |-
+      [Capital.com API Settings](https://capital.com/trading/platform/?popup=api-key-generation&tab=APISettings)

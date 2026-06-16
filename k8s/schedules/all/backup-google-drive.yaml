@@ -1,0 +1,19 @@
+apiVersion: task.benjamin-borbe.de/v1
+kind: Schedule
+metadata:
+  name: backup-google-drive
+spec:
+  vault: personal
+  title: Backup Google Drive
+  schedule:
+    recurrence: Monthly
+  template:
+    body: |-
+      [Google Drive Backup Guide](obsidian://open?vault=Personal&file=50%20Knowledge%20Base%2FGoogle%20Drive%20Backup%20Guide)
+
+      Requirements:
+
+      1. Hell server must be powered on
+      2. Google Drive Desktop synced
+
+      Script: ~/Documents/workspaces/scripts/backup-google-drive.sh

@@ -1,0 +1,19 @@
+apiVersion: task.benjamin-borbe.de/v1
+kind: Schedule
+metadata:
+  name: topic-backup-saturday
+spec:
+  vault: personal
+  title: Backup Kafka Topics
+  schedule:
+    recurrence: Weekday
+    weekday: Saturday
+  template:
+    body: |-
+      Backup Kafka topics before weekend restart
+
+      Prerequisite: hell must be powered on (see "Turn on hell" subtask).
+
+      cd /Users/bborbe/Documents/workspaces/trading/strimzi/topic-backuper/cmd/backup
+
+      make backup

@@ -1,0 +1,17 @@
+apiVersion: task.benjamin-borbe.de/v1
+kind: Schedule
+metadata:
+  name: renew-gmail-oauth-tokens
+spec:
+  vault: personal
+  title: Renew Gmail OAuth Tokens
+  schedule:
+    recurrence: Weekday
+    weekday: Saturday
+  template:
+    body: |-
+      Renew Gmail OAuth tokens (expire every 7 days) for all environments:
+
+      Dev: [OAuth Init](https://dev.quant.benjamin-borbe.de/admin/core-mail-controller/oauth2/init)
+
+      Prod: [OAuth Init](https://prod.quant.benjamin-borbe.de/admin/core-mail-controller/oauth2/init)

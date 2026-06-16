@@ -1,0 +1,13 @@
+apiVersion: task.benjamin-borbe.de/v1
+kind: Schedule
+metadata:
+  name: turn-off-fire
+spec:
+  vault: personal
+  title: Turn off fire
+  schedule:
+    recurrence: Weekday
+    weekday: Sunday
+  template:
+    body: |-
+      power off fire

@@ -150,7 +150,7 @@ func (k *k8sConnector) desiredCRDSpec() apiextensionsv1.CustomResourceDefinition
 			Served:  true,
 			Storage: true,
 			Schema: &apiextensionsv1.CustomResourceValidation{
-				OpenAPIV3Schema: scheduleSpecSchemaPtr(),
+				OpenAPIV3Schema: scheduleCRSchemaPtr(),
 			},
 		}},
 	}

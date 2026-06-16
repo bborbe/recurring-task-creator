@@ -1,0 +1,32 @@
+apiVersion: task.benjamin-borbe.de/v1
+kind: Schedule
+metadata:
+  name: update-minio
+spec:
+  vault: personal
+  title: Update Minio
+  schedule:
+    recurrence: Monthly
+  template:
+    body: |-
+      helm repo add minio-operator https://operator.min.io
+
+      helm repo update
+
+      helm list -n minio-operator
+
+      helm search repo minio-operator/operator
+
+      helm list -n minio
+
+      helm search repo minio-operator/tenant
+
+      Open "backup" Intellij Project
+
+      Update Version in k8s/minio/operator/Makefile
+
+      make upgrade
+
+      Update Version in k8s/minio/tenant/Makefile
+
+      make upgrade
