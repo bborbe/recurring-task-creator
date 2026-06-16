@@ -71,6 +71,9 @@ func (a *application) Run(ctx context.Context, _ libsentry.Client) error {
 	syncCtx, syncCancel := context.WithTimeout(ctx, 30*time.Second)
 	defer syncCancel()
 	syncResult := informerFactory.WaitForCacheSyncWithContext(syncCtx)
+	if syncResult.Err != nil {
+		return errors.Wrap(ctx, syncResult.Err, "informer cache sync failed")
+	}
 	for _, ok := range syncResult.Synced {
 		if !ok {
 			return errors.Errorf(ctx, "informer cache did not sync within 30s")
