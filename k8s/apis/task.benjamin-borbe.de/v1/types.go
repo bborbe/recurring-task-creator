@@ -63,8 +63,8 @@ type ScheduleTrigger struct {
 	// "Thursday", "Friday", "Saturday", "Sunday". Encoded as the CEL rule in
 	// scheduleSpecSchema. The Go type is `string` (not `*string`) so JSON
 	// omits the field cleanly when unset; the schema's presence check is
-	// `has(self.weekday)`.
-	// +optional
+	// `has(self.weekday)`. Optionality is encoded by `omitempty` + the CEL
+	// rule — no separate `+optional` marker is needed.
 	Weekday string `json:"weekday,omitempty"`
 }
 
