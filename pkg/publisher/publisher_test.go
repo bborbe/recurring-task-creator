@@ -580,6 +580,37 @@ var _ = Describe("Publisher", func() {
 		)
 	})
 
+	Describe("full-inventory render", func() {
+		It("every inventory entry renders to a title ending in ' - <period-token>'", func() {
+			// The full-inventory cross-check: prove that Prompt 1's publisher
+			// suffix and Prompt 2's inventory cleanup are mutually consistent.
+			// For each entry in schedule.Inventory() and the fixed reference
+			// date 2026-06-15, the rendered Title must end with " - " followed
+			// by the period token buildPeriodToken returns for the same input.
+			refDate := schedule.NewDate(2026, time.June, 15)
+			for _, def := range schedule.Inventory() {
+				// Use a fresh sender per entry so SendCommandArgsForCall(0)
+				// always points at the most recent Publish.
+				localSender := &taskmocks.TaskCreateCommandSender{}
+				localSender.SendCommandReturns(nil)
+				localPub := publisher.NewPublisher(localSender, false)
+				Expect(localPub.Publish(context.Background(), def, refDate)).To(Succeed())
+				_, cmd := localSender.SendCommandArgsForCall(0)
+				expectedToken, err := publisher.BuildPeriodTokenForTest(
+					context.Background(),
+					def.Recurrence,
+					refDate,
+					def.Weekday,
+				)
+				Expect(err).NotTo(HaveOccurred(), def.Slug)
+				expectedSuffix := " - " + expectedToken
+				Expect(cmd.Title).To(HaveSuffix(expectedSuffix),
+					"entry %q rendered title %q does not end with %q",
+					def.Slug, cmd.Title, expectedSuffix)
+			}
+		})
+	})
+
 	Describe("frontmatter", func() {
 		It(
 			"has the six-key shape (assignee, status, page_type, goals, priority, created_by)",

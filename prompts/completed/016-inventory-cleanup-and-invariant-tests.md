@@ -1,9 +1,14 @@
 ---
-status: inbox
+status: completed
 spec: [008-title-period-tokens-and-drop-recurring-frontmatter]
-summary: Strip the eight period placeholders from the 8 affected TitleTemplate values in pkg/schedule/inventory.go; add Ginkgo specs in pkg/schedule asserting no TitleTemplate carries the eight period placeholders and every TitleTemplate is non-empty after trim; add a Ginkgo spec in pkg/publisher iterating the full inventory and asserting every rendered title ends with the expected period-token suffix
-branch: dark-factory/title-period-tokens-and-drop-recurring-frontmatter
+summary: Stripped 8 period placeholders from inventory TitleTemplate values, added periodTitlePlaceholders test var + 2 new validation specs, added BuildPeriodTokenForTest accessor, added full-inventory render test (45 cases), appended changelog entry; make precommit exits 0
+container: recurring-task-creator-title-period-exec-016-inventory-cleanup-and-invariant-tests
+dark-factory-version: v0.177.1
 created: "2026-06-16T07:50:00Z"
+queued: "2026-06-16T08:02:12Z"
+started: "2026-06-16T08:02:13Z"
+completed: "2026-06-16T08:12:02Z"
+branch: dark-factory/title-period-tokens-and-drop-recurring-frontmatter
 ---
 
 <summary>

@@ -29,7 +29,7 @@ var inventory = []TaskDefinition{
 	},
 	{
 		Slug:          "weekly-review",
-		TitleTemplate: "Weekly Review {{iso-week}}",
+		TitleTemplate: "Weekly Review",
 		BodyTemplate: "Complete weekly review.\n\n" +
 			"In Obsidian run (in order):\n\n" +
 			"1. /complete-week - Bot performance, fills weekly note\n" +
@@ -94,7 +94,7 @@ var inventory = []TaskDefinition{
 	},
 	{
 		Slug:          "plan-next-week",
-		TitleTemplate: "Plan Week {{next-iso-week}}",
+		TitleTemplate: "Plan Week",
 		BodyTemplate: "Create plan for week {{next-iso-week}}\n\n" +
 			"In Obsidian run:\n\n" +
 			"/plan-week",
@@ -251,7 +251,7 @@ var inventory = []TaskDefinition{
 	},
 	{
 		Slug:          "monthly-review",
-		TitleTemplate: "Review Month {{last-month}}",
+		TitleTemplate: "Review Month",
 		BodyTemplate: "Create review for month {{last-month}}\n\n" +
 			"In Obsidian run:\n\n" +
 			"/monthly-trading-review {{last-month}}",
@@ -259,7 +259,7 @@ var inventory = []TaskDefinition{
 	},
 	{
 		Slug:          "plan-month",
-		TitleTemplate: "Plan Month {{month}}",
+		TitleTemplate: "Plan Month",
 		BodyTemplate: "Create plan for month {{month}}\n\n" +
 			"In Obsidian run:\n\n" +
 			"/plan-month",
@@ -367,7 +367,7 @@ var inventory = []TaskDefinition{
 	// Quarterly — first day of Jan/Apr/Jul/Oct (2 entries)
 	{
 		Slug:          "quarter-review",
-		TitleTemplate: "Review Quarter {{last-quarter}}",
+		TitleTemplate: "Review Quarter",
 		BodyTemplate: "Create review for quarter {{last-quarter}}\n\n" +
 			"In Obsidian run:\n\n" +
 			"/quarterly-trading-review {{last-quarter}}",
@@ -375,7 +375,7 @@ var inventory = []TaskDefinition{
 	},
 	{
 		Slug:          "quarter-plan",
-		TitleTemplate: "Plan Quarter {{quarter}}",
+		TitleTemplate: "Plan Quarter",
 		BodyTemplate: "Create plan for quarter {{quarter}}\n\n" +
 			"In Obsidian run:\n\n" +
 			"/plan-quarter",
@@ -384,7 +384,7 @@ var inventory = []TaskDefinition{
 	// Yearly — first day of January (2 entries)
 	{
 		Slug:          "yearly-review",
-		TitleTemplate: "Review Year {{last-year}}",
+		TitleTemplate: "Review Year",
 		BodyTemplate: "Create review for year {{last-year}}\n\n" +
 			"In Obsidian run:\n\n" +
 			"/yearly-trading-review {{last-year}}",
@@ -392,7 +392,7 @@ var inventory = []TaskDefinition{
 	},
 	{
 		Slug:          "plan-year",
-		TitleTemplate: "Plan Year {{year}}",
+		TitleTemplate: "Plan Year",
 		BodyTemplate: "Create plan for year {{year}}\n\n" +
 			"In Obsidian run:\n\n" +
 			"/plan-year",
