@@ -17,14 +17,14 @@ var inventory = []TaskDefinition{
 			"~/Documents/workspaces/scripts/remote-k3s-shutdown-nuke.sh\n\n" +
 			"[K3s Cluster Weekly Reboot Procedure](obsidian://open?vault=Personal&file=50%20Knowledge%20Base%2FK3s%20Cluster%20Weekly%20Reboot%20Procedure)\n\n" +
 			"[jira-task-creator](obsidian://open?vault=Personal&file=50%20Knowledge%20Base%2Fjira-task-creator)",
-		Recurrence: RecurrenceWeekly,
+		Recurrence: RecurrenceWeekday,
 		Weekday:    time.Saturday,
 	},
 	{
 		Slug:          "turn-on-hell",
 		TitleTemplate: "Turn on hell",
 		BodyTemplate:  "power on hell",
-		Recurrence:    RecurrenceWeekly,
+		Recurrence:    RecurrenceWeekday,
 		Weekday:       time.Saturday,
 	},
 	{
@@ -34,7 +34,7 @@ var inventory = []TaskDefinition{
 			"In Obsidian run (in order):\n\n" +
 			"1. /complete-week - Bot performance, fills weekly note\n" +
 			"2. /weekly-trading-review {{iso-week}} - Portfolio balances",
-		Recurrence: RecurrenceWeekly,
+		Recurrence: RecurrenceWeekday,
 		Weekday:    time.Saturday,
 	},
 	{
@@ -46,28 +46,28 @@ var inventory = []TaskDefinition{
 			"Dashboards:\n\n" +
 			"* [FTMO](https://trader.ftmo.com/accounts-overview)\n" +
 			"* [Dev](https://dev.quant.benjamin-borbe.de/account/detail/ftmo-demo)",
-		Recurrence: RecurrenceWeekly,
+		Recurrence: RecurrenceWeekday,
 		Weekday:    time.Saturday,
 	},
 	{
 		Slug:          "lexoffice-invoices",
 		TitleTemplate: "LexOffice Accounting",
 		BodyTemplate:  "[LexOffice](https://app.lexoffice.de/fis/#)",
-		Recurrence:    RecurrenceWeekly,
+		Recurrence:    RecurrenceWeekday,
 		Weekday:       time.Saturday,
 	},
 	{
 		Slug:          "moneymoney-review",
 		TitleTemplate: "Review MoneyMoney",
 		BodyTemplate:  "Review MoneyMoney",
-		Recurrence:    RecurrenceWeekly,
+		Recurrence:    RecurrenceWeekday,
 		Weekday:       time.Saturday,
 	},
 	{
 		Slug:          "opnsense-update",
 		TitleTemplate: "OPNsense Update",
 		BodyTemplate:  "[OPNsense Firmware Updates](https://opnsense.hm.benjamin-borbe.de/ui/core/firmware#updates)",
-		Recurrence:    RecurrenceWeekly,
+		Recurrence:    RecurrenceWeekday,
 		Weekday:       time.Saturday,
 	},
 	{
@@ -80,7 +80,7 @@ var inventory = []TaskDefinition{
 			"3. Download backup\n" +
 			"4. Update all\n\n" +
 			"[Home Assistant](http://homeassistant.local:8123/config/dashboard)",
-		Recurrence: RecurrenceWeekly,
+		Recurrence: RecurrenceWeekday,
 		Weekday:    time.Saturday,
 	},
 	{
@@ -89,7 +89,7 @@ var inventory = []TaskDefinition{
 		BodyTemplate: "Renew Gmail OAuth tokens (expire every 7 days) for all environments:\n\n" +
 			"Dev: [OAuth Init](https://dev.quant.benjamin-borbe.de/admin/core-mail-controller/oauth2/init)\n\n" +
 			"Prod: [OAuth Init](https://prod.quant.benjamin-borbe.de/admin/core-mail-controller/oauth2/init)",
-		Recurrence: RecurrenceWeekly,
+		Recurrence: RecurrenceWeekday,
 		Weekday:    time.Saturday,
 	},
 	{
@@ -98,7 +98,7 @@ var inventory = []TaskDefinition{
 		BodyTemplate: "Create plan for week {{next-iso-week}}\n\n" +
 			"In Obsidian run:\n\n" +
 			"/plan-week",
-		Recurrence: RecurrenceWeekly,
+		Recurrence: RecurrenceWeekday,
 		Weekday:    time.Saturday,
 	},
 	{
@@ -106,7 +106,7 @@ var inventory = []TaskDefinition{
 		TitleTemplate: "Run update-all.sh (before restart)",
 		BodyTemplate: "Run system updates before weekend restart (sun.hm and fire.hm)\n\n" +
 			"/Users/bborbe/Documents/workspaces/scripts/update-all.sh",
-		Recurrence: RecurrenceWeekly,
+		Recurrence: RecurrenceWeekday,
 		Weekday:    time.Saturday,
 	},
 	{
@@ -116,7 +116,7 @@ var inventory = []TaskDefinition{
 			"Prerequisite: hell must be powered on (see \"Turn on hell\" subtask).\n\n" +
 			"cd /Users/bborbe/Documents/workspaces/trading/strimzi/topic-backuper/cmd/backup\n\n" +
 			"make backup",
-		Recurrence: RecurrenceWeekly,
+		Recurrence: RecurrenceWeekday,
 		Weekday:    time.Saturday,
 	},
 	// Weekly — Sunday (9 entries)
@@ -125,35 +125,35 @@ var inventory = []TaskDefinition{
 		TitleTemplate: "Complete Rsync Backups",
 		BodyTemplate: "* check backup status\n" +
 			"** [Backup Status](https://backup.hell.hm.benjamin-borbe.de/status)",
-		Recurrence: RecurrenceWeekly,
+		Recurrence: RecurrenceWeekday,
 		Weekday:    time.Sunday,
 	},
 	{
 		Slug:          "complete-longhorn-backups",
 		TitleTemplate: "Complete Longhorn Backups",
 		BodyTemplate:  "[Longhorn Volumes](https://longhorn.quant.benjamin-borbe.de/#/volume)",
-		Recurrence:    RecurrenceWeekly,
+		Recurrence:    RecurrenceWeekday,
 		Weekday:       time.Sunday,
 	},
 	{
 		Slug:          "turn-off-hell",
 		TitleTemplate: "Turn off hell",
 		BodyTemplate:  "power off hell",
-		Recurrence:    RecurrenceWeekly,
+		Recurrence:    RecurrenceWeekday,
 		Weekday:       time.Sunday,
 	},
 	{
 		Slug:          "turn-off-sun",
 		TitleTemplate: "Turn off sun",
 		BodyTemplate:  "power off sun",
-		Recurrence:    RecurrenceWeekly,
+		Recurrence:    RecurrenceWeekday,
 		Weekday:       time.Sunday,
 	},
 	{
 		Slug:          "turn-off-fire",
 		TitleTemplate: "Turn off fire",
 		BodyTemplate:  "power off fire",
-		Recurrence:    RecurrenceWeekly,
+		Recurrence:    RecurrenceWeekday,
 		Weekday:       time.Sunday,
 	},
 	{
@@ -162,7 +162,7 @@ var inventory = []TaskDefinition{
 		BodyTemplate: "Run garbage collection on docker registry to free storage space.\n\n" +
 			"kubectlquant -n docker-registry get pods\n\n" +
 			"kubectlquant -n docker-registry exec -it <POD_NAME> -- registry garbage-collect /etc/docker/registry/config.yml",
-		Recurrence: RecurrenceWeekly,
+		Recurrence: RecurrenceWeekday,
 		Weekday:    time.Sunday,
 	},
 	{
@@ -170,7 +170,7 @@ var inventory = []TaskDefinition{
 		TitleTemplate: "Rebuild Trading Dev+Prod",
 		BodyTemplate: "Rebuild and redeploy all trading services for dev and prod.\n\n" +
 			"Runbook: Trading - Rebuild Dev and Prod",
-		Recurrence: RecurrenceWeekly,
+		Recurrence: RecurrenceWeekday,
 		Weekday:    time.Sunday,
 	},
 	{
@@ -180,7 +180,7 @@ var inventory = []TaskDefinition{
 			"* kubectlquant get po --all-namespaces|grep -v Running|grep -v Complete\n" +
 			"* [Prometheus Alerts](https://prometheus.quant.benjamin-borbe.de/alerts)\n" +
 			"* [Karma Active Alerts](https://karma.quant.benjamin-borbe.de/?q=%40state%3Dactive)",
-		Recurrence: RecurrenceWeekly,
+		Recurrence: RecurrenceWeekday,
 		Weekday:    time.Sunday,
 	},
 	{
@@ -188,7 +188,7 @@ var inventory = []TaskDefinition{
 		TitleTemplate: "Run update-all.sh",
 		BodyTemplate: "Run system updates across all servers\n\n" +
 			"/Users/bborbe/Documents/workspaces/scripts/update-all.sh",
-		Recurrence: RecurrenceWeekly,
+		Recurrence: RecurrenceWeekday,
 		Weekday:    time.Sunday,
 	},
 	// Day-of-Month = 5 (1 entry)

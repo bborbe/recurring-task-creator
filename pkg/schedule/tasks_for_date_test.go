@@ -153,13 +153,13 @@ var _ = Describe("TasksForDate", func() {
 		// Drive the public accessor (which reads the package-level inventory).
 		// Coverage check: ensure TasksForDate is exercised end-to-end against
 		// the real 45-entry inventory. The trigger handler in pkg/handler
-		// also calls TasksForDate (Prompt 2 wires it) — this is a thin
-		// end-to-end coverage test that future refactors can rely on.
+		// also calls TasksForDate — this is a thin end-to-end coverage test
+		// that future refactors can rely on.
+		// 2025-01-07 is a Tuesday. After spec 009, the 21 RecurrenceWeekday
+		// entries (12 Saturday + 9 Sunday) do NOT fire on a Tuesday; the 24
+		// always-fire entries (18 monthly + 2 quarterly + 4 yearly) do.
 		got := schedule.TasksForDate(schedule.NewDate(2025, time.January, 7))
-		// 2025-01-07 is a Tuesday. All 45 entries fire (none are
-		// RecurrenceWeekday yet — the inventory is unchanged in this prompt,
-		// and RecurrenceWeekday has no inventory entries).
-		Expect(got).To(HaveLen(45))
+		Expect(got).To(HaveLen(24))
 	})
 })
 

@@ -1,8 +1,13 @@
 ---
-status: approved
+status: completed
 spec: [009-weekday-kind-split]
+summary: Migrated 21 weekly-with-Weekday inventory entries to RecurrenceWeekday; split buildPeriodToken switch (RecurrenceWeekly bare, RecurrenceWeekday with weekday suffix); wired tick and trigger to filter via schedule.TasksForDate(date); updated all tests, deleted sundayWeeklyAllowList, added UUID5 stability test, added changelog entry; make precommit passes
+container: recurring-task-creator-weekday-kind-exec-018-spec-009-migrate-inventory-and-wire-tick
+dark-factory-version: v0.177.1
 created: "2026-06-16T12:30:00Z"
 queued: "2026-06-16T12:45:58Z"
+started: "2026-06-16T12:56:27Z"
+completed: "2026-06-16T13:19:05Z"
 branch: dark-factory/weekday-kind-split
 ---
 

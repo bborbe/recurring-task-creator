@@ -89,22 +89,33 @@ func (t *tick) RunOnce(ctx context.Context) error {
 }
 
 // tick performs one full pass: read clock, convert to Berlin civil date,
-// update the gauge, iterate the full inventory, and call publisher.Publish
-// for each entry. Per-task errors are logged and counted but never abort
-// the pass. The inventory is published in slug-ascending order (the
-// underlying slice is sorted on init).
+// update the gauge, fetch the date-filtered inventory via
+// schedule.TasksForDate(date), and call publisher.Publish for each entry.
+// Per-task errors are logged and counted but never abort the pass. The
+// inventory is published in the order schedule.TasksForDate returns it
+// (NOT slug-sorted — the trigger HTTP handler does that for its response
+// body; the tick iterates the raw filtered slice).
+//
+// The t.inventory field is set by NewTick from the factory's full-inventory
+// call and is no longer read by tick at runtime — filtering happens
+// inside schedule.TasksForDate against the canonical inventory. The
+// field is preserved (set in NewTick) for future refactors that may
+// revert to a per-tick custom inventory; a follow-up spec can remove
+// it once the call site stabilizes.
 func (t *tick) tick(ctx context.Context) {
 	now := t.clock.Now().Time().In(t.berlin)
 	t.metrics.SetLastTickTimestamp(float64(now.Unix()))
 	year, month, day := now.Date()
 	date := schedule.NewDate(year, month, day)
 
-	if len(t.inventory) == 0 {
-		glog.V(2).Infof("no tasks in inventory")
+	defs := schedule.TasksForDate(date)
+
+	if len(defs) == 0 {
+		glog.V(2).Infof("no tasks for date %04d-%02d-%02d", date.Year, date.Month, date.Day)
 		return
 	}
 
-	for _, def := range t.inventory {
+	for _, def := range defs {
 		select {
 		case <-ctx.Done():
 			return

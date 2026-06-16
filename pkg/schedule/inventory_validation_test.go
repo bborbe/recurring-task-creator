@@ -15,28 +15,6 @@ import (
 	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 )
 
-// sundayWeeklyAllowList is the exact set of inventory slugs whose Recurrence
-// is RecurrenceWeekly AND whose intended Weekday is time.Sunday. The list
-// is the disambiguation key for the new "non-weekly entries must leave
-// Weekday at the zero value" validation: because time.Sunday is BOTH the
-// zero value of time.Weekday AND the intended value of a Sunday weekly
-// entry, the only way to tell a "Sunday weekly entry" apart from a
-// "non-weekly entry that forgot to set Weekday" is to enumerate the
-// Sunday slugs. Length is asserted to be exactly 9 — adding or removing
-// a Sunday weekly slug is a data-shape change that requires updating
-// this list and the inventory together.
-var sundayWeeklyAllowList = []string{
-	"complete-rsync-backups",
-	"complete-longhorn-backups",
-	"turn-off-hell",
-	"turn-off-sun",
-	"turn-off-fire",
-	"docker-registry-gc",
-	"rebuild-trading-dev-prod",
-	"check-bot-is-healthy",
-	"run-update-all",
-}
-
 // periodTitlePlaceholders is the exact set of placeholders that spec 008
 // stripped from TitleTemplate values. The publisher's automatic
 // `<bare> - <period-token>` suffix (added in Prompt 1) replaces them.
@@ -89,6 +67,7 @@ var _ = Describe("inventory", func() {
 		allowed := map[schedule.RecurrenceKind]bool{
 			schedule.RecurrenceDaily:     true,
 			schedule.RecurrenceWeekly:    true,
+			schedule.RecurrenceWeekday:   true,
 			schedule.RecurrenceMonthly:   true,
 			schedule.RecurrenceQuarterly: true,
 			schedule.RecurrenceYearly:    true,
@@ -99,43 +78,38 @@ var _ = Describe("inventory", func() {
 		}
 	})
 
-	It("has exactly 9 Sunday weekly slugs in sundayWeeklyAllowList", func() {
-		// Adding or removing a Sunday weekly slug is a data-shape change
-		// that must be reflected here. This assertion catches accidental
-		// list drift.
-		Expect(sundayWeeklyAllowList).To(HaveLen(9))
-	})
-
-	It("every weekly entry has Weekday in {time.Saturday, time.Sunday}", func() {
-		allowed := map[time.Weekday]bool{
-			time.Saturday: true,
-			time.Sunday:   true,
-		}
+	It("inventory contains exactly 12 Saturday RecurrenceWeekday entries", func() {
+		n := 0
 		for _, def := range schedule.AllDefinitionsForTest() {
-			if def.Recurrence != schedule.RecurrenceWeekly {
-				continue
+			if def.Recurrence == schedule.RecurrenceWeekday && def.Weekday == time.Saturday {
+				n++
 			}
-			Expect(allowed).To(HaveKey(def.Weekday),
-				"weekly entry %q has Weekday %v; expected time.Saturday or time.Sunday", def.Slug, def.Weekday)
 		}
+		Expect(n).To(Equal(12),
+			"expected 12 RecurrenceWeekday entries with Weekday=time.Saturday, got %d", n)
 	})
 
-	It(
-		"every non-weekly entry leaves Weekday at the zero value AND its slug is NOT in sundayWeeklyAllowList",
-		func() {
-			for _, def := range schedule.AllDefinitionsForTest() {
-				if def.Recurrence == schedule.RecurrenceWeekly {
-					continue
-				}
-				Expect(def.Weekday).To(Equal(time.Sunday),
-					"non-weekly entry %q has non-zero Weekday %v; non-weekly entries must leave Weekday unset",
-					def.Slug, def.Weekday)
-				Expect(sundayWeeklyAllowList).NotTo(ContainElement(def.Slug),
-					"non-weekly entry %q is in sundayWeeklyAllowList; the allow-list must contain only weekly slugs",
-					def.Slug)
+	It("inventory contains exactly 9 Sunday RecurrenceWeekday entries", func() {
+		n := 0
+		for _, def := range schedule.AllDefinitionsForTest() {
+			if def.Recurrence == schedule.RecurrenceWeekday && def.Weekday == time.Sunday {
+				n++
 			}
-		},
-	)
+		}
+		Expect(n).To(Equal(9),
+			"expected 9 RecurrenceWeekday entries with Weekday=time.Sunday, got %d", n)
+	})
+
+	It("inventory contains zero RecurrenceWeekly entries", func() {
+		n := 0
+		for _, def := range schedule.AllDefinitionsForTest() {
+			if def.Recurrence == schedule.RecurrenceWeekly {
+				n++
+			}
+		}
+		Expect(n).To(Equal(0),
+			"expected 0 RecurrenceWeekly entries after spec 009, got %d", n)
+	})
 
 	It("has no period placeholders in any TitleTemplate", func() {
 		// After spec 008, the eight period-style placeholders (periodTitlePlaceholders)
