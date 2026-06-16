@@ -1,11 +1,12 @@
 ---
-status: prompted
+status: verifying
 tags:
     - dark-factory
     - spec
 approved: "2026-06-16T18:55:40Z"
 generating: "2026-06-16T18:58:57Z"
 prompted: "2026-06-16T19:13:06Z"
+verifying: "2026-06-16T19:50:47Z"
 branch: dark-factory/informer-backed-inventory
 ---
 
