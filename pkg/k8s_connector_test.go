@@ -103,16 +103,38 @@ var _ = Describe("SetupCustomResourceDefinition", func() {
 		Expect(err.Error()).To(ContainSubstring("build apiextensions clientset"))
 	})
 
-	It("returns nil when create sees an AlreadyExists race", func() {
-		// Inject a custom fake clientset whose Create path always
-		// returns AlreadyExists. The Get path returns IsNotFound so
-		// the connector falls into createCrd. The connector should
-		// treat the race as success and return nil.
+	It("reconciles via update when create sees an AlreadyExists race", func() {
+		// Simulate the real race: another pod already wrote the CRD with
+		// a different version slot. The local Get races and returns NotFound
+		// (its read predates Pod A's write — the reactor below makes the
+		// first Get return NotFound, then injects Pod A's CRD before the
+		// second Get fires from updateCrd's re-fetch). On Create the API
+		// returns AlreadyExists; the connector must fall through to update
+		// so Pod B's desiredCRDSpec wins, not Pod A's stale slot.
+		raceWinner := &apiextensionsv1.CustomResourceDefinition{
+			ObjectMeta: metav1.ObjectMeta{Name: v1.Plural + "." + v1.GroupName},
+			Spec: apiextensionsv1.CustomResourceDefinitionSpec{
+				Group: v1.GroupName,
+				Names: apiextensionsv1.CustomResourceDefinitionNames{
+					Kind:     v1.Kind,
+					Plural:   v1.Plural,
+					Singular: v1.Singular,
+				},
+				Scope: apiextensionsv1.NamespaceScoped,
+				Versions: []apiextensionsv1.CustomResourceDefinitionVersion{{
+					Name:    "STALE-RACE-WINNER-VERSION",
+					Served:  true,
+					Storage: true,
+				}},
+			},
+		}
 		clientset = apiextensionsfake.NewSimpleClientset()
 		clientset.PrependReactor(
 			"create",
 			"customresourcedefinitions",
 			func(_ testing.Action) (bool, runtime.Object, error) {
+				// Pod A finished its write between our Get and our Create.
+				_ = clientset.Tracker().Add(raceWinner)
 				return true, nil, &apierrors.StatusError{ErrStatus: metav1.Status{
 					Status:  metav1.StatusFailure,
 					Code:    409,
@@ -127,5 +149,12 @@ var _ = Describe("SetupCustomResourceDefinition", func() {
 		connector = pkg.NewK8sConnector(configBuilder, clientBuilder)
 
 		Expect(connector.SetupCustomResourceDefinition(ctx)).To(Succeed())
+
+		updated, err := clientset.ApiextensionsV1().CustomResourceDefinitions().Get(
+			ctx, raceWinner.Name, metav1.GetOptions{})
+		Expect(err).NotTo(HaveOccurred())
+		Expect(updated.Spec.Versions).To(HaveLen(1))
+		Expect(updated.Spec.Versions[0].Name).To(Equal(v1.Version),
+			"AlreadyExists fall-through must reconcile to desired spec")
 	})
 })

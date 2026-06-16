@@ -35,8 +35,8 @@ const weekdayRequiredIfWeeklyMessage = "weekday is required when recurrence is '
 // scheduleSpecSchemaPtr returns a pointer to the schedule spec schema.
 // Convenience wrapper for callers that need the *JSONSchemaProps form
 // (e.g. OpenAPIV3Schema on CustomResourceValidation).
-func (k *k8sConnector) scheduleSpecSchemaPtr() *apiextensionsv1.JSONSchemaProps {
-	schema := k.scheduleSpecSchema()
+func scheduleSpecSchemaPtr() *apiextensionsv1.JSONSchemaProps {
+	schema := scheduleSpecSchema()
 	return &schema
 }
 
@@ -44,7 +44,7 @@ func (k *k8sConnector) scheduleSpecSchemaPtr() *apiextensionsv1.JSONSchemaProps 
 // schema is built as Go code (no CRD YAML manifest is generated or
 // committed) and applied on every binary boot via
 // SetupCustomResourceDefinition. Single source of truth: this file.
-func (k *k8sConnector) scheduleSpecSchema() apiextensionsv1.JSONSchemaProps {
+func scheduleSpecSchema() apiextensionsv1.JSONSchemaProps {
 	return apiextensionsv1.JSONSchemaProps{
 		Type:        "object",
 		Description: "Schedule spec — defines when a recurring task fires and what to publish.",

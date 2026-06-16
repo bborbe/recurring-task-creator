@@ -32,9 +32,9 @@ type ConfigBuilder func() (*rest.Config, error)
 // tests wire it to a closure that returns the fake clientset.
 type CRDClientBuilder func(*rest.Config) (apiextensionsclient.Interface, error)
 
-// K8sConnector installs the Schedule CRD on a Kubernetes cluster.
-//
 //counterfeiter:generate -o ../mocks/k8s_connector.go --fake-name FakeK8sConnector . K8sConnector
+
+// K8sConnector installs the Schedule CRD on a Kubernetes cluster.
 type K8sConnector interface {
 	SetupCustomResourceDefinition(ctx context.Context) error
 }
@@ -89,13 +89,28 @@ func (k *k8sConnector) createCrd(
 	}
 	if _, err := crdClient.Create(ctx, crd, metav1.CreateOptions{}); err != nil {
 		if apierrors.IsAlreadyExists(err) {
-			// Race: another pod beat us to it. Fall through to update path.
 			glog.V(2).Infof("k8s-connector: crd-already-exists: applying update")
-			return nil
+			return k.updateCrd(ctx, crdClient)
 		}
 		return errors.Wrapf(ctx, err, "create CRD %s.%s", v1.Plural, v1.GroupName)
 	}
 	glog.V(2).Infof("k8s-connector: created CRD %s.%s", v1.Plural, v1.GroupName)
+	return nil
+}
+
+func (k *k8sConnector) updateCrd(
+	ctx context.Context,
+	crdClient apiextensionsv1typed.CustomResourceDefinitionInterface,
+) error {
+	existing, err := crdClient.Get(ctx, v1.Plural+"."+v1.GroupName, metav1.GetOptions{})
+	if err != nil {
+		return errors.Wrap(ctx, err, "get CRD")
+	}
+	existing.Spec = k.desiredCRDSpec()
+	if _, err := crdClient.Update(ctx, existing, metav1.UpdateOptions{}); err != nil {
+		return errors.Wrapf(ctx, err, "update CRD %s.%s", v1.Plural, v1.GroupName)
+	}
+	glog.V(2).Infof("k8s-connector: updated CRD %s.%s", v1.Plural, v1.GroupName)
 	return nil
 }
 
@@ -120,7 +135,7 @@ func (k *k8sConnector) desiredCRDSpec() apiextensionsv1.CustomResourceDefinition
 			Served:  true,
 			Storage: true,
 			Schema: &apiextensionsv1.CustomResourceValidation{
-				OpenAPIV3Schema: k.scheduleSpecSchemaPtr(),
+				OpenAPIV3Schema: scheduleSpecSchemaPtr(),
 			},
 		}},
 	}

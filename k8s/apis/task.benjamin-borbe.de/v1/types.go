@@ -13,9 +13,10 @@ import (
 )
 
 // Schedule is the Schema for the Schedule CRD. Names are frozen for the
-// life of v1 (spec 008).
+// life of v1 (spec 008). No status subresource in v1 — Status field
+// exists on the Go type for future Spec B controller writes but the CRD
+// schema does not register `/status`.
 // +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
 // +genclient
 // +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
