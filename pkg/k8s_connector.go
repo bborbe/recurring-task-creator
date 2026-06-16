@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// This connector is wired into `main.go` and `cmd/run-once/main.go` in a future spec; this file is standalone.
-
 package pkg
 
 import (
@@ -64,19 +62,14 @@ func (k *k8sConnector) SetupCustomResourceDefinition(ctx context.Context) error 
 	}
 
 	crdClient := clientset.ApiextensionsV1().CustomResourceDefinitions()
-	existing, err := crdClient.Get(ctx, v1.Plural+"."+v1.GroupName, metav1.GetOptions{})
+	_, err = crdClient.Get(ctx, v1.Plural+"."+v1.GroupName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		return k.createCrd(ctx, crdClient)
 	}
 	if err != nil {
 		return errors.Wrap(ctx, err, "get CRD")
 	}
-	existing.Spec = k.desiredCRDSpec()
-	if _, err := crdClient.Update(ctx, existing, metav1.UpdateOptions{}); err != nil {
-		return errors.Wrapf(ctx, err, "update CRD %s.%s", v1.Plural, v1.GroupName)
-	}
-	glog.V(2).Infof("k8s-connector: updated CRD %s.%s", v1.Plural, v1.GroupName)
-	return nil
+	return k.updateCrd(ctx, crdClient)
 }
 
 func (k *k8sConnector) createCrd(
