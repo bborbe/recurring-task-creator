@@ -1,0 +1,23 @@
+apiVersion: task.benjamin-borbe.de/v1
+kind: Schedule
+metadata:
+  name: weekly-review
+  namespace: personal
+spec:
+  vault: personal
+  title: Weekly Review
+  schedule:
+    recurrence: Weekly
+    weekday: Saturday
+  template:
+    body: |
+      Reflect on the past week.
+      Plan the next.
+    frontmatter:
+      goals:
+        - "[[Migrate Personal Workflow from Atlassian to Obsidian]]"
+      priority: 2
+      status: in_progress
+      page_type: task
+      assignee: bborbe
+      recurring: Weekly
