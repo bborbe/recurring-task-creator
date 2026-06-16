@@ -6,21 +6,21 @@ package publisher
 
 import (
 	lib "github.com/bborbe/agent/lib"
-
-	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 )
 
-// buildFrontmatter returns the exact frontmatter shape for every recurring
-// task. The shape is FROZEN: changing any of these keys or values is a
-// breaking change to the migration's vault-file layout.
-func buildFrontmatter(recurrence schedule.RecurrenceKind) lib.TaskFrontmatter {
+// buildFrontmatter returns the exact frontmatter shape for every task
+// published by this service. The shape is FROZEN: changing any of these
+// keys or values is a breaking change to the migration's vault-file
+// layout. The shape was reduced from seven keys to six by spec 008:
+// the `recurring` key is gone — downstream vault tooling treats every
+// published task as a normal one-shot task, regardless of cadence.
+func buildFrontmatter() lib.TaskFrontmatter {
 	return lib.TaskFrontmatter{
 		"assignee":   "bborbe",
 		"status":     "in_progress",
 		"page_type":  "task",
 		"goals":      []interface{}{goalsLink},
 		"priority":   2,
-		"recurring":  string(recurrence),
 		"created_by": "recurring-task-creator",
 	}
 }

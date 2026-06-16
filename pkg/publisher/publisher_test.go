@@ -386,55 +386,55 @@ var _ = Describe("Publisher", func() {
 				name:     "{{date}}",
 				template: "prefix {{date}} suffix",
 				date:     schedule.NewDate(2025, time.January, 4),
-				want:     "prefix 2025-01-04 suffix",
+				want:     "prefix 2025-01-04 suffix - 2025W01-sun",
 			}),
 			Entry("{{iso-week}}", renderCase{
 				name:     "{{iso-week}}",
 				template: "Week {{iso-week}}",
 				date:     schedule.NewDate(2025, time.January, 4),
-				want:     "Week 2025W01",
+				want:     "Week 2025W01 - 2025W01-sun",
 			}),
 			Entry("{{next-iso-week}}", renderCase{
 				name:     "{{next-iso-week}}",
 				template: "Next {{next-iso-week}}",
 				date:     schedule.NewDate(2025, time.January, 4),
-				want:     "Next 2025W02",
+				want:     "Next 2025W02 - 2025W01-sun",
 			}),
 			Entry("{{month}}", renderCase{
 				name:     "{{month}}",
 				template: "Month {{month}}",
 				date:     schedule.NewDate(2025, time.January, 4),
-				want:     "Month 2025-01",
+				want:     "Month 2025-01 - 2025W01-sun",
 			}),
 			Entry("{{last-month}} with year roll-back", renderCase{
 				name:     "{{last-month}}",
 				template: "Last {{last-month}}",
 				date:     schedule.NewDate(2025, time.January, 4),
-				want:     "Last 2024-12",
+				want:     "Last 2024-12 - 2025W01-sun",
 			}),
 			Entry("{{quarter}}", renderCase{
 				name:     "{{quarter}}",
 				template: "Q {{quarter}}",
 				date:     schedule.NewDate(2025, time.April, 1),
-				want:     "Q 2025Q2",
+				want:     "Q 2025Q2 - 2025W14-sun",
 			}),
 			Entry("{{last-quarter}} with year roll-back", renderCase{
 				name:     "{{last-quarter}}",
 				template: "Last {{last-quarter}}",
 				date:     schedule.NewDate(2025, time.January, 1),
-				want:     "Last 2024Q4",
+				want:     "Last 2024Q4 - 2025W01-sun",
 			}),
 			Entry("{{year}}", renderCase{
 				name:     "{{year}}",
 				template: "Year {{year}}",
 				date:     schedule.NewDate(2025, time.April, 1),
-				want:     "Year 2025",
+				want:     "Year 2025 - 2025W14-sun",
 			}),
 			Entry("{{last-year}}", renderCase{
 				name:     "{{last-year}}",
 				template: "Last {{last-year}}",
 				date:     schedule.NewDate(2025, time.January, 1),
-				want:     "Last 2024",
+				want:     "Last 2024 - 2025W01-sun",
 			}),
 		)
 
@@ -465,56 +465,180 @@ var _ = Describe("Publisher", func() {
 				def,
 				schedule.NewDate(2024, time.December, 30),
 			)).To(Succeed())
-			Expect(capture().Title).To(Equal("2025W01"))
+			Expect(capture().Title).To(Equal("2025W01 - 2025W01-sun"))
 		})
 	})
 
-	Describe("frontmatter", func() {
-		It("has the full frozen shape", func() {
+	Describe("title suffix", func() {
+		It("appends the period token to a monthly title", func() {
 			def := schedule.TaskDefinition{
-				Slug:          "test-slug",
-				TitleTemplate: "t",
-				Recurrence:    schedule.RecurrenceWeekly,
+				Slug:          "update-k3s",
+				TitleTemplate: "Update K3s",
+				Recurrence:    schedule.RecurrenceMonthly,
 			}
 			Expect(pub.Publish(
 				context.Background(),
 				def,
-				schedule.NewDate(2025, time.January, 4),
+				schedule.NewDate(2026, time.June, 15),
 			)).To(Succeed())
-			fm := capture().Frontmatter
-			Expect(fm).To(HaveKeyWithValue("assignee", "bborbe"))
-			Expect(fm).To(HaveKeyWithValue("status", "in_progress"))
-			Expect(fm).To(HaveKeyWithValue("page_type", "task"))
-			Expect(fm).To(HaveKeyWithValue("priority", 2))
-			Expect(fm).To(HaveKeyWithValue("recurring", "weekly"))
-			Expect(fm).To(HaveKeyWithValue(
-				"goals",
-				[]interface{}{"[[Migrate Personal Workflow from Atlassian to Obsidian]]"},
-			))
-			Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
-			Expect(fm).To(HaveLen(7))
+			Expect(capture().Title).To(Equal("Update K3s - 2026-06"))
 		})
 
-		DescribeTable("recurring matches RecurrenceKind",
-			func(kind schedule.RecurrenceKind) {
+		It("appends the period token to a weekly title (with weekday suffix)", func() {
+			def := schedule.TaskDefinition{
+				Slug:          "shutdown-k3s",
+				TitleTemplate: "Shutdown K3s",
+				Recurrence:    schedule.RecurrenceWeekly,
+				Weekday:       time.Saturday,
+			}
+			// 2026-06-17 is a Wednesday in ISO 2026W25.
+			Expect(pub.Publish(
+				context.Background(),
+				def,
+				schedule.NewDate(2026, time.June, 17),
+			)).To(Succeed())
+			Expect(capture().Title).To(Equal("Shutdown K3s - 2026W25-sat"))
+		})
+
+		It("trims whitespace from the rendered title before appending the suffix", func() {
+			def := schedule.TaskDefinition{
+				Slug:          "trailing-space",
+				TitleTemplate: "Trailing Space ",
+				Recurrence:    schedule.RecurrenceMonthly,
+			}
+			Expect(pub.Publish(
+				context.Background(),
+				def,
+				schedule.NewDate(2026, time.June, 15),
+			)).To(Succeed())
+			Expect(capture().Title).To(Equal("Trailing Space - 2026-06"))
+		})
+
+		It(
+			"renders bare placeholders-only templates as '<token>' after substitution and suffix",
+			func() {
+				def := schedule.TaskDefinition{
+					Slug:          "placeholder-only",
+					TitleTemplate: "{{month}}",
+					Recurrence:    schedule.RecurrenceMonthly,
+				}
+				Expect(pub.Publish(
+					context.Background(),
+					def,
+					schedule.NewDate(2026, time.June, 15),
+				)).To(Succeed())
+				Expect(capture().Title).To(Equal("2026-06 - 2026-06"))
+			},
+		)
+
+		DescribeTable(
+			"appends '<bare> - <period-token>' for every RecurrenceKind",
+			func(rec schedule.RecurrenceKind, date schedule.Date, expectedToken string) {
+				localSender := &taskmocks.TaskCreateCommandSender{}
+				localSender.SendCommandReturns(nil)
+				localPub := publisher.NewPublisher(localSender, false)
+				def := schedule.TaskDefinition{
+					Slug:          "kind-" + string(rec),
+					TitleTemplate: "Bare",
+					Recurrence:    rec,
+					Weekday:       time.Saturday,
+				}
+				Expect(localPub.Publish(context.Background(), def, date)).To(Succeed())
+				_, cmd := localSender.SendCommandArgsForCall(0)
+				Expect(cmd.Title).To(Equal("Bare - " + expectedToken))
+			},
+			Entry(
+				"daily",
+				schedule.RecurrenceDaily,
+				schedule.NewDate(2026, time.June, 15),
+				"2026-06-15",
+			),
+			Entry(
+				"weekly",
+				schedule.RecurrenceWeekly,
+				schedule.NewDate(2026, time.June, 17),
+				"2026W25-sat",
+			),
+			Entry(
+				"monthly",
+				schedule.RecurrenceMonthly,
+				schedule.NewDate(2026, time.June, 15),
+				"2026-06",
+			),
+			Entry(
+				"quarterly",
+				schedule.RecurrenceQuarterly,
+				schedule.NewDate(2026, time.April, 1),
+				"2026Q2",
+			),
+			Entry(
+				"yearly",
+				schedule.RecurrenceYearly,
+				schedule.NewDate(2026, time.January, 1),
+				"2026",
+			),
+		)
+	})
+
+	Describe("frontmatter", func() {
+		It(
+			"has the six-key shape (assignee, status, page_type, goals, priority, created_by)",
+			func() {
 				def := schedule.TaskDefinition{
 					Slug:          "test-slug",
 					TitleTemplate: "t",
-					Recurrence:    kind,
+					Recurrence:    schedule.RecurrenceWeekly,
 				}
 				Expect(pub.Publish(
 					context.Background(),
 					def,
 					schedule.NewDate(2025, time.January, 4),
 				)).To(Succeed())
-				Expect(capture().Frontmatter).To(HaveKeyWithValue("recurring", string(kind)))
+				fm := capture().Frontmatter
+				Expect(fm).To(HaveKeyWithValue("assignee", "bborbe"))
+				Expect(fm).To(HaveKeyWithValue("status", "in_progress"))
+				Expect(fm).To(HaveKeyWithValue("page_type", "task"))
+				Expect(fm).To(HaveKeyWithValue("priority", 2))
+				Expect(fm).To(HaveKeyWithValue(
+					"goals",
+					[]interface{}{"[[Migrate Personal Workflow from Atlassian to Obsidian]]"},
+				))
+				Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
+				Expect(fm).To(HaveLen(6))
+				// AC #4 explicit absence: the `recurring` key was removed by spec 008.
+				Expect(fm).NotTo(HaveKey("recurring"))
 			},
-			Entry("daily", schedule.RecurrenceDaily),
-			Entry("weekly", schedule.RecurrenceWeekly),
-			Entry("monthly", schedule.RecurrenceMonthly),
-			Entry("quarterly", schedule.RecurrenceQuarterly),
-			Entry("yearly", schedule.RecurrenceYearly),
 		)
+
+		It("does not depend on the entry's RecurrenceKind (no kind-specific keys)", func() {
+			// After spec 008 the frontmatter shape is identical for every
+			// RecurrenceKind — there is no kind-encoded field anymore. Two
+			// entries with different kinds and otherwise identical definitions
+			// produce the same Frontmatter.
+			def1 := schedule.TaskDefinition{
+				Slug:          "kind-a",
+				TitleTemplate: "t",
+				Recurrence:    schedule.RecurrenceDaily,
+			}
+			def2 := schedule.TaskDefinition{
+				Slug:          "kind-b",
+				TitleTemplate: "t",
+				Recurrence:    schedule.RecurrenceYearly,
+			}
+			Expect(pub.Publish(
+				context.Background(),
+				def1,
+				schedule.NewDate(2025, time.January, 4),
+			)).To(Succeed())
+			fm1 := capture().Frontmatter
+			Expect(pub.Publish(
+				context.Background(),
+				def2,
+				schedule.NewDate(2025, time.January, 4),
+			)).To(Succeed())
+			fm2 := capture().Frontmatter
+			Expect(fm1).To(Equal(fm2))
+		})
 	})
 
 	Describe("sender interaction", func() {
