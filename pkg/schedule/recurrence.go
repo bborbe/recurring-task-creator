@@ -10,6 +10,7 @@ type RecurrenceKind string
 const (
 	RecurrenceDaily     RecurrenceKind = "daily"
 	RecurrenceWeekly    RecurrenceKind = "weekly"
+	RecurrenceWeekday   RecurrenceKind = "weekday"
 	RecurrenceMonthly   RecurrenceKind = "monthly"
 	RecurrenceQuarterly RecurrenceKind = "quarterly"
 	RecurrenceYearly    RecurrenceKind = "yearly"
@@ -22,6 +23,7 @@ const (
 var AllRecurrenceKinds = []RecurrenceKind{
 	RecurrenceDaily,
 	RecurrenceWeekly,
+	RecurrenceWeekday,
 	RecurrenceMonthly,
 	RecurrenceQuarterly,
 	RecurrenceYearly,

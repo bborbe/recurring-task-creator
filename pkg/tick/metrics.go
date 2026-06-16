@@ -34,7 +34,7 @@ func NewPrometheusMetrics() Metrics {
 }
 
 // recurringTasksPublishedTotal counts Publish outcomes by result and recurrence.
-// Pre-initialized to zero for all 10 combinations in init() so Prometheus
+// Pre-initialized to zero for all 12 combinations in init() so Prometheus
 // scrapers see the series before the first event.
 var recurringTasksPublishedTotal = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
@@ -67,7 +67,7 @@ func init() {
 
 // prometheusMetrics is the Prometheus-backed implementation of Metrics.
 // The counter and gauge are package-level singletons registered once in init()
-// and pre-initialized for all ten result/recurrence label combinations.
+// and pre-initialized for all twelve result/recurrence label combinations.
 type prometheusMetrics struct {
 	counter *prometheus.CounterVec
 	gauge   prometheus.Gauge
