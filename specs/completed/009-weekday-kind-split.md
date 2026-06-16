@@ -1,5 +1,5 @@
 ---
-status: verifying
+status: completed
 tags:
     - dark-factory
     - spec
@@ -7,6 +7,7 @@ approved: "2026-06-16T12:01:34Z"
 generating: "2026-06-16T12:04:42Z"
 prompted: "2026-06-16T12:31:22Z"
 verifying: "2026-06-16T13:19:05Z"
+completed: "2026-06-16T15:23:53Z"
 branch: dark-factory/weekday-kind-split
 ---
 
