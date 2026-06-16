@@ -23,11 +23,13 @@ package v1
 //
 // ScheduleTrigger is the recurrence subnode.
 type ScheduleTriggerApplyConfiguration struct {
-	// Recurrence is one of: "Daily", "Weekly", "Monthly", "Quarterly", "Yearly"
-	// (capitalized, matching Go's time.Weekday.String() style and Spec 6's
-	// period-token output). Constrained by the OpenAPI enum in scheduleSpecSchema.
+	// Recurrence is one of: "Daily", "Weekly", "Weekday", "Monthly", "Quarterly", "Yearly"
+	// (capitalized, matching Go's time.Weekday.String() style and Spec 6/9's
+	// period-token output). "Weekly" is always-fire (no weekday); "Weekday"
+	// fires only on its target weekday. Constrained by the OpenAPI enum in
+	// scheduleSpecSchema.
 	Recurrence *string `json:"recurrence,omitempty"`
-	// Weekday is required when Recurrence == "Weekly"; forbidden otherwise.
+	// Weekday is required when Recurrence == "Weekday"; forbidden otherwise.
 	// Values are time.Weekday.String() form: "Monday", "Tuesday", "Wednesday",
 	// "Thursday", "Friday", "Saturday", "Sunday". Encoded as the CEL rule in
 	// scheduleSpecSchema. The Go type is `string` (not `*string`) so JSON

@@ -65,7 +65,7 @@ func scheduleSpecSchema() apiextensionsv1.JSONSchemaProps {
 			},
 			"schedule": {
 				Type:        "object",
-				Description: "Recurrence trigger. The weekday-required-iff-weekly invariant is enforced by the CEL x-kubernetes-validations rule below.",
+				Description: "Recurrence trigger. The weekday-required-iff-weekday invariant is enforced by the CEL x-kubernetes-validations rule below.",
 				Required:    []string{"recurrence"},
 				Properties: map[string]apiextensionsv1.JSONSchemaProps{
 					"recurrence": {

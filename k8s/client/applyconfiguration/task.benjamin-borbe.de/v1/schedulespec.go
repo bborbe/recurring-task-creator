@@ -30,9 +30,9 @@ type ScheduleSpecApplyConfiguration struct {
 	Vault *string `json:"vault,omitempty"`
 	// Title is the title shown to the user.
 	Title *string `json:"title,omitempty"`
-	// Schedule describes when the task fires. The weekday-required-iff-weekly
+	// Schedule describes when the task fires. The weekday-required-iff-weekday
 	// invariant is encoded as a CEL x-kubernetes-validations rule in
-	// scheduleSpecSchema (Prompt 2).
+	// scheduleSpecSchema.
 	Schedule *ScheduleTriggerApplyConfiguration `json:"schedule,omitempty"`
 	// Template is the body + frontmatter stamped onto the generated task.
 	Template *ScheduleTemplateApplyConfiguration `json:"template,omitempty"`

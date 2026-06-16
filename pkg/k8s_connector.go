@@ -114,6 +114,13 @@ func (k *k8sConnector) updateCrd(
 	if err != nil {
 		return errors.Wrap(ctx, err, "get CRD")
 	}
+	// Replace the whole spec rather than deep-merging. This binary owns the
+	// CRD's schema, scope, names, and versions: any divergence between the
+	// running pod's desiredCRDSpec() and what's on the cluster is exactly
+	// what this reconcile is supposed to flatten. Operator-added Spec fields
+	// (e.g. extra Versions, additionalPrinterColumns) are out of scope for
+	// v1 — operators that need them should fork desiredCRDSpec or use
+	// server-side apply with a different field manager.
 	existing.Spec = k.desiredCRDSpec()
 	if _, err := crdClient.Update(ctx, existing, metav1.UpdateOptions{}); err != nil {
 		return errors.Wrapf(ctx, err, "update CRD %s.%s", v1.Plural, v1.GroupName)
