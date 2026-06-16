@@ -37,6 +37,7 @@ spec:
                       - agent
       securityContext:
         fsGroup: 65534
+      serviceAccountName: recurring-task-creator
       containers:
         - name: service
           args:

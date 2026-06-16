@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: 'recurring-task-creator-{{ "NAMESPACE" | env }}'
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: 'recurring-task-creator-{{ "NAMESPACE" | env }}'
+subjects:
+  - kind: ServiceAccount
+    name: recurring-task-creator
+    namespace: '{{ "NAMESPACE" | env }}'
