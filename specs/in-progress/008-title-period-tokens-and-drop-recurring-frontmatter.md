@@ -1,10 +1,11 @@
 ---
-status: approved
+status: verifying
 tags:
     - dark-factory
     - spec
 approved: "2026-06-16T07:43:41Z"
 generating: "2026-06-16T07:47:17Z"
+verifying: "2026-06-16T08:12:02Z"
 branch: dark-factory/title-period-tokens-and-drop-recurring-frontmatter
 ---
 
@@ -119,3 +120,23 @@ Rationale: prompt 1 changes the publisher contract (title shape + frontmatter sh
 ## Do-Nothing Option
 
 If we don't do this: the next monthly / quarterly / yearly tick will overwrite the previous period's vault file at the same title-derived path, destroying any user edits and ticked checkboxes accumulated during that period. The user has already hit this in production after Spec 7 shipped. The `recurring:` frontmatter field continues to mislead the vault's downstream tooling (`/complete-task`, `/start-day`, Dataview) into treating one-shot period materializations as re-firing recurring tasks. Both bugs compound on every tick; there is no operational mitigation short of manual title fixes per entry per period.
+
+## Verification Result
+
+**Verified:** 2026-06-16T08:44:53Z (HEAD 7086812)
+**Binary:** installed `dark-factory` (spec targets recurring-task-creator, not dark-factory itself)
+**Scenario:** Ran `go test -v -args -ginkgo.v ./pkg/publisher` (54/54 pass) and `./pkg/schedule` (10/10 pass); ran the two grep evidence commands; ran `make precommit` from repo root.
+**Evidence:**
+- `Publisher title suffix appends the period token to a monthly title` (publisher_test.go:473) PASS — AC 1
+- `Publisher title suffix appends the period token to a weekly title (with weekday suffix)` (publisher_test.go:487) PASS — AC 2
+- `Publisher title suffix appends '<bare> - <period-token>' for every RecurrenceKind {daily,weekly,monthly,quarterly,yearly}` (publisher_test.go:550-574) PASS — AC 3
+- `Publisher frontmatter has the six-key shape (assignee, status, page_type, goals, priority, created_by)` (publisher_test.go:615) + `does not depend on RecurrenceKind` PASS — AC 4
+- `grep -nE '"recurring"' pkg/publisher/frontmatter.go` → empty, exit 1 — AC 5
+- `grep -nE '\{\{(iso-week|next-iso-week|month|last-month|quarter|last-quarter|year|last-year)\}\}' pkg/schedule/inventory.go | grep TitleTemplate` → empty, exit 1 — AC 6
+- `inventory has no period placeholders in any TitleTemplate` (inventory_validation_test.go:140) PASS — AC 7
+- `inventory has a non-empty TitleTemplate for every entry` (inventory_validation_test.go:158) PASS — AC 8
+- `Publisher full-inventory render every inventory entry renders to a title ending in ' - <period-token>'` (publisher_test.go:584) PASS — AC 9
+- `period-token byte-equality with the formatter output` DescribeTable + `weekly: byte-equality with the formatter output` (publisher_test.go:227-273) prove UUID5 byte-identity with `uuid.NewSHA1(uuidNamespace, []byte("recurring-<slug>-<token>"))` — AC 10
+- CHANGELOG.md line 5 (`feat: Publisher renders every task title as <bare-title> - <period-token>`) + line 6 (`feat: Drop the recurring: <kind> key from the published task frontmatter`) — AC 11
+- `make precommit` exit 0 (gosec 0 issues, trivy 0 vulns, addlicense clean, `ready to commit`) — AC 12
+**Verdict:** PASS
