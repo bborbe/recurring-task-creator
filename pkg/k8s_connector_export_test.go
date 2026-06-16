@@ -12,6 +12,9 @@ func VaultPatternForTest() string { return vaultPattern }
 // RecurrenceEnumForTest returns the closed set of valid recurrence strings.
 func RecurrenceEnumForTest() []string { return recurrenceEnum }
 
+// WeekdayEnumForTest returns the closed set of valid weekday strings.
+func WeekdayEnumForTest() []string { return weekdayEnum }
+
 // WeekdayRequiredIfWeekdayRuleForTest returns the CEL rule from XValidations[0].
 func WeekdayRequiredIfWeekdayRuleForTest() string { return weekdayRequiredIfWeekdayRule }
 

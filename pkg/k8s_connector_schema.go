@@ -19,6 +19,20 @@ import (
 // separate API contract).
 var recurrenceEnum = []string{"Daily", "Weekly", "Weekday", "Monthly", "Quarterly", "Yearly"}
 
+// weekdayEnum is the closed set of valid weekday strings on the CRD
+// wire, matching time.Weekday.String() output. Locked in v1 — typos
+// like "Satuday" are rejected at the API-server boundary instead of
+// failing later inside the controller's switch statement.
+var weekdayEnum = []string{
+	"Monday",
+	"Tuesday",
+	"Wednesday",
+	"Thursday",
+	"Friday",
+	"Saturday",
+	"Sunday",
+}
+
 // vaultPattern is the regex the API server enforces on spec.vault.
 // Matches the slug convention used in pkg/schedule/inventory.go.
 const vaultPattern = "^[a-z][a-z0-9-]*$"
@@ -76,6 +90,7 @@ func scheduleSpecSchema() apiextensionsv1.JSONSchemaProps {
 					"weekday": {
 						Type:        "string",
 						Description: "time.Weekday string (Monday..Sunday). Required when recurrence is 'Weekday'; forbidden otherwise.",
+						Enum:        jsonEnumValues(weekdayEnum),
 					},
 				},
 				XValidations: apiextensionsv1.ValidationRules{{

@@ -75,6 +75,18 @@ var _ = Describe("scheduleSpecSchema CEL validation", func() {
 		if !found {
 			return fmt.Errorf("recurrence %q is not in the closed set", recurrence)
 		}
+		if weekday, ok := sched["weekday"].(string); ok && weekday != "" {
+			var weekdayFound bool
+			for _, w := range pkg.WeekdayEnumForTest() {
+				if w == weekday {
+					weekdayFound = true
+					break
+				}
+			}
+			if !weekdayFound {
+				return fmt.Errorf("weekday %q is not in the closed set", weekday)
+			}
+		}
 		if msg := evalRule(buildSelfForCEL(recurrence, sched["weekday"])); msg != "" {
 			return fmt.Errorf("%s", msg)
 		}
@@ -155,6 +167,20 @@ var _ = Describe("scheduleSpecSchema CEL validation", func() {
 			"schedule": map[string]interface{}{
 				"recurrence": "Monthly",
 				"weekday":    "Saturday",
+			},
+		}
+		err := validateSpec(spec)
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("weekday"))
+	})
+
+	It("rejects a typo'd weekday value", func() {
+		spec := map[string]interface{}{
+			"vault": "personal",
+			"title": "Foo",
+			"schedule": map[string]interface{}{
+				"recurrence": "Weekday",
+				"weekday":    "Satuday", // typo: missing the 'r'
 			},
 		}
 		err := validateSpec(spec)
