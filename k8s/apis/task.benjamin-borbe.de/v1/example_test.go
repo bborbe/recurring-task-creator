@@ -47,12 +47,12 @@ var _ = Describe("example.yaml", func() {
 		Expect(sch.APIVersion).To(Equal("task.benjamin-borbe.de/v1"))
 		Expect(sch.Kind).To(Equal("Schedule"))
 		Expect(sch.Name).To(Equal("weekly-review"))
-		Expect(sch.Namespace).To(Equal("personal"))
+		Expect(sch.Namespace).To(Equal("default"))
 	})
 
 	It("round-trips every Spec field", func() {
 		Expect(yaml.UnmarshalStrict(raw, &sch)).To(Succeed())
-		Expect(sch.Spec.Vault).To(Equal("personal"))
+		Expect(sch.Spec.Vault).To(Equal("default"))
 		Expect(sch.Spec.Title).To(Equal("Weekly Review"))
 		Expect(sch.Spec.Schedule.Recurrence).To(Equal("Weekday"))
 		Expect(sch.Spec.Schedule.Weekday).To(Equal("Saturday"))
@@ -68,9 +68,9 @@ var _ = Describe("example.yaml", func() {
 kind: Schedule
 metadata:
   name: weekly-review
-  namespace: personal
+  namespace: default
 spec:
-  vault: personal
+  vault: default
   title: Weekly Review
   schedule:
     recurrence: Weekday

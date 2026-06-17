@@ -132,8 +132,6 @@ Inherited skeleton example packages (`pkg/factory`, `pkg/handler`, `pkg/mathutil
 
 ## Key Design Decisions
 
-(Reference: parent task `~/Documents/Obsidian/Personal/24 Tasks/Migrate recurring Jira subtasks to vault task system.md`)
-
 - **Hourly idempotent cron tick** — service runs hourly, computes "what should exist for today", publishes missing tasks. Idempotency via deterministic `TaskIdentifier = UUID5("recurring-<slug>-<YYYY-MM-DD>")` — controller no-ops on duplicate.
 - **Per-subtask vault tasks** — no story container; one vault task per subtask. Matches `/start-day` `[ ]` surfacing.
 - **Drop K3s LatestVersionGetter** — no external HTTP call from the schedule; static title "Update K3s" is enough.
@@ -141,7 +139,7 @@ Inherited skeleton example packages (`pkg/factory`, `pkg/handler`, `pkg/mathutil
 - **Closed predicate primitive set** — weekday-in-set, day-of-month-in-set, month-and-day, every-day, quarter-boundary, year-boundary. Adding a new kind is a new spec.
 - **No Jira / ADF / Kafka / HTTP imports in `pkg/schedule/`** — that package is pure data and pure functions.
 - **Slugs are frozen** — renaming a slug after merge breaks the deterministic UUID5 and is itself a new spec.
-- **No `LICENSE` file, no Claude PR review workflow** — private personal-infra repo, solo maintainer.
+- **BSD-2-Clause license** (`LICENSE` at repo root). Solo maintainer; no Claude PR review workflow.
 
 ## Cutover Pattern
 
