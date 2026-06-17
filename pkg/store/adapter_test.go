@@ -112,4 +112,44 @@ var _ = Describe("adaptSchedule", func() {
 		Expect(def.TitleTemplate).To(Equal("My Title"))
 		Expect(def.BodyTemplate).To(Equal("My Body"))
 	})
+
+	It("copies frontmatter verbatim from CRD into TaskDefinition.Frontmatter", func() {
+		cr := &v1.Schedule{
+			ObjectMeta: metav1.ObjectMeta{Name: "slug-with-fm"},
+			Spec: v1.ScheduleSpec{
+				Title:    "T",
+				Schedule: v1.ScheduleTrigger{Recurrence: "Daily"},
+				Template: v1.ScheduleTemplate{
+					Body: "B",
+					Frontmatter: map[string]interface{}{
+						"assignee": "alice",
+						"priority": 4,
+						"goals":    []interface{}{"[[Example Goal]]"},
+						"category": "ops",
+					},
+				},
+			},
+		}
+		def, err := store.AdaptScheduleForTest(ctx, cr)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(def.Frontmatter).To(HaveKeyWithValue("assignee", "alice"))
+		Expect(def.Frontmatter).To(HaveKeyWithValue("priority", 4))
+		Expect(def.Frontmatter).To(HaveKeyWithValue("goals", []interface{}{"[[Example Goal]]"}))
+		Expect(def.Frontmatter).To(HaveKeyWithValue("category", "ops"))
+		Expect(def.Frontmatter).To(HaveLen(4))
+	})
+
+	It("leaves Frontmatter nil when the CR's template.frontmatter is absent", func() {
+		cr := &v1.Schedule{
+			ObjectMeta: metav1.ObjectMeta{Name: "no-fm"},
+			Spec: v1.ScheduleSpec{
+				Title:    "T",
+				Schedule: v1.ScheduleTrigger{Recurrence: "Daily"},
+				Template: v1.ScheduleTemplate{Body: "B"},
+			},
+		}
+		def, err := store.AdaptScheduleForTest(ctx, cr)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(def.Frontmatter).To(BeNil())
+	})
 })

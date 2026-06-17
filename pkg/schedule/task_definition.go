@@ -4,11 +4,15 @@
 
 package schedule
 
-import (
-	"time"
+import "time"
 
-	lib "github.com/bborbe/agent/lib"
-)
+// Frontmatter is operator-defined YAML frontmatter stamped onto the
+// generated vault file. Structurally identical to `bborbe/agent/lib`'s
+// `TaskFrontmatter` (`map[string]interface{}`) but declared locally so
+// the pure-data layer here doesn't pull in the agent module just to
+// name a map type. The publisher converts to/from `lib.TaskFrontmatter`
+// at its package boundary.
+type Frontmatter = map[string]interface{}
 
 // TaskDefinition is one entry in the recurring-task inventory.
 type TaskDefinition struct {
@@ -50,10 +54,11 @@ type TaskDefinition struct {
 	// Frontmatter is operator-defined YAML frontmatter stamped onto the
 	// generated vault file. Sourced from the `spec.template.frontmatter`
 	// field on the Schedule CR (free-form map[string]interface{}). The
-	// publisher merges this with the three hardcoded keys it always
-	// emits (status, page_type, created_by); operator-supplied keys take
-	// precedence when present.
-	Frontmatter lib.TaskFrontmatter
+	// publisher merges this with three hardcoded built-in keys it
+	// always emits (`status`, `page_type`, `created_by`); the built-in
+	// keys WIN on collision — the publisher's invariants are not
+	// operator-overrideable.
+	Frontmatter Frontmatter
 }
 
 // SupportedPlaceholders lists the EXACT set of placeholders accepted in
