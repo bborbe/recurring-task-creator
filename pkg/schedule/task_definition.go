@@ -4,7 +4,11 @@
 
 package schedule
 
-import "time"
+import (
+	"time"
+
+	lib "github.com/bborbe/agent/lib"
+)
 
 // TaskDefinition is one entry in the recurring-task inventory.
 type TaskDefinition struct {
@@ -42,6 +46,14 @@ type TaskDefinition struct {
 	//     RecurrenceYearly: ignored. May be the zero value or any other
 	//     value without effect on firing or rendering.
 	Weekday time.Weekday
+
+	// Frontmatter is operator-defined YAML frontmatter stamped onto the
+	// generated vault file. Sourced from the `spec.template.frontmatter`
+	// field on the Schedule CR (free-form map[string]interface{}). The
+	// publisher merges this with the three hardcoded keys it always
+	// emits (status, page_type, created_by); operator-supplied keys take
+	// precedence when present.
+	Frontmatter lib.TaskFrontmatter
 }
 
 // SupportedPlaceholders lists the EXACT set of placeholders accepted in

@@ -15,9 +15,9 @@ spec:
       Plan the next.
     frontmatter:
       goals:
-        - "[[Migrate Personal Workflow from Atlassian to Obsidian]]"
+        - "[[Example Goal]]"
       priority: 2
       status: in_progress
       page_type: task
-      assignee: bborbe
+      assignee: alice
       recurring: Weekday

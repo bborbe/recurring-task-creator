@@ -15,11 +15,6 @@ import (
 	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 )
 
-// goalsLink is the wiki link placed in Frontmatter["goals"] for every
-// recurring task created by this service. Frozen; do not move or rename
-// without a new spec.
-const goalsLink = "[[Migrate Personal Workflow from Atlassian to Obsidian]]"
-
 //counterfeiter:generate -o ../../mocks/publisher-publisher.go --fake-name PublisherPublisher . Publisher
 
 // Publisher turns one (TaskDefinition, Date) pair into a validated
@@ -80,7 +75,7 @@ func (p *publisher) Publish(
 		Title: strings.TrimSpace(
 			renderTemplate(def.TitleTemplate, def.Slug, date),
 		) + " - " + periodToken,
-		Frontmatter: buildFrontmatter(),
+		Frontmatter: buildFrontmatter(def.Frontmatter),
 		Body:        renderTemplate(def.BodyTemplate, def.Slug, date),
 	}
 	if p.dryRun {

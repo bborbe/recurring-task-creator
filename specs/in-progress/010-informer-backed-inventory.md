@@ -134,7 +134,6 @@ The on-disk CRD bootstrap (the 45 `Schedule` YAMLs that re-introduce today's inv
 
 ## Related
 
-- Parent task: `~/Documents/Obsidian/Personal/24 Tasks/Move recurring-task inventory to k8s CRD.md`
 - Predecessor: `[[Build Recurring Task Creator]]`
 - Predecessor spec (CRD scaffolding): `specs/in-progress/008-crd-scaffolding.md` (the connector, the types, the schema, and the generated client live here)
 - Recurrence enum closed by Spec 9: `specs/completed/009-weekday-kind-split.md`

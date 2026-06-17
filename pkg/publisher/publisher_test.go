@@ -681,7 +681,7 @@ var _ = Describe("Publisher", func() {
 
 	Describe("frontmatter", func() {
 		It(
-			"has the six-key shape (assignee, status, page_type, goals, priority, created_by)",
+			"emits the three built-in keys when the operator supplies no frontmatter",
 			func() {
 				def := schedule.TaskDefinition{
 					Slug:          "test-slug",
@@ -694,18 +694,68 @@ var _ = Describe("Publisher", func() {
 					schedule.NewDate(2025, time.January, 4),
 				)).To(Succeed())
 				fm := capture().Frontmatter
-				Expect(fm).To(HaveKeyWithValue("assignee", "bborbe"))
 				Expect(fm).To(HaveKeyWithValue("status", "in_progress"))
 				Expect(fm).To(HaveKeyWithValue("page_type", "task"))
-				Expect(fm).To(HaveKeyWithValue("priority", 2))
-				Expect(fm).To(HaveKeyWithValue(
-					"goals",
-					[]interface{}{"[[Migrate Personal Workflow from Atlassian to Obsidian]]"},
-				))
 				Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
-				Expect(fm).To(HaveLen(6))
-				// AC #4 explicit absence: the `recurring` key was removed by spec 008.
+				Expect(fm).To(HaveLen(3))
 				Expect(fm).NotTo(HaveKey("recurring"))
+			},
+		)
+
+		It(
+			"merges operator-defined frontmatter from TaskDefinition.Frontmatter",
+			func() {
+				def := schedule.TaskDefinition{
+					Slug:          "test-slug",
+					TitleTemplate: "t",
+					Recurrence:    schedule.RecurrenceWeekly,
+					Frontmatter: lib.TaskFrontmatter{
+						"assignee": "alice",
+						"priority": 4,
+						"goals":    []interface{}{"[[Example Goal]]"},
+						"category": "ops",
+					},
+				}
+				Expect(pub.Publish(
+					context.Background(),
+					def,
+					schedule.NewDate(2025, time.January, 4),
+				)).To(Succeed())
+				fm := capture().Frontmatter
+				Expect(fm).To(HaveKeyWithValue("assignee", "alice"))
+				Expect(fm).To(HaveKeyWithValue("priority", 4))
+				Expect(fm).To(HaveKeyWithValue("goals", []interface{}{"[[Example Goal]]"}))
+				Expect(fm).To(HaveKeyWithValue("category", "ops"))
+				Expect(fm).To(HaveKeyWithValue("status", "in_progress"))
+				Expect(fm).To(HaveKeyWithValue("page_type", "task"))
+				Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
+				Expect(fm).To(HaveLen(7))
+			},
+		)
+
+		It(
+			"built-in keys win on collision; operator cannot override status/page_type/created_by",
+			func() {
+				def := schedule.TaskDefinition{
+					Slug:          "test-slug",
+					TitleTemplate: "t",
+					Recurrence:    schedule.RecurrenceWeekly,
+					Frontmatter: lib.TaskFrontmatter{
+						"status":     "operator-tries-to-override",
+						"page_type":  "operator-tries-to-override",
+						"created_by": "operator-tries-to-override",
+					},
+				}
+				Expect(pub.Publish(
+					context.Background(),
+					def,
+					schedule.NewDate(2025, time.January, 4),
+				)).To(Succeed())
+				fm := capture().Frontmatter
+				Expect(fm).To(HaveKeyWithValue("status", "in_progress"))
+				Expect(fm).To(HaveKeyWithValue("page_type", "task"))
+				Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
+				Expect(fm).To(HaveLen(3))
 			},
 		)
 

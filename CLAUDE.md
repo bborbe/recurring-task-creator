@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-`recurring-task-creator` — a private Go service that publishes `task.CreateCommand` events to Kafka on a schedule so the agent task-controller materializes recurring tasks (daily/weekly/monthly/quarterly/yearly) as Obsidian vault files. Replaces `jira-task-creator`.
+`recurring-task-creator` — a Go service that publishes `task.CreateCommand` events to Kafka on a schedule so a downstream task-controller (e.g. `bborbe/agent`'s `task/controller`) materializes recurring tasks (daily / weekly / weekday / monthly / quarterly / yearly) as Obsidian vault files. Task definitions live as `Schedule` Custom Resources, applied with `kubectl apply`.
 
 ## Dark Factory Workflow
 
@@ -141,6 +141,6 @@ Inherited skeleton example packages (`pkg/factory`, `pkg/handler`, `pkg/mathutil
 - **Slugs are frozen** — renaming a slug after merge breaks the deterministic UUID5 and is itself a new spec.
 - **BSD-2-Clause license** (`LICENSE` at repo root). Solo maintainer; no Claude PR review workflow.
 
-## Cutover Pattern
+## Historical Notes
 
-This service runs in parallel with `jira-task-creator` for one cycle (Phase 3 of the parent task), then `jira-task-creator` is scaled to zero and its repo archived. No double-write coordination is needed because both services write to different sinks (Jira API vs Kafka).
+- This service replaced a predecessor (`bborbe/jira-task-creator`) that wrote subtasks to Jira directly. The cutover ran both in parallel for one cycle, then the predecessor was scaled to zero. Kept here for context — the cutover is complete and `jira-task-creator` is decommissioned.
