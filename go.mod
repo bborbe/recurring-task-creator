@@ -9,10 +9,10 @@ tool (
 
 require (
 	github.com/bborbe/agent/lib v0.68.0
-	github.com/bborbe/cqrs v0.5.2
+	github.com/bborbe/cqrs v0.5.3
 	github.com/bborbe/errors v1.5.13
 	github.com/bborbe/http v1.26.13
-	github.com/bborbe/kafka v1.23.2
+	github.com/bborbe/kafka v1.25.0
 	github.com/bborbe/log v1.6.14
 	github.com/bborbe/metrics v0.5.4
 	github.com/bborbe/run v1.9.28
@@ -20,16 +20,16 @@ require (
 	github.com/bborbe/service v1.10.1
 	github.com/bborbe/time v1.27.1
 	github.com/golang/glog v1.2.5
-	github.com/google/cel-go v0.26.0
+	github.com/google/cel-go v0.28.1
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
-	github.com/onsi/ginkgo/v2 v2.29.0
-	github.com/onsi/gomega v1.41.0
+	github.com/onsi/ginkgo/v2 v2.31.0
+	github.com/onsi/gomega v1.42.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
-	k8s.io/apiextensions-apiserver v0.36.1
-	k8s.io/apimachinery v0.36.1
-	k8s.io/client-go v0.36.1
+	k8s.io/apiextensions-apiserver v0.36.2
+	k8s.io/apimachinery v0.36.2
+	k8s.io/client-go v0.36.2
 	sigs.k8s.io/structured-merge-diff/v6 v6.4.0
 	sigs.k8s.io/yaml v1.6.0
 )
@@ -38,14 +38,14 @@ require (
 	cel.dev/expr v0.25.1 // indirect
 	github.com/IBM/sarama v1.50.2 // indirect
 	github.com/Masterminds/semver/v3 v3.5.0 // indirect
-	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
+	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	github.com/bborbe/argument/v2 v2.12.27 // indirect
 	github.com/bborbe/collection v1.20.13 // indirect
-	github.com/bborbe/k8s v1.14.2 // indirect
+	github.com/bborbe/k8s v1.14.3 // indirect
 	github.com/bborbe/kv v1.21.2 // indirect
 	github.com/bborbe/math v1.3.11 // indirect
 	github.com/bborbe/parse v1.10.13 // indirect
-	github.com/bborbe/strimzi v1.8.4 // indirect
+	github.com/bborbe/strimzi v1.8.5 // indirect
 	github.com/bborbe/validation v1.4.14 // indirect
 	github.com/bborbe/vault-cli v0.68.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -100,7 +100,6 @@ require (
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/spf13/cobra v1.10.2 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
-	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
@@ -122,8 +121,8 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/api v0.36.1 // indirect
-	k8s.io/code-generator v0.36.1 // indirect
+	k8s.io/api v0.36.2 // indirect
+	k8s.io/code-generator v0.36.2 // indirect
 	k8s.io/gengo/v2 v2.0.0-20250922181213-ec3ebc5fd46b // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260520065146-aa012df4f4af // indirect
@@ -132,3 +131,5 @@ require (
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 )
+
+exclude cloud.google.com/go v0.26.0
