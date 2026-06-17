@@ -144,11 +144,11 @@ This repo ships **exactly the first producer**: Schedule CR → Kafka `task.Crea
 | Component | Repo | Public? | Role |
 |---|---|---|---|
 | `recurring-task-creator` | [bborbe/recurring-task-creator](https://github.com/bborbe/recurring-task-creator) | ✅ public | THIS — Schedule CR → Kafka `CreateCommand` |
-| `git-rest` | [bborbe/git-rest](https://github.com/bborbe/git-rest) | (private) | HTTP CRUD over a git remote (vault writer) |
-| `task-controller`, `task-executor`, `agent-{claude,pi,code,gemini}` | [bborbe/agent](https://github.com/bborbe/agent) | (private) | shared task pipeline + reference agents |
-| `github-pr-watcher`, `github-build-watcher`, `github-release-watcher`, `maintainer-agent-pr-reviewer`, `maintainer-agent-github-releaser` | [bborbe/maintainer](https://github.com/bborbe/maintainer) | (private) | GitHub-source producers + platform agents |
-| `vault-cli` | bborbe/vault-cli | (private) | operator CLI / Claude Code plugin |
-| `task-orchestrator` | bborbe/task-orchestrator | (private) | operator web UI (Kanban + session driver) |
+| `git-rest` | [bborbe/git-rest](https://github.com/bborbe/git-rest) | ✅ public | HTTP CRUD over a git remote (vault writer) |
+| `task-controller`, `task-executor`, `agent-{claude,pi,code,gemini}` | [bborbe/agent](https://github.com/bborbe/agent) | ✅ public | shared task pipeline + reference agents |
+| `github-pr-watcher`, `github-build-watcher`, `github-release-watcher`, `maintainer-agent-pr-reviewer`, `maintainer-agent-github-releaser` | [bborbe/maintainer](https://github.com/bborbe/maintainer) | ✅ public | GitHub-source producers + platform agents |
+| `vault-cli` | [bborbe/vault-cli](https://github.com/bborbe/vault-cli) | ✅ public | operator CLI / Claude Code plugin |
+| `task-orchestrator` | [bborbe/task-orchestrator](https://github.com/bborbe/task-orchestrator) | ✅ public | operator web UI (Kanban + session driver) |
 | Cluster infra (helm services, monitoring, the operator's own Schedule CRs) | bborbe/quant | (private) | operational config + per-operator content |
 
 ## Why split this way
