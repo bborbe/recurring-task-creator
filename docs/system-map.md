@@ -106,18 +106,25 @@ prod        ... (same set)
 
 (An operator's cluster also typically registers their own domain-specific agents; only the generic + platform set is shown above.)
 
-### Agent shapes
+### Reference agents
 
-| Agent | Shape | Role |
+Four example agents demonstrate that the pipeline is technology-agnostic — each fills the same `planning / execution / ai_review` phase contract using a different backing technology:
+
+| Agent | Backing technology | What it shows |
 |---|---|---|
-| `agent-claude` | all-Claude — same Claude Code step reused across `planning / execution / ai_review` | generic / fallback |
-| `agent-pi` | all-MiniMax-`pi` — Tier-D sibling of Claude Agent (cheap LLM swap) | budget reference |
-| `agent-code` | pure-Go — 3 distinct deterministic steps, no LLM | deterministic reference |
-| `agent-gemini` | hybrid — Gemini at planning edge, Go steps for execution + verify | boundary-translator reference |
-| `maintainer-agent-pr-reviewer` | per-phase — reviews `bborbe/*` PRs | platform |
-| `maintainer-agent-github-releaser` | per-phase — semver classify + tag releases | platform |
+| `agent-code` | no LLM — pure Go | the contract works for deterministic / rule-based work; no AI dependency |
+| `agent-claude` | [Claude Code](https://docs.claude.com/claude-code) (Anthropic CLI) | LLM-driven phases using a subscription-billable agent CLI |
+| `agent-gemini` | [Gemini API](https://ai.google.dev) | LLM-driven phases via a usage-billed HTTP API |
+| `agent-pi` | [pi.dev](https://pi.dev) (MiniMax) | LLM-driven phases via a cheap third-party API (cost-tier swap) |
 
-All agents follow the same controller / executor contract; they differ in *what each phase does*, not in the pipeline shape.
+Same controller / executor contract for all four; they differ only in what each phase actually executes inside its container.
+
+### Platform agents
+
+| Agent | Role |
+|---|---|
+| `maintainer-agent-pr-reviewer` | reviews `bborbe/*` PRs |
+| `maintainer-agent-github-releaser` | semver classify + tag releases |
 
 ## Operator surfaces
 
