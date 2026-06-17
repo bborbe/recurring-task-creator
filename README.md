@@ -1,4 +1,9 @@
-# recurring-task-creator
+# Recurring Task Creator
+
+[![Go Reference](https://pkg.go.dev/badge/github.com/bborbe/recurring-task-creator.svg)](https://pkg.go.dev/github.com/bborbe/recurring-task-creator)
+[![CI](https://github.com/bborbe/recurring-task-creator/actions/workflows/ci.yml/badge.svg)](https://github.com/bborbe/recurring-task-creator/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bborbe/recurring-task-creator)](https://goreportcard.com/report/github.com/bborbe/recurring-task-creator)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/bborbe/recurring-task-creator)
 
 Publishes `task.CreateCommand` events to Kafka on a fixed schedule so a downstream task-controller materializes recurring tasks (daily / weekly / weekday / monthly / quarterly / yearly) as Obsidian vault `.md` files.
 
