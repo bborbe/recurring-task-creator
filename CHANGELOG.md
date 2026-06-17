@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.0.2
+
+- bump alpine 3.23 → 3.24 in Dockerfile
+- update bborbe/kafka v1.23.2 → v1.25.0 and bborbe/cqrs v0.5.2 → v0.5.3
+- update k8s.io/{api,apimachinery,client-go,apiextensions-apiserver} v0.36.1 → v0.36.2
+- update cel-go v0.26.0 → v0.28.1, ginkgo v2.29.0 → v2.31.0, gomega v1.41.0 → v1.42.0
+- drop stoewer/go-strcase indirect dep; exclude cloud.google.com/go v0.26.0
+
 ## v0.0.1
 
 Initial public release.
