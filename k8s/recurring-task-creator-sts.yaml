@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: recurring-task-creator
+  namespace: '{{ "NAMESPACE" | env }}'
+  annotations:
+    keel.sh/policy: force
+    keel.sh/trigger: poll
+    keel.sh/match-tag: "true"
+    keel.sh/pollSchedule: "@every 1m"
+    random: '{{ "RANDOM" | env }}'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: recurring-task-creator
+  serviceName: recurring-task-creator
+  template:
+    metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "9090"
+        prometheus.io/scheme: http
+        prometheus.io/scrape: "true"
+        random: '{{ "RANDOM" | env }}'
+      labels:
+        app: recurring-task-creator
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node_type
+                    operator: In
+                    values:
+                      - agent
+      securityContext:
+        fsGroup: 65534
+      serviceAccountName: recurring-task-creator
+      containers:
+        - name: service
+          args:
+            - -v={{"LOGLEVEL" | env}}
+          env:
+            - name: LISTEN
+              value: ':9090'
+            - name: KAFKA_BROKERS
+              value: '{{ "KAFKA_BROKERS" | env }}'
+            - name: STAGE
+              value: '{{ "STAGE" | env }}'
+            - name: DRY_RUN
+              value: '{{ "DRY_RUN" | env }}'
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  key: sentry-dsn
+                  name: recurring-task-creator
+            - name: SENTRY_PROXY
+              value: '{{"SENTRY_PROXY_URL" | env}}'
+            - name: TZ
+              value: Europe/Berlin
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          image: '{{"DOCKER_REGISTRY" | env}}/recurring-task-creator:{{"BRANCH" | env}}'
+          imagePullPolicy: Always
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /healthz
+              port: 9090
+              scheme: HTTP
+            initialDelaySeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          ports:
+            - containerPort: 9090
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: 9090
+              scheme: HTTP
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+          resources:
+            limits:
+              cpu: 200m
+              memory: 100Mi
+            requests:
+              cpu: 20m
+              memory: 20Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65534
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmp
+      imagePullSecrets:
+        - name: docker-quant
+      volumes:
+        - name: tmp
+          emptyDir: {}
+  updateStrategy:
+    type: RollingUpdate

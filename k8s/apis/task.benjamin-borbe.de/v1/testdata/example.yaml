@@ -1,0 +1,23 @@
+apiVersion: task.benjamin-borbe.de/v1
+kind: Schedule
+metadata:
+  name: weekly-review
+  namespace: default
+spec:
+  vault: default
+  title: Weekly Review
+  schedule:
+    recurrence: Weekday
+    weekday: Saturday
+  template:
+    body: |
+      Reflect on the past week.
+      Plan the next.
+    frontmatter:
+      goals:
+        - "[[Example Goal]]"
+      priority: 2
+      status: in_progress
+      page_type: task
+      assignee: alice
+      recurring: Weekday

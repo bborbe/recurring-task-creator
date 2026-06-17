@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: recurring-task-creator
+  namespace: '{{ "NAMESPACE" | env }}'
+rules:
+  - apiGroups:
+      - task.benjamin-borbe.de
+    resources:
+      - schedules
+    verbs:
+      - get
+      - list
+      - watch
