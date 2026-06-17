@@ -13,7 +13,7 @@ branch: dark-factory/weekday-kind-split
 
 <summary>
 
-- All 21 inventory entries with `Recurrence: RecurrenceWeekly, Weekday: time.Saturday|time.Sunday` in `/workspace/pkg/schedule/inventory.go` are migrated to `Recurrence: RecurrenceWeekday` with `Weekday: time.Saturday|time.Sunday` unchanged. The 12 Saturday entries (slugs `shutdown-k3s`, `turn-on-hell`, `weekly-review`, `check-ftmo-demo-accounts`, `lexoffice-invoices`, `moneymoney-review`, `opnsense-update`, `home-assistant-update-backup`, `renew-gmail-oauth-tokens`, `plan-next-week`, `run-update-all-saturday`, `topic-backup-saturday`) and the 9 Sunday entries (slugs `complete-rsync-backups`, `complete-longhorn-backups`, `turn-off-hell`, `turn-off-sun`, `turn-off-fire`, `docker-registry-gc`, `rebuild-trading-dev-prod`, `check-bot-is-healthy`, `run-update-all`) are migrated. The 24 non-weekly entries (17 monthly + 2 quarterly + 2 yearly + 1 monthly day-5 + 2 yearly May-1st) are NOT touched.
+- All 21 inventory entries with `Recurrence: RecurrenceWeekly, Weekday: time.Saturday|time.Sunday` in `/workspace/pkg/schedule/inventory.go` are migrated to `Recurrence: RecurrenceWeekday` with `Weekday: time.Saturday|time.Sunday` unchanged. The 12 Saturday entries (slugs `weekday-sat-1`, `weekday-sat-2`, `weekly-review`, `weekday-sat-4`, `weekday-sat-5`, `weekday-sat-6`, `weekday-sat-7`, `weekday-sat-8`, `weekday-sat-9`, `weekday-sat-10`, `weekday-sat-11`, `weekday-sat-12`) and the 9 Sunday entries (slugs `weekday-sun-1`, `weekday-sun-2`, `weekday-sun-3`, `weekday-sun-4`, `weekday-sun-5`, `weekday-sun-6`, `weekday-sun-7`, `weekday-sun-8`, `run-update-all`) are migrated. The 24 non-weekly entries (17 monthly + 2 quarterly + 2 yearly + 1 monthly day-5 + 2 yearly May-1st) are NOT touched.
 - The publisher's `buildPeriodToken` switch in `/workspace/pkg/publisher/uuid_namespace.go` is updated: the existing `case schedule.RecurrenceWeekly` arm now emits bare `YYYYWww` (no weekday suffix); a new `case schedule.RecurrenceWeekday` arm emits `YYYYWww-<3-letter-lowercase-weekday-abbrev>`. The 21 migrated entries' UUID5 input strings are byte-identical to pre-Spec-9 — same identifier, same vault filename, no duplicates after deploy. A table-driven UUID5 stability test enumerates all 21 weekday slugs with the hand-derived pre-Spec-9 expected token strings and asserts byte-for-byte equality.
 - The tick (`pkg/tick/tick.go`) is updated to filter by date: it now calls `schedule.TasksForDate(date)` (the new accessor added in Prompt 1) instead of iterating `t.inventory` directly. The factory still passes `schedule.Inventory()` (full inventory) to `tick.NewTick`; the tick derives the per-tick filtered slice internally. The "full inventory" tick test in `pkg/tick/tick_test.go` (line 423) is updated to assert the date-filtered count (using `schedule.TasksForDate(refDate)` as the expected count, not the full 45).
 - The trigger handler (`pkg/handler/trigger.go`) is updated to iterate `schedule.TasksForDate(date)` instead of `schedule.Inventory()`. The "publishes every entry in the inventory on /trigger?date=" test (line 78) and the "responds 200 with date, published=N, errors=[]" test (line 90) are updated to use `schedule.TasksForDate(date)` for the expected count. For `?date=2025-01-04` (Saturday), the expected count is 12 Saturday weekday entries + 17 monthly + 2 quarterly + 2 yearly (May 1st) + 2 yearly (Jan 1st — does not fire on Jan 4) + 1 monthly (day 5 — does not fire on Jan 4) = 12 + 17 + 2 + 2 = 33 entries; verify by calling `schedule.TasksForDate(schedule.NewDate(2025, time.January, 4))` in the test and using `len(...)` for the assertion. The test uses the same accessor the trigger uses, guaranteeing the two stay in sync.
@@ -38,7 +38,7 @@ Read `/workspace/CLAUDE.md` for project conventions (Go 1.26, BSD license header
 
 Read these source files fully before making changes:
 
-- `/workspace/pkg/schedule/inventory.go` — the 45-entry inventory slice (post-Prompt-1: still 21 entries with `Recurrence: RecurrenceWeekly, Weekday: time.Saturday|time.Sunday`). The 12 Saturday slugs (in declaration order) are: `shutdown-k3s`, `turn-on-hell`, `weekly-review`, `check-ftmo-demo-accounts`, `lexoffice-invoices`, `moneymoney-review`, `opnsense-update`, `home-assistant-update-backup`, `renew-gmail-oauth-tokens`, `plan-next-week`, `run-update-all-saturday`, `topic-backup-saturday`. The 9 Sunday slugs (in declaration order) are: `complete-rsync-backups`, `complete-longhorn-backups`, `turn-off-hell`, `turn-off-sun`, `turn-off-fire`, `docker-registry-gc`, `rebuild-trading-dev-prod`, `check-bot-is-healthy`, `run-update-all`. This prompt changes the `Recurrence: RecurrenceWeekly` line on all 21 entries to `Recurrence: RecurrenceWeekday`. The `Weekday` field is unchanged. The other 24 entries (17 monthly + 2 quarterly + 2 yearly Jan-1st + 1 monthly day-5 + 2 yearly May-1st) are NOT modified.
+- `/workspace/pkg/schedule/inventory.go` — the 45-entry inventory slice (post-Prompt-1: still 21 entries with `Recurrence: RecurrenceWeekly, Weekday: time.Saturday|time.Sunday`). The 12 Saturday slugs (in declaration order) are: `weekday-sat-1`, `weekday-sat-2`, `weekly-review`, `weekday-sat-4`, `weekday-sat-5`, `weekday-sat-6`, `weekday-sat-7`, `weekday-sat-8`, `weekday-sat-9`, `weekday-sat-10`, `weekday-sat-11`, `weekday-sat-12`. The 9 Sunday slugs (in declaration order) are: `weekday-sun-1`, `weekday-sun-2`, `weekday-sun-3`, `weekday-sun-4`, `weekday-sun-5`, `weekday-sun-6`, `weekday-sun-7`, `weekday-sun-8`, `run-update-all`. This prompt changes the `Recurrence: RecurrenceWeekly` line on all 21 entries to `Recurrence: RecurrenceWeekday`. The `Weekday` field is unchanged. The other 24 entries (17 monthly + 2 quarterly + 2 yearly Jan-1st + 1 monthly day-5 + 2 yearly May-1st) are NOT modified.
 - `/workspace/pkg/schedule/inventory_validation_test.go` — the existing `Describe("inventory", ...)` block with 6 `It` cases. After this prompt the block has 5 `It` cases (3 are deleted: `has exactly 9 Sunday weekly slugs in sundayWeeklyAllowList`, `every weekly entry has Weekday in {time.Saturday, time.Sunday}`, `every non-weekly entry leaves Weekday at the zero value AND its slug is NOT in sundayWeeklyAllowList`; 2 are added: `every RecurrenceWeekday entry has non-zero Weekday`, `every RecurrenceWeekly entry has zero Weekday`). The `uses recurrence kinds from the closed set` test gains `RecurrenceWeekday` in its `allowed` map. The 3 unchanged pre-Spec-7 tests (`has unique slugs`, `uses only supported placeholders in TitleTemplate and BodyTemplate`, `has no period placeholders in any TitleTemplate`, `has a non-empty TitleTemplate for every entry`) stay. The `sundayWeeklyAllowList` package-level var is DELETED.
 - `/workspace/pkg/schedule/recurrence.go` — 6-value `RecurrenceKind` enum (post-Prompt-1). Unchanged in this prompt.
 - `/workspace/pkg/schedule/task_definition.go` — `TaskDefinition` struct. Unchanged (Prompt 1 updated the `Weekday` GoDoc).
@@ -77,13 +77,13 @@ Load-bearing snippets inlined for the executor's verification:
 // by a `Weekday: time.Saturday,` (12 entries) or `Weekday: time.Sunday,`
 // (9 entries) line. The migration changes ONLY the `Recurrence` line.
 // The slugs (in declaration order) are:
-//   Saturday (12): shutdown-k3s, turn-on-hell, weekly-review, check-ftmo-demo-accounts,
-//                  lexoffice-invoices, moneymoney-review, opnsense-update,
-//                  home-assistant-update-backup, renew-gmail-oauth-tokens,
-//                  plan-next-week, run-update-all-saturday, topic-backup-saturday
-//   Sunday (9):    complete-rsync-backups, complete-longhorn-backups, turn-off-hell,
-//                  turn-off-sun, turn-off-fire, docker-registry-gc,
-//                  rebuild-trading-dev-prod, check-bot-is-healthy, run-update-all
+//   Saturday (12): weekday-sat-1, weekday-sat-2, weekly-review, weekday-sat-4,
+//                  weekday-sat-5, weekday-sat-6, weekday-sat-7,
+//                  weekday-sat-8, weekday-sat-9,
+//                  weekday-sat-10, weekday-sat-11, weekday-sat-12
+//   Sunday (9):    weekday-sun-1, weekday-sun-2, weekday-sun-3,
+//                  weekday-sun-4, weekday-sun-5, weekday-sun-6,
+//                  weekday-sun-7, weekday-sun-8, run-update-all
 ```
 
 ```go
@@ -167,33 +167,33 @@ The 21 edits:
 
 | # | Slug | Old `Recurrence` | New `Recurrence` |
 |---|------|------------------|------------------|
-| 1 | `shutdown-k3s` | `RecurrenceWeekly` | `RecurrenceWeekday` |
-| 2 | `turn-on-hell` | `RecurrenceWeekly` | `RecurrenceWeekday` |
+| 1 | `weekday-sat-1` | `RecurrenceWeekly` | `RecurrenceWeekday` |
+| 2 | `weekday-sat-2` | `RecurrenceWeekly` | `RecurrenceWeekday` |
 | 3 | `weekly-review` | `RecurrenceWeekly` | `RecurrenceWeekday` |
-| 4 | `check-ftmo-demo-accounts` | `RecurrenceWeekly` | `RecurrenceWeekday` |
-| 5 | `lexoffice-invoices` | `RecurrenceWeekly` | `RecurrenceWeekday` |
-| 6 | `moneymoney-review` | `RecurrenceWeekly` | `RecurrenceWeekday` |
-| 7 | `opnsense-update` | `RecurrenceWeekly` | `RecurrenceWeekday` |
-| 8 | `home-assistant-update-backup` | `RecurrenceWeekly` | `RecurrenceWeekday` |
-| 9 | `renew-gmail-oauth-tokens` | `RecurrenceWeekly` | `RecurrenceWeekday` |
-| 10 | `plan-next-week` | `RecurrenceWeekly` | `RecurrenceWeekday` |
-| 11 | `run-update-all-saturday` | `RecurrenceWeekly` | `RecurrenceWeekday` |
-| 12 | `topic-backup-saturday` | `RecurrenceWeekly` | `RecurrenceWeekday` |
-| 13 | `complete-rsync-backups` | `RecurrenceWeekly` | `RecurrenceWeekday` |
-| 14 | `complete-longhorn-backups` | `RecurrenceWeekly` | `RecurrenceWeekday` |
-| 15 | `turn-off-hell` | `RecurrenceWeekly` | `RecurrenceWeekday` |
-| 16 | `turn-off-sun` | `RecurrenceWeekly` | `RecurrenceWeekday` |
-| 17 | `turn-off-fire` | `RecurrenceWeekly` | `RecurrenceWeekday` |
-| 18 | `docker-registry-gc` | `RecurrenceWeekly` | `RecurrenceWeekday` |
-| 19 | `rebuild-trading-dev-prod` | `RecurrenceWeekly` | `RecurrenceWeekday` |
-| 20 | `check-bot-is-healthy` | `RecurrenceWeekly` | `RecurrenceWeekday` |
+| 4 | `weekday-sat-4` | `RecurrenceWeekly` | `RecurrenceWeekday` |
+| 5 | `weekday-sat-5` | `RecurrenceWeekly` | `RecurrenceWeekday` |
+| 6 | `weekday-sat-6` | `RecurrenceWeekly` | `RecurrenceWeekday` |
+| 7 | `weekday-sat-7` | `RecurrenceWeekly` | `RecurrenceWeekday` |
+| 8 | `weekday-sat-8` | `RecurrenceWeekly` | `RecurrenceWeekday` |
+| 9 | `weekday-sat-9` | `RecurrenceWeekly` | `RecurrenceWeekday` |
+| 10 | `weekday-sat-10` | `RecurrenceWeekly` | `RecurrenceWeekday` |
+| 11 | `weekday-sat-11` | `RecurrenceWeekly` | `RecurrenceWeekday` |
+| 12 | `weekday-sat-12` | `RecurrenceWeekly` | `RecurrenceWeekday` |
+| 13 | `weekday-sun-1` | `RecurrenceWeekly` | `RecurrenceWeekday` |
+| 14 | `weekday-sun-2` | `RecurrenceWeekly` | `RecurrenceWeekday` |
+| 15 | `weekday-sun-3` | `RecurrenceWeekly` | `RecurrenceWeekday` |
+| 16 | `weekday-sun-4` | `RecurrenceWeekly` | `RecurrenceWeekday` |
+| 17 | `weekday-sun-5` | `RecurrenceWeekly` | `RecurrenceWeekday` |
+| 18 | `weekday-sun-6` | `RecurrenceWeekly` | `RecurrenceWeekday` |
+| 19 | `weekday-sun-7` | `RecurrenceWeekly` | `RecurrenceWeekday` |
+| 20 | `weekday-sun-8` | `RecurrenceWeekly` | `RecurrenceWeekday` |
 | 21 | `run-update-all` | `RecurrenceWeekly` | `RecurrenceWeekday` |
 
 Notes that are load-bearing for the executor:
 
 - The structural edit — find the slug, find the `Recurrence:` line on the same struct literal, change `RecurrenceWeekly` to `RecurrenceWeekday` — does not depend on line numbers (verify by reading the file end-to-end before editing). The line numbers in §0 of `<context>` are the line of the `Recurrence:` declaration as the file stands; they are hints.
 - The `Weekday` field on each of the 21 entries is UNCHANGED. The 12 Saturday entries keep `Weekday: time.Saturday,`; the 9 Sunday entries keep `Weekday: time.Sunday,`. UUID5 stability (the spec's Desired Behavior 6) depends on this — the token rendering reads `def.Weekday` regardless of which `RecurrenceKind` arm the switch dispatches into.
-- The 24 non-weekly entries (17 monthly + 2 quarterly + 2 yearly Jan-1st + 1 monthly day-5 + 2 yearly May-1st) are NOT modified. They keep `Recurrence: RecurrenceMonthly` / `RecurrenceQuarterly` / `RecurrenceYearly` and no `Weekday` field. The monthly day-5 entry (`update-finances`) keeps `Recurrence: RecurrenceMonthly`; the 2 yearly May-1st entries (`capitalcom-apikey-prod`, `capitalcom-apikey-dev`) keep `Recurrence: RecurrenceYearly`.
+- The 24 non-weekly entries (17 monthly + 2 quarterly + 2 yearly Jan-1st + 1 monthly day-5 + 2 yearly May-1st) are NOT modified. They keep `Recurrence: RecurrenceMonthly` / `RecurrenceQuarterly` / `RecurrenceYearly` and no `Weekday` field. The monthly day-5 entry (`monthly-day5-1`) keeps `Recurrence: RecurrenceMonthly`; the 2 yearly May-1st entries (`yearly-may-1`, `yearly-may-2`) keep `Recurrence: RecurrenceYearly`.
 - The file's `Copyright (c) 2026` BSD header is preserved.
 
 ## 2. Update `buildPeriodToken` to handle `RecurrenceWeekly` (bare) and `RecurrenceWeekday` (suffixed)
@@ -738,27 +738,27 @@ Describe("UUID5 stability for the 21 migrated weekday entries", func() {
     }
     cases := []stabilityCase{
         // 12 Saturday entries
-        {slug: "shutdown-k3s", recurrence: schedule.RecurrenceWeekday, weekday: time.Saturday, date: schedule.NewDate(2026, time.June, 20), expectedInput: "recurring-shutdown-k3s-2026W25-sat"},
-        {slug: "turn-on-hell", recurrence: schedule.RecurrenceWeekday, weekday: time.Saturday, date: schedule.NewDate(2026, time.June, 20), expectedInput: "recurring-turn-on-hell-2026W25-sat"},
+        {slug: "weekday-sat-1", recurrence: schedule.RecurrenceWeekday, weekday: time.Saturday, date: schedule.NewDate(2026, time.June, 20), expectedInput: "recurring-weekday-sat-1-2026W25-sat"},
+        {slug: "weekday-sat-2", recurrence: schedule.RecurrenceWeekday, weekday: time.Saturday, date: schedule.NewDate(2026, time.June, 20), expectedInput: "recurring-weekday-sat-2-2026W25-sat"},
         {slug: "weekly-review", recurrence: schedule.RecurrenceWeekday, weekday: time.Saturday, date: schedule.NewDate(2026, time.June, 20), expectedInput: "recurring-weekly-review-2026W25-sat"},
-        {slug: "check-ftmo-demo-accounts", recurrence: schedule.RecurrenceWeekday, weekday: time.Saturday, date: schedule.NewDate(2026, time.June, 20), expectedInput: "recurring-check-ftmo-demo-accounts-2026W25-sat"},
-        {slug: "lexoffice-invoices", recurrence: schedule.RecurrenceWeekday, weekday: time.Saturday, date: schedule.NewDate(2026, time.June, 20), expectedInput: "recurring-lexoffice-invoices-2026W25-sat"},
-        {slug: "moneymoney-review", recurrence: schedule.RecurrenceWeekday, weekday: time.Saturday, date: schedule.NewDate(2026, time.June, 20), expectedInput: "recurring-moneymoney-review-2026W25-sat"},
-        {slug: "opnsense-update", recurrence: schedule.RecurrenceWeekday, weekday: time.Saturday, date: schedule.NewDate(2026, time.June, 20), expectedInput: "recurring-opnsense-update-2026W25-sat"},
-        {slug: "home-assistant-update-backup", recurrence: schedule.RecurrenceWeekday, weekday: time.Saturday, date: schedule.NewDate(2026, time.June, 20), expectedInput: "recurring-home-assistant-update-backup-2026W25-sat"},
-        {slug: "renew-gmail-oauth-tokens", recurrence: schedule.RecurrenceWeekday, weekday: time.Saturday, date: schedule.NewDate(2026, time.June, 20), expectedInput: "recurring-renew-gmail-oauth-tokens-2026W25-sat"},
-        {slug: "plan-next-week", recurrence: schedule.RecurrenceWeekday, weekday: time.Saturday, date: schedule.NewDate(2026, time.June, 20), expectedInput: "recurring-plan-next-week-2026W25-sat"},
-        {slug: "run-update-all-saturday", recurrence: schedule.RecurrenceWeekday, weekday: time.Saturday, date: schedule.NewDate(2026, time.June, 20), expectedInput: "recurring-run-update-all-saturday-2026W25-sat"},
-        {slug: "topic-backup-saturday", recurrence: schedule.RecurrenceWeekday, weekday: time.Saturday, date: schedule.NewDate(2026, time.June, 20), expectedInput: "recurring-topic-backup-saturday-2026W25-sat"},
+        {slug: "weekday-sat-4", recurrence: schedule.RecurrenceWeekday, weekday: time.Saturday, date: schedule.NewDate(2026, time.June, 20), expectedInput: "recurring-weekday-sat-4-2026W25-sat"},
+        {slug: "weekday-sat-5", recurrence: schedule.RecurrenceWeekday, weekday: time.Saturday, date: schedule.NewDate(2026, time.June, 20), expectedInput: "recurring-weekday-sat-5-2026W25-sat"},
+        {slug: "weekday-sat-6", recurrence: schedule.RecurrenceWeekday, weekday: time.Saturday, date: schedule.NewDate(2026, time.June, 20), expectedInput: "recurring-weekday-sat-6-2026W25-sat"},
+        {slug: "weekday-sat-7", recurrence: schedule.RecurrenceWeekday, weekday: time.Saturday, date: schedule.NewDate(2026, time.June, 20), expectedInput: "recurring-weekday-sat-7-2026W25-sat"},
+        {slug: "weekday-sat-8", recurrence: schedule.RecurrenceWeekday, weekday: time.Saturday, date: schedule.NewDate(2026, time.June, 20), expectedInput: "recurring-weekday-sat-8-2026W25-sat"},
+        {slug: "weekday-sat-9", recurrence: schedule.RecurrenceWeekday, weekday: time.Saturday, date: schedule.NewDate(2026, time.June, 20), expectedInput: "recurring-weekday-sat-9-2026W25-sat"},
+        {slug: "weekday-sat-10", recurrence: schedule.RecurrenceWeekday, weekday: time.Saturday, date: schedule.NewDate(2026, time.June, 20), expectedInput: "recurring-weekday-sat-10-2026W25-sat"},
+        {slug: "weekday-sat-11", recurrence: schedule.RecurrenceWeekday, weekday: time.Saturday, date: schedule.NewDate(2026, time.June, 20), expectedInput: "recurring-weekday-sat-11-2026W25-sat"},
+        {slug: "weekday-sat-12", recurrence: schedule.RecurrenceWeekday, weekday: time.Saturday, date: schedule.NewDate(2026, time.June, 20), expectedInput: "recurring-weekday-sat-12-2026W25-sat"},
         // 9 Sunday entries
-        {slug: "complete-rsync-backups", recurrence: schedule.RecurrenceWeekday, weekday: time.Sunday, date: schedule.NewDate(2026, time.June, 21), expectedInput: "recurring-complete-rsync-backups-2026W25-sun"},
-        {slug: "complete-longhorn-backups", recurrence: schedule.RecurrenceWeekday, weekday: time.Sunday, date: schedule.NewDate(2026, time.June, 21), expectedInput: "recurring-complete-longhorn-backups-2026W25-sun"},
-        {slug: "turn-off-hell", recurrence: schedule.RecurrenceWeekday, weekday: time.Sunday, date: schedule.NewDate(2026, time.June, 21), expectedInput: "recurring-turn-off-hell-2026W25-sun"},
-        {slug: "turn-off-sun", recurrence: schedule.RecurrenceWeekday, weekday: time.Sunday, date: schedule.NewDate(2026, time.June, 21), expectedInput: "recurring-turn-off-sun-2026W25-sun"},
-        {slug: "turn-off-fire", recurrence: schedule.RecurrenceWeekday, weekday: time.Sunday, date: schedule.NewDate(2026, time.June, 21), expectedInput: "recurring-turn-off-fire-2026W25-sun"},
-        {slug: "docker-registry-gc", recurrence: schedule.RecurrenceWeekday, weekday: time.Sunday, date: schedule.NewDate(2026, time.June, 21), expectedInput: "recurring-docker-registry-gc-2026W25-sun"},
-        {slug: "rebuild-trading-dev-prod", recurrence: schedule.RecurrenceWeekday, weekday: time.Sunday, date: schedule.NewDate(2026, time.June, 21), expectedInput: "recurring-rebuild-trading-dev-prod-2026W25-sun"},
-        {slug: "check-bot-is-healthy", recurrence: schedule.RecurrenceWeekday, weekday: time.Sunday, date: schedule.NewDate(2026, time.June, 21), expectedInput: "recurring-check-bot-is-healthy-2026W25-sun"},
+        {slug: "weekday-sun-1", recurrence: schedule.RecurrenceWeekday, weekday: time.Sunday, date: schedule.NewDate(2026, time.June, 21), expectedInput: "recurring-weekday-sun-1-2026W25-sun"},
+        {slug: "weekday-sun-2", recurrence: schedule.RecurrenceWeekday, weekday: time.Sunday, date: schedule.NewDate(2026, time.June, 21), expectedInput: "recurring-weekday-sun-2-2026W25-sun"},
+        {slug: "weekday-sun-3", recurrence: schedule.RecurrenceWeekday, weekday: time.Sunday, date: schedule.NewDate(2026, time.June, 21), expectedInput: "recurring-weekday-sun-3-2026W25-sun"},
+        {slug: "weekday-sun-4", recurrence: schedule.RecurrenceWeekday, weekday: time.Sunday, date: schedule.NewDate(2026, time.June, 21), expectedInput: "recurring-weekday-sun-4-2026W25-sun"},
+        {slug: "weekday-sun-5", recurrence: schedule.RecurrenceWeekday, weekday: time.Sunday, date: schedule.NewDate(2026, time.June, 21), expectedInput: "recurring-weekday-sun-5-2026W25-sun"},
+        {slug: "weekday-sun-6", recurrence: schedule.RecurrenceWeekday, weekday: time.Sunday, date: schedule.NewDate(2026, time.June, 21), expectedInput: "recurring-weekday-sun-6-2026W25-sun"},
+        {slug: "weekday-sun-7", recurrence: schedule.RecurrenceWeekday, weekday: time.Sunday, date: schedule.NewDate(2026, time.June, 21), expectedInput: "recurring-weekday-sun-7-2026W25-sun"},
+        {slug: "weekday-sun-8", recurrence: schedule.RecurrenceWeekday, weekday: time.Sunday, date: schedule.NewDate(2026, time.June, 21), expectedInput: "recurring-weekday-sun-8-2026W25-sun"},
         {slug: "run-update-all", recurrence: schedule.RecurrenceWeekday, weekday: time.Sunday, date: schedule.NewDate(2026, time.June, 21), expectedInput: "recurring-run-update-all-2026W25-sun"},
     }
     DescribeTable(
@@ -801,7 +801,7 @@ Notes that are load-bearing for the executor:
 - The `fmt` package is needed for the `Entry` name formatting. The current `publisher_test.go` does NOT import `fmt`; add it to the import block in goimports-reviser order (alphabetical, in the standard-library block: `context`, `fmt`, `time`).
 - The 21 hand-derived expected input strings are the byte-identical pre-Spec-9 strings. The pre-Spec-9 token for `RecurrenceWeekly + Weekday=time.Saturday + date=2026-06-20 (a Saturday)` was `2026W25-sat` (the Saturday is the date's weekday AND the entry's weekday; both happen to agree on this particular date — the test uses a date whose weekday matches the entry's weekday to make the token unambiguous). The same for the Sunday entries on 2026-06-21 (a Sunday). The test relies on the 2026-06-20/2026-06-21 date pair being Saturday/Sunday respectively — verify with `time.Date(2026, time.June, 20, 0, 0, 0, 0, time.UTC).Weekday() == time.Saturday` and `time.Date(2026, time.June, 21, 0, 0, 0, 0, time.UTC).Weekday() == time.Sunday` (the test is implicitly correct; the expected token's `<abbrev>` matches the entry's `Weekday`, not the date's weekday).
 - The per-iteration `localSender` / `localPub` pattern is used; the `pub` and `capture()` from the parent suite are NOT used (the `DescribeTable`'s body makes 21 independent `Publish` calls and reads each via `localSender.SendCommandArgsForCall(0)`).
-- The `Entry` names are `00-shutdown-k3s`, `01-turn-on-hell`, etc. — they encode the order so a failing case is identifiable in the test output.
+- The `Entry` names are `00-weekday-sat-1`, `01-weekday-sat-2`, etc. — they encode the order so a failing case is identifiable in the test output.
 
 ## 7. Update the tick tests for the new 6-kind shape and the date-filter behavior
 
@@ -996,7 +996,7 @@ It("publishes every entry that fires on the given civil date", func() {
 })
 ```
 
-The other 4 tests follow the same pattern: `date := schedule.NewDate(2025, time.January, 4)` (or read the date from the request URL — the test's request URL is `/trigger?date=2025-01-04`, so the date is Saturday 2025-01-04) and `tasks := schedule.TasksForDate(date)`. The `tasks[0].Slug` in the error-isolation tests is replaced with the first slug of the date-filtered slice (e.g. `"backup-atlassian-confluence"`, alphabetically first among the entries that fire on 2025-01-04).
+The other 4 tests follow the same pattern: `date := schedule.NewDate(2025, time.January, 4)` (or read the date from the request URL — the test's request URL is `/trigger?date=2025-01-04`, so the date is Saturday 2025-01-04) and `tasks := schedule.TasksForDate(date)`. The `tasks[0].Slug` in the error-isolation tests is replaced with the first slug of the date-filtered slice (e.g. `"monthly-1"`, alphabetically first among the entries that fire on 2025-01-04).
 
 Notes that are load-bearing for the executor:
 

@@ -66,7 +66,7 @@ const (
 // A weekly entry after Prompt 1 looks like:
 //
 //     {
-//         Slug:          "shutdown-k3s",
+//         Slug:          "weekday-sat-1",
 //         TitleTemplate: "Shutdown K3s",
 //         BodyTemplate:  "...",
 //         Recurrence:    RecurrenceWeekly,
@@ -76,18 +76,18 @@ const (
 //     }
 //
 // The 9 Sunday weekly slugs (in inventory declaration order):
-//   1. complete-rsync-backups
-//   2. complete-longhorn-backups
-//   3. turn-off-hell
-//   4. turn-off-sun
-//   5. turn-off-fire
-//   6. docker-registry-gc
-//   7. rebuild-trading-dev-prod
-//   8. check-bot-is-healthy
+//   1. weekday-sun-1
+//   2. weekday-sun-2
+//   3. weekday-sun-3
+//   4. weekday-sun-4
+//   5. weekday-sun-5
+//   6. weekday-sun-6
+//   7. weekday-sun-7
+//   8. weekday-sun-8
 //   9. run-update-all
 ```
 
-The 12 Saturday weekly slugs (Prompt 1 left them at the zero value; this prompt sets `Weekday: time.Saturday` on each — for the executor's reference, the slugs are `shutdown-k3s`, `turn-on-hell`, `weekly-review`, `check-ftmo-demo-accounts`, `lexoffice-invoices`, `moneymoney-review`, `opnsense-update`, `home-assistant-update-backup`, `renew-gmail-oauth-tokens`, `plan-next-week`, `run-update-all-saturday`, `topic-backup-saturday`).
+The 12 Saturday weekly slugs (Prompt 1 left them at the zero value; this prompt sets `Weekday: time.Saturday` on each — for the executor's reference, the slugs are `weekday-sat-1`, `weekday-sat-2`, `weekly-review`, `weekday-sat-4`, `weekday-sat-5`, `weekday-sat-6`, `weekday-sat-7`, `weekday-sat-8`, `weekday-sat-9`, `weekday-sat-10`, `weekday-sat-11`, `weekday-sat-12`).
 
 </context>
 
@@ -95,13 +95,13 @@ The 12 Saturday weekly slugs (Prompt 1 left them at the zero value; this prompt 
 
 ## 1. Set `Weekday: time.Saturday` on the 12 Saturday weekly entries
 
-In `/workspace/pkg/schedule/inventory.go`, add the field `Weekday: time.Saturday,` to each of the 12 Saturday weekly entries. The entries are listed in declaration order; the slug of each is one of: `shutdown-k3s`, `turn-on-hell`, `weekly-review`, `check-ftmo-demo-accounts`, `lexoffice-invoices`, `moneymoney-review`, `opnsense-update`, `home-assistant-update-backup`, `renew-gmail-oauth-tokens`, `plan-next-week`, `run-update-all-saturday`, `topic-backup-saturday`.
+In `/workspace/pkg/schedule/inventory.go`, add the field `Weekday: time.Saturday,` to each of the 12 Saturday weekly entries. The entries are listed in declaration order; the slug of each is one of: `weekday-sat-1`, `weekday-sat-2`, `weekly-review`, `weekday-sat-4`, `weekday-sat-5`, `weekday-sat-6`, `weekday-sat-7`, `weekday-sat-8`, `weekday-sat-9`, `weekday-sat-10`, `weekday-sat-11`, `weekday-sat-12`.
 
-The new field line is added immediately after the `Recurrence: RecurrenceWeekly,` line in each entry. After the change, a representative entry (e.g. `shutdown-k3s`) reads:
+The new field line is added immediately after the `Recurrence: RecurrenceWeekly,` line in each entry. After the change, a representative entry (e.g. `weekday-sat-1`) reads:
 
 ```go
 {
-    Slug:          "shutdown-k3s",
+    Slug:          "weekday-sat-1",
     TitleTemplate: "Shutdown K3s",
     BodyTemplate: "Shutdown K3s cleanly so BoltDB files are not corrupt during backups.\n\n" +
         "~/Documents/workspaces/scripts/remote-k3s-shutdown-nuke.sh\n\n" +
@@ -118,13 +118,13 @@ Do not change the `Slug`, `TitleTemplate`, `BodyTemplate`, or `Recurrence` field
 
 ## 2. Set `Weekday: time.Sunday` on the 9 Sunday weekly entries
 
-In `/workspace/pkg/schedule/inventory.go`, add the field `Weekday: time.Sunday,` to each of the 9 Sunday weekly entries. The entries are listed in declaration order; the slug of each is one of: `complete-rsync-backups`, `complete-longhorn-backups`, `turn-off-hell`, `turn-off-sun`, `turn-off-fire`, `docker-registry-gc`, `rebuild-trading-dev-prod`, `check-bot-is-healthy`, `run-update-all`.
+In `/workspace/pkg/schedule/inventory.go`, add the field `Weekday: time.Sunday,` to each of the 9 Sunday weekly entries. The entries are listed in declaration order; the slug of each is one of: `weekday-sun-1`, `weekday-sun-2`, `weekday-sun-3`, `weekday-sun-4`, `weekday-sun-5`, `weekday-sun-6`, `weekday-sun-7`, `weekday-sun-8`, `run-update-all`.
 
-The new field line is added immediately after the `Recurrence: RecurrenceWeekly,` line in each entry. After the change, a representative entry (e.g. `complete-rsync-backups`) reads:
+The new field line is added immediately after the `Recurrence: RecurrenceWeekly,` line in each entry. After the change, a representative entry (e.g. `weekday-sun-1`) reads:
 
 ```go
 {
-    Slug:          "complete-rsync-backups",
+    Slug:          "weekday-sun-1",
     TitleTemplate: "Complete Rsync Backups",
     BodyTemplate: "* check backup status\n" +
         "** [Backup Status](https://backup.host.example.local/status)",
@@ -169,14 +169,14 @@ First, add the `sundayWeeklyAllowList` package-level var at the top of the file 
 // a Sunday weekly slug is a data-shape change that requires updating
 // this list and the inventory together.
 var sundayWeeklyAllowList = []string{
-    "complete-rsync-backups",
-    "complete-longhorn-backups",
-    "turn-off-hell",
-    "turn-off-sun",
-    "turn-off-fire",
-    "docker-registry-gc",
-    "rebuild-trading-dev-prod",
-    "check-bot-is-healthy",
+    "weekday-sun-1",
+    "weekday-sun-2",
+    "weekday-sun-3",
+    "weekday-sun-4",
+    "weekday-sun-5",
+    "weekday-sun-6",
+    "weekday-sun-7",
+    "weekday-sun-8",
     "run-update-all",
 }
 ```

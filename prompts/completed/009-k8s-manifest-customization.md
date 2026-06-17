@@ -33,7 +33,7 @@ Read `/workspace/CLAUDE.md` for project conventions.
 
 Read these files in full before editing (paths under `/workspace/`):
 
-- `k8s/recurring-task-creator-sts.yaml` (101 lines) — the file you are rewriting. Key points it currently has that you will remove: `replicas: 0` (line 13), `DATADIR` env var (lines 52-53), `volumeMounts: datadir at /data` (lines 84-86), `volumeClaimTemplates` block (lines 91-100), `nodeAffinity.values: ["{{ \"NAMESPACE\" | env }}"]` (lines 33-37). Key points it currently has that you will preserve verbatim: `keel.sh/*` annotations (lines 7-10), `serviceName: recurring-task-creator` (line 17), `imagePullSecrets: [docker-quant]` (lines 87-88), `updateStrategy.type: RollingUpdate` (lines 89-90), `args: ["-v={{\"LOGLEVEL\" | env}}"]` (line 41), `prometheus.io/*` pod annotations (lines 20-25), `image` template (line 56), `imagePullPolicy: Always` (line 57), `livenessProbe` block (lines 58-66), `readinessProbe` block (lines 70-76), `ports: containerPort 9090 name http` (lines 67-69), `random: '{{ "RANDOM" | env }}'` annotations (lines 11 and 25).
+- `k8s/recurring-task-creator-sts.yaml` (101 lines) — the file you are rewriting. Key points it currently has that you will remove: `replicas: 0` (line 13), `DATADIR` env var (lines 52-53), `volumeMounts: datadir at /data` (lines 84-86), `volumeClaimTemplates` block (lines 91-100), `nodeAffinity.values: ["{{ \"NAMESPACE\" | env }}"]` (lines 33-37). Key points it currently has that you will preserve verbatim: `keel.sh/*` annotations (lines 7-10), `serviceName: recurring-task-creator` (line 17), `imagePullSecrets: [docker-example]` (lines 87-88), `updateStrategy.type: RollingUpdate` (lines 89-90), `args: ["-v={{\"LOGLEVEL\" | env}}"]` (line 41), `prometheus.io/*` pod annotations (lines 20-25), `image` template (line 56), `imagePullPolicy: Always` (line 57), `livenessProbe` block (lines 58-66), `readinessProbe` block (lines 70-76), `ports: containerPort 9090 name http` (lines 67-69), `random: '{{ "RANDOM" | env }}'` annotations (lines 11 and 25).
 - `k8s/recurring-task-creator-svc.yaml` (12 lines) — already correct per spec Desired Behavior #11. No changes.
 - `k8s/recurring-task-creator-ing.yaml` (26 lines) — already correct per spec Desired Behavior #12. No changes.
 - `k8s/recurring-task-creator-secret.yaml` (9 lines) — already correct per spec Desired Behavior #13. No changes.
@@ -171,7 +171,7 @@ spec:
             - mountPath: /tmp
               name: tmp
       imagePullSecrets:
-        - name: docker-quant
+        - name: docker-example
       volumes:
         - name: tmp
           emptyDir: {}
@@ -195,7 +195,7 @@ This file is already correct per spec Desired Behavior #11. Do not edit it. Veri
 
 ## 3. Confirm `k8s/recurring-task-creator-ing.yaml` is unchanged
 
-This file is already correct per spec Desired Behavior #12. Do not edit it. Verify by reading the file and confirming: `kind: Ingress`, `name: recurring-task-creator`, `ingressClassName: 'traefik'`, host `recurring-task-creator.{{ "NAMESPACE" | env }}.quant.benjamin-borbe.de`, backend service `recurring-task-creator` port `http`, `tls.secretName: tls-quant`, traefik annotations `websecure` + `tls: "true"`.
+This file is already correct per spec Desired Behavior #12. Do not edit it. Verify by reading the file and confirming: `kind: Ingress`, `name: recurring-task-creator`, `ingressClassName: 'traefik'`, host `recurring-task-creator.{{ "NAMESPACE" | env }}.example.com`, backend service `recurring-task-creator` port `http`, `tls.secretName: tls-example`, traefik annotations `websecure` + `tls: "true"`.
 
 ## 4. Confirm `k8s/recurring-task-creator-secret.yaml` is unchanged
 
@@ -323,7 +323,7 @@ yq '.spec.selector' /workspace/k8s/recurring-task-creator-svc.yaml
 
 # ing.yaml greps
 grep -nE 'recurring-task-creator\.\{\{ "NAMESPACE" \| env \}\}\.quant\.benjamin-borbe\.de' /workspace/k8s/recurring-task-creator-ing.yaml
-grep -nE 'tls-quant|ingressClassName: .traefik.' /workspace/k8s/recurring-task-creator-ing.yaml
+grep -nE 'tls-example|ingressClassName: .traefik.' /workspace/k8s/recurring-task-creator-ing.yaml
 
 # secret.yaml grep
 yq '.data | keys' /workspace/k8s/recurring-task-creator-secret.yaml
@@ -383,7 +383,7 @@ Do NOT remove the existing two bullets (`pkg/publisher` and `pkg/schedule`). Do 
 
 <constraints>
 - The `{{ "KEY" | env }}` and `{{ "KEY" | env | teamvaultUrl | base64 }}` template syntax MUST be preserved verbatim — `Makefile.k8s`'s `apply` target renders it. Do not switch to Helm, Kustomize, or plain YAML.
-- The names `recurring-task-creator` (Service / StatefulSet / Secret / pod `app` label / Ingress / KafkaUser prefix), the host pattern `recurring-task-creator.<NAMESPACE>.quant.benjamin-borbe.de`, the `KafkaUser` in `strimzi` namespace, the `tls-quant` TLS secret, the `traefik` ingress class, the `docker-quant` image pull secret, and the `my-cluster` strimzi label MUST all match the spec and the skeleton — DNS, RBAC, Prometheus discovery, strimzi, and traefik all depend on these exact strings.
+- The names `recurring-task-creator` (Service / StatefulSet / Secret / pod `app` label / Ingress / KafkaUser prefix), the host pattern `recurring-task-creator.<NAMESPACE>.example.com`, the `KafkaUser` in `strimzi` namespace, the `tls-example` TLS secret, the `traefik` ingress class, the `docker-example` image pull secret, and the `my-cluster` strimzi label MUST all match the spec and the skeleton — DNS, RBAC, Prometheus discovery, strimzi, and traefik all depend on these exact strings.
 - DO NOT add any of: `ServiceAccount`, `Role`, `RoleBinding`, `ClusterRole`, `ClusterRoleBinding`, `ServiceMonitor`, `HorizontalPodAutoscaler`, `PodDisruptionBudget`, `NetworkPolicy`, `*-error-critical-alert.yaml` — the spec Non-goals list all of these as out of scope.
 - DO NOT change the HTTP port (fixed at `9090`), the timezone (fixed at `Europe/Berlin`), the env var names (`LISTEN`, `KAFKA_BROKERS`, `STAGE`, `SENTRY_DSN`, `SENTRY_PROXY`, `TZ`), or the keeplived/keel.sh annotations.
 - DO NOT add a new `Makefile.env` variable pair beyond what is already required for Kafka mTLS and Sentry — every new env var is a new secret to rotate.
@@ -393,7 +393,7 @@ Do NOT remove the existing two bullets (`pkg/publisher` and `pkg/schedule`). Do 
 - DO NOT modify `k8s/Makefile`, `Makefile.k8s`, `Makefile.variables`, or `Makefile.precommit`.
 - DO NOT modify `k8s/recurring-task-creator-svc.yaml`, `k8s/recurring-task-creator-ing.yaml`, `k8s/recurring-task-creator-secret.yaml`, or `k8s/recurring-task-creator-user.yaml` — they are already correct.
 - DO NOT remove the skeleton's `keel.sh/*` annotations — auto-redeploy on tag push is the cluster convention.
-- DO NOT remove the skeleton's `imagePullSecrets: [{name: docker-quant}]` — the quant registry requires it.
+- DO NOT remove the skeleton's `imagePullSecrets: [{name: docker-example}]` — the quant registry requires it.
 - The manifest is correct iff the spec's AC greps pass. `make precommit` is a defensive gate, not the load-bearing correctness signal.
 
 ## Failure-mode coverage (from the spec's `## Failure Modes` table)
@@ -402,7 +402,7 @@ These failure-mode rows are addressed by the prompt's requirements above; do not
 
 - **KAFKA_BROKERS unset at apply time** — the new env block declares `KAFKA_BROKERS` from `'{{ "KAFKA_BROKERS" | env }}'` (requirement #1). The `example.env` update (requirement #9) sets a default, so a deploy loop that forgets to override still produces a valid template (it just publishes to `localhost:9092`, which is wrong but the templating does not fail).
 - **Strimzi has not yet provisioned the KafkaUser cert** — unchanged from skeleton; the `KafkaUser` resource is applied first by strimzi's per-namespace reconciler, then the pod consumes the mounted cert.
-- **tls-quant secret rotation** — unchanged from skeleton; the Ingress already references `tls-quant`.
+- **tls-example secret rotation** — unchanged from skeleton; the Ingress already references `tls-example`.
 - **Two pods running simultaneously during rolling update** — `replicas: 1` plus `RollingUpdate` ensures one-at-a-time rollout; idempotency is at the Spec 2 / Spec 3 layer.
 - **Pod drain / node loss** — `RollingUpdate` is preserved; the new pod lands on another `node_type=agent` node.
 - **Image pull failure** — unchanged from skeleton; `imagePullPolicy: Always` + `keel.sh/poll` is preserved.
@@ -434,4 +434,4 @@ These were resolved during prompt generation by picking the most reasonable defa
 - **`RANDOM=$$(date +%s)` in `example.env`** — uses `$$` so make does not expand at parse time. Some skeletons use a fixed value and rely on keeplived/keel.sh to poll. The spec does not specify; the `$$(date +%s)` form is the convention used by the parent skeleton's other services.
 - **`SENTRY_PROXY_URL` placeholder value** — `http://sentry-proxy.quant.svc.cluster.local:8080` is a placeholder. The spec does not name the cluster-internal Sentry proxy URL. The deploy worktree's per-namespace `example.env` is expected to override this.
 - **`STAGE=dev` in `example.env`** — defaults to `dev` because the repo is shipped from a `dev` deploy context. The prod worktree overrides with `export STAGE=prod`.
-- **Image pull secret name `docker-quant`** — the spec AC says "or whichever name the parent module's `Makefile.env` uses for the quant registry." The skeleton uses `docker-quant`; this prompt preserves it without further verification against `~/Documents/workspaces/maintainer/watcher/github-pr/k8s/` (that path is on the maintainer's host machine, not in the YOLO container).
+- **Image pull secret name `docker-example`** — the spec AC says "or whichever name the parent module's `Makefile.env` uses for the quant registry." The skeleton uses `docker-example`; this prompt preserves it without further verification against `~/Documents/workspaces/maintainer/watcher/github-pr/k8s/` (that path is on the maintainer's host machine, not in the YOLO container).

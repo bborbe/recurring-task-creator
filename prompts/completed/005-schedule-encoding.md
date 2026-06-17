@@ -61,7 +61,7 @@ Title placeholders in the source providers come from these formatters (verified)
 - `dateToLastYear(d) = dateToYear(d - 1 year)`. Spec's `{{last-year}}`.
 - `d.Format(time.DateOnly)` = `2006-01-02`. Spec's `{{date}}`.
 
-The one entry that needed runtime I/O in the original source (`CreateUpdateK3s`, which fetched the latest K3s version via `LatestVersionGetter`) ships in this spec with a static title (no version-suffix template) and a static markdown body that links to the K3s release channels. The slug is `update-k3s`. The Goal demands slug-for-slug fidelity, not title-for-title verbatim fidelity; static-title is consistent with the constraint "no I/O, no clock, no network."
+The one entry that needed runtime I/O in the original source (`CreateUpdateK3s`, which fetched the latest K3s version via `LatestVersionGetter`) ships in this spec with a static title (no version-suffix template) and a static markdown body that links to the K3s release channels. The slug is `monthly-17`. The Goal demands slug-for-slug fidelity, not title-for-title verbatim fidelity; static-title is consistent with the constraint "no I/O, no clock, no network."
 </context>
 
 <requirements>
@@ -267,87 +267,16 @@ Encode EXACTLY these 45 entries. Each row below specifies: slug, recurrence, pre
 
 For body templates, paragraphs are separated by a blank line (`\n\n`). Links are `[text](url)`. Where the source provider built multiple ADF paragraphs, flatten to one markdown paragraph per source paragraph, separated by blank lines. Lists keep their source markers (`* `, `1. `, `- `). The exact body wording does not need to match the source byte-for-byte — the test surface asserts slugs, sort order, placeholder validity, uniqueness, and the canonical slug list. Bodies are static markdown defined in code; they cross no trust boundary.
 
-### Weekly — Saturday (12 entries, predicate `OnWeekdays(time.Saturday)`, recurrence `RecurrenceWeekly`)
-
-| Slug | TitleTemplate | BodyTemplate (markdown, paragraph-separated) |
-|------|---------------|----------------------------------------------|
-| `shutdown-k3s` | `Shutdown K3s` | `Shutdown K3s cleanly so BoltDB files are not corrupt during backups.\n\n~/Documents/workspaces/scripts/remote-k3s-shutdown-nuke.sh\n\n[K3s Cluster Weekly Reboot Procedure](<vault-deeplink>)\n\n[jira-task-creator](<vault-deeplink>)` |
-| `turn-on-hell` | `Turn on hell` | `power on hell` |
-| `weekly-review` | `Weekly Review {{iso-week}}` | `Complete weekly review.\n\nIn Obsidian run (in order):\n\n1. /complete-week - Bot performance, fills weekly note\n2. /weekly-trading-review {{iso-week}} - Portfolio balances` |
-| `check-ftmo-demo-accounts` | `Check FTMO Demo Accounts` | `Check if ftmo-demo account is expiring soon (e.g., this weekend).\n\nIf expiring soon, follow renewal guide:\n\n<vault>/40 Trading/FTMO Demo Account Renewal Guide.md\n\nDashboards:\n\n* [FTMO](https://trader.ftmo.com/accounts-overview)\n* [Dev](https://dev.quant.benjamin-borbe.de/account/detail/ftmo-demo)` |
-| `lexoffice-invoices` | `LexOffice Accounting` | `[LexOffice](https://app.lexoffice.de/fis/#)` |
-| `moneymoney-review` | `Review MoneyMoney` | `Review MoneyMoney` |
-| `opnsense-update` | `OPNsense Update` | `[OPNsense Firmware Updates](https://opnsense.hm.benjamin-borbe.de/ui/core/firmware#updates)` |
-| `home-assistant-update-backup` | `Home Assistant Update + Backup` | `Weekly Home Assistant maintenance.\n\nSteps:\n\n1. Login\n2. Create backup\n3. Download backup\n4. Update all\n\n[Home Assistant](http://homeassistant.local:8123/config/dashboard)` |
-| `renew-gmail-oauth-tokens` | `Renew Gmail OAuth Tokens` | `Renew Gmail OAuth tokens (expire every 7 days) for all environments:\n\nDev: [OAuth Init](https://dev.quant.benjamin-borbe.de/admin/core-mail-controller/oauth2/init)\n\nProd: [OAuth Init](https://prod.quant.benjamin-borbe.de/admin/core-mail-controller/oauth2/init)` |
-| `plan-next-week` | `Plan Week {{next-iso-week}}` | `Create plan for week {{next-iso-week}}\n\nIn Obsidian run:\n\n/plan-week` |
-| `run-update-all-saturday` | `Run update-all.sh (before restart)` | `Run system updates before weekend restart (host.example.local)\n\n<scripts>/update-all.sh` |
-| `topic-backup-saturday` | `Backup Kafka Topics` | `Backup Kafka topics before weekend restart\n\nPrerequisite: hell must be powered on (see "Turn on hell" subtask).\n\ncd ~/workspaces/trading/strimzi/topic-backuper/cmd/backup\n\nmake backup` |
-
-### Weekly — Sunday (9 entries, predicate `OnWeekdays(time.Sunday)`, recurrence `RecurrenceWeekly`)
-
-| Slug | TitleTemplate | BodyTemplate |
-|------|---------------|--------------|
-| `complete-rsync-backups` | `Complete Rsync Backups` | `* check backup status\n** [Backup Status](https://backup.host.example.local/status)` |
-| `complete-longhorn-backups` | `Complete Longhorn Backups` | `[Longhorn Volumes](https://longhorn.quant.benjamin-borbe.de/#/volume)` |
-| `turn-off-hell` | `Turn off hell` | `power off hell` |
-| `turn-off-sun` | `Turn off sun` | `power off sun` |
-| `turn-off-fire` | `Turn off fire` | `power off fire` |
-| `docker-registry-gc` | `Docker Registry GC` | `Run garbage collection on docker registry to free storage space.\n\nkubectlquant -n docker-registry get pods\n\nkubectlquant -n docker-registry exec -it <POD_NAME> -- registry garbage-collect /etc/docker/registry/config.yml` |
-| `rebuild-trading-dev-prod` | `Rebuild Trading Dev+Prod` | `Rebuild and redeploy all trading services for dev and prod.\n\nRunbook: Trading - Rebuild Dev and Prod` |
-| `check-bot-is-healthy` | `Bot is Healthy` | `check bot is ready for trading on monday\n\n* kubectlquant get po --all-namespaces|grep -v Running|grep -v Complete\n* [Prometheus Alerts](https://prometheus.quant.benjamin-borbe.de/alerts)\n* [Karma Active Alerts](https://karma.quant.benjamin-borbe.de/?q=%40state%3Dactive)` |
-| `run-update-all` | `Run update-all.sh` | `Run system updates across all servers\n\n<scripts>/update-all.sh` |
-
-### Day-of-Month = 5 (1 entry, predicate `OnDaysOfMonth(5)`, recurrence `RecurrenceMonthly`)
-
-| Slug | TitleTemplate | BodyTemplate |
-|------|---------------|--------------|
-| `update-finances` | `Update Finances spreadsheet` | `Fill spreadsheet at 5. of each month\n\n[Finances Spreadsheet](https://docs.google.com/spreadsheets/d/1Bmj_zmpomXJHW5sRTIcEE0xolIlGrYtO0FkY3nrxkPc/edit?usp=sharing)` |
-
-### May 1st only (2 entries, predicate `OnMonthAndDay(time.May, 1)`, recurrence `RecurrenceYearly`)
-
-| Slug | TitleTemplate | BodyTemplate |
-|------|---------------|--------------|
-| `capitalcom-apikey-prod` | `Change Capitalcom ApiKey - Prod` | `[Capital.com API Settings](https://capital.com/trading/platform/?popup=api-key-generation&tab=APISettings)` |
-| `capitalcom-apikey-dev` | `Change Capitalcom ApiKey - Dev` | `[Capital.com API Settings](https://capital.com/trading/platform/?popup=api-key-generation&tab=APISettings)` |
-
-### Monthly — day 1 of every month (17 entries, predicate `OnFirstDayOfMonth()`, recurrence `RecurrenceMonthly`)
-
-| Slug | TitleTemplate | BodyTemplate |
-|------|---------------|--------------|
-| `backup-atlassian-confluence` | `Atlassian Confluence Backup` | `[Atlassian Confluence Backup](https://borbe.atlassian.net/wiki/plugins/servlet/ondemandbackupmanager/admin)\n\nSave to: smb://host.example.local/bborbe/Backups/Atlassian-Cloud/` |
-| `backup-atlassian-jira` | `Atlassian Jira Backup` | `[Atlassian Jira Backup](https://borbe.atlassian.net/secure/admin/CloudExport.jspa)\n\nSave to: smb://host.example.local/bborbe/Backups/Atlassian-Cloud/` |
-| `backup-google-drive` | `Backup Google Drive` | `[Google Drive Backup Guide](<vault-deeplink>)\n\nRequirements:\n\n1. Hell server must be powered on\n2. Google Drive Desktop synced\n\nScript: ~/Documents/workspaces/scripts/backup-google-drive.sh` |
-| `backup-pictures` | `Backup Images` | `Backup iPhone images to file server and archive to external drive.\n\n[How to Back Up iPhone](<vault-deeplink>)\n\nSteps:\n\n1. Import images via USB backup\n2. Rename and move to file server\n3. Archive to external drive using rsync\n4. Delete images from iPhone` |
-| `monthly-review` | `Review Month {{last-month}}` | `Create review for month {{last-month}}\n\nIn Obsidian run:\n\n/monthly-trading-review {{last-month}}` |
-| `plan-month` | `Plan Month {{month}}` | `Create plan for month {{month}}\n\nIn Obsidian run:\n\n/plan-month` |
-| `trading-profits` | `Add Trading Profits to Sheet` | `[Trading Profits Sheet](https://docs.google.com/spreadsheets/d/1F6ObbGvRciK4ZdvB3BuRCf7LJFWdL-46teXvXlR0waI/edit?usp=sharing)` |
-| `update-frontend` | `Update Frontend` | `Follow Frontend Update Guide in Obsidian vault.\n\nGuide location: 50 Knowledge Base/Frontend Update Guide.md\n\n[Verification](https://prod.quant.benjamin-borbe.de/chart?epic=BTCUSD&broker=capitalcom&source=standard&bidAsk=bid&resolution=1m&from=NOW-7d&until=NOW)` |
-| `update-go-mod` | `Update Trading Bot Dependencies` | `Update all dependencies of all trading services.\n\nDone when: All projects updated, tests pass, changes merged to master.\n\n[Updater Guide](<vault-deeplink>)` |
-| `update-inventar` | `Update inventar` | `Review purchases and add new items to Obsidian inventory.\n\n[Monthly Inventory Update Guide](<vault-deeplink>)\n\nSteps:\n\n1. Review trading business invoices in Google Drive\n2. Check for personal purchases\n3. Add items following the inventory guide\n4. Verify items appear in dashboard` |
-| `update-journal` | `Update Trading Journal` | `Use /update-trading-journal in Claude Code` |
-| `world-apply` | `World apply` | `[World Apply Guide](<vault-deeplink>)` |
-| `update-screego` | `Update Screego` | `[Screego Docker Hub](https://hub.docker.com/r/screego/server/tags)\n\ncat ~/Documents/workspaces/world/configuration/world.go|grep screego` |
-| `update-poste` | `Update Poste` | `[Poste Docker Hub](https://hub.docker.com/r/analogic/poste.io/tags)\n\ncat ~/Documents/workspaces/world/configuration/world.go|grep poste\n\n# update poste version in world.go\n\nmake install\n\nworld apply -a poste -v=2` |
-| `update-minio` | `Update Minio` | `helm repo add minio-operator https://operator.min.io\n\nhelm repo update\n\nhelm list -n minio-operator\n\nhelm search repo minio-operator/operator\n\nhelm list -n minio\n\nhelm search repo minio-operator/tenant\n\nOpen "backup" Intellij Project\n\nUpdate Version in k8s/minio/operator/Makefile\n\nmake upgrade\n\nUpdate Version in k8s/minio/tenant/Makefile\n\nmake upgrade` |
-| `update-library` | `Update Github Libraries` | `Automated workflow (recommended):\n\n[Updater Guide](<vault-deeplink>)\n\nManual workflow:\n\n[Go Library Update Workflow](<vault-deeplink>)\n\nTask tracking:\n\n[Update All Go Libraries Task](<vault-deeplink>)` |
-| `update-k3s` | `Update K3s` | `[K3s Release Channels](https://update.k3s.io/v1-release/channels)\n\n[K3s Upgrade Guide](<vault-deeplink>)\n\n* Update Hell\n* Update Nuke` |
-
-Note on `update-k3s`: the source `CreateUpdateK3s` interpolates the latest K3s version via an HTTP lookup. This spec forbids I/O, so the static title `Update K3s` is shipped. Slug fidelity is preserved.
-
-### Quarterly — first day of Jan/Apr/Jul/Oct (2 entries, predicate `OnFirstDayOfQuarter()`, recurrence `RecurrenceQuarterly`)
-
-| Slug | TitleTemplate | BodyTemplate |
-|------|---------------|--------------|
-| `quarter-review` | `Review Quarter {{last-quarter}}` | `Create review for quarter {{last-quarter}}\n\nIn Obsidian run:\n\n/quarterly-trading-review {{last-quarter}}` |
-| `quarter-plan` | `Plan Quarter {{quarter}}` | `Create plan for quarter {{quarter}}\n\nIn Obsidian run:\n\n/plan-quarter` |
-
-### Yearly — first day of January (2 entries, predicate `OnFirstDayOfYear()`, recurrence `RecurrenceYearly`)
-
-| Slug | TitleTemplate | BodyTemplate |
-|------|---------------|--------------|
-| `yearly-review` | `Review Year {{last-year}}` | `Create review for year {{last-year}}\n\nIn Obsidian run:\n\n/yearly-trading-review {{last-year}}` |
-| `plan-year` | `Plan Year {{year}}` | `Create plan for year {{year}}\n\nIn Obsidian run:\n\n/plan-year` |
+> **Inventory tables elided for public prep.** The canonical 45-entry
+> inventory below was the original encoded data shipped to the daemon.
+> Personal task details (titles, body markdown, vault links, dashboard
+> URLs) lived here verbatim. They were removed before public release.
+> The slug naming scheme (\`weekday-sat-N\`, \`weekday-sun-N\`,
+> \`monthly-N\`, \`monthly-day5-N\`, \`yearly-may-N\`,
+> \`quarterly-N\`, \`yearly-N\`) and the row count per bucket are the
+> only surviving structure. Inventory is now CRD-driven; see
+> spec 010 (informer-backed inventory) and the example CR at
+> \`k8s/apis/task.benjamin-borbe.de/v1/testdata/example.yaml\`.
 
 Total: 12 + 9 + 1 + 2 + 17 + 2 + 2 = **45 entries**.
 
@@ -429,41 +358,41 @@ var _ = Describe("TasksForDate", func() {
     It("returns the Saturday arm for 2025-01-04", func() {
         defs := schedule.TasksForDate(schedule.NewDate(2025, time.January, 4))
         Expect(slugs(defs)).To(ConsistOf(
-            "shutdown-k3s", "turn-on-hell", "weekly-review",
-            "check-ftmo-demo-accounts", "lexoffice-invoices",
-            "moneymoney-review", "opnsense-update",
-            "home-assistant-update-backup", "renew-gmail-oauth-tokens",
-            "plan-next-week", "run-update-all-saturday", "topic-backup-saturday",
+            "weekday-sat-1", "weekday-sat-2", "weekly-review",
+            "weekday-sat-4", "weekday-sat-5",
+            "weekday-sat-6", "weekday-sat-7",
+            "weekday-sat-8", "weekday-sat-9",
+            "weekday-sat-10", "weekday-sat-11", "weekday-sat-12",
         ))
     })
 
     It("returns the Sunday arm for 2025-01-05", func() {
         defs := schedule.TasksForDate(schedule.NewDate(2025, time.January, 5))
         Expect(slugs(defs)).To(ConsistOf(
-            "complete-rsync-backups", "complete-longhorn-backups",
-            "turn-off-hell", "turn-off-sun", "turn-off-fire",
-            "docker-registry-gc", "rebuild-trading-dev-prod",
-            "check-bot-is-healthy", "run-update-all",
+            "weekday-sun-1", "weekday-sun-2",
+            "weekday-sun-3", "weekday-sun-4", "weekday-sun-5",
+            "weekday-sun-6", "weekday-sun-7",
+            "weekday-sun-8", "run-update-all",
         ))
     })
 
-    It("returns only update-finances for 2025-03-05 (Wednesday, DOM=5)", func() {
+    It("returns only monthly-day5-1 for 2025-03-05 (Wednesday, DOM=5)", func() {
         defs := schedule.TasksForDate(schedule.NewDate(2025, time.March, 5))
-        Expect(slugs(defs)).To(ConsistOf("update-finances"))
+        Expect(slugs(defs)).To(ConsistOf("monthly-day5-1"))
     })
 
-    It("returns monthly union + capitalcom pair for 2025-05-01 (19 slugs)", func() {
+    It("returns monthly union + yearly-may pair for 2025-05-01 (19 slugs)", func() {
         defs := schedule.TasksForDate(schedule.NewDate(2025, time.May, 1))
         Expect(slugs(defs)).To(ConsistOf(
             // monthly (17):
-            "backup-atlassian-confluence", "backup-atlassian-jira",
-            "backup-google-drive", "backup-pictures",
-            "monthly-review", "plan-month", "trading-profits",
-            "update-frontend", "update-go-mod", "update-inventar",
-            "update-journal", "world-apply", "update-screego",
-            "update-poste", "update-minio", "update-library", "update-k3s",
-            // capitalcom (2):
-            "capitalcom-apikey-prod", "capitalcom-apikey-dev",
+            "monthly-1", "monthly-2",
+            "monthly-3", "monthly-4",
+            "monthly-5", "monthly-6", "monthly-7",
+            "monthly-8", "monthly-9", "monthly-10",
+            "monthly-11", "monthly-12", "monthly-13",
+            "monthly-14", "monthly-15", "monthly-16", "monthly-17",
+            // yearly-may (2):
+            "yearly-may-1", "yearly-may-2",
         ))
         Expect(defs).To(HaveLen(19))
     })
@@ -471,27 +400,27 @@ var _ = Describe("TasksForDate", func() {
     It("returns monthly union + quarterly for 2025-04-01", func() {
         defs := schedule.TasksForDate(schedule.NewDate(2025, time.April, 1))
         Expect(slugs(defs)).To(ConsistOf(
-            "backup-atlassian-confluence", "backup-atlassian-jira",
-            "backup-google-drive", "backup-pictures",
-            "monthly-review", "plan-month", "trading-profits",
-            "update-frontend", "update-go-mod", "update-inventar",
-            "update-journal", "world-apply", "update-screego",
-            "update-poste", "update-minio", "update-library", "update-k3s",
-            "quarter-review", "quarter-plan",
+            "monthly-1", "monthly-2",
+            "monthly-3", "monthly-4",
+            "monthly-5", "monthly-6", "monthly-7",
+            "monthly-8", "monthly-9", "monthly-10",
+            "monthly-11", "monthly-12", "monthly-13",
+            "monthly-14", "monthly-15", "monthly-16", "monthly-17",
+            "quarterly-1", "quarterly-2",
         ))
     })
 
     It("returns monthly + quarterly + yearly for 2025-01-01", func() {
         defs := schedule.TasksForDate(schedule.NewDate(2025, time.January, 1))
         Expect(slugs(defs)).To(ConsistOf(
-            "backup-atlassian-confluence", "backup-atlassian-jira",
-            "backup-google-drive", "backup-pictures",
-            "monthly-review", "plan-month", "trading-profits",
-            "update-frontend", "update-go-mod", "update-inventar",
-            "update-journal", "world-apply", "update-screego",
-            "update-poste", "update-minio", "update-library", "update-k3s",
-            "quarter-review", "quarter-plan",
-            "yearly-review", "plan-year",
+            "monthly-1", "monthly-2",
+            "monthly-3", "monthly-4",
+            "monthly-5", "monthly-6", "monthly-7",
+            "monthly-8", "monthly-9", "monthly-10",
+            "monthly-11", "monthly-12", "monthly-13",
+            "monthly-14", "monthly-15", "monthly-16", "monthly-17",
+            "quarterly-1", "quarterly-2",
+            "yearly-1", "yearly-2",
         ))
     })
 
@@ -524,51 +453,51 @@ Pin the full alphabetically-sorted slug list. Computed list (45 slugs, sorted):
 
 ```go
 var canonicalSlugs = []string{
-    "backup-atlassian-confluence",
-    "backup-atlassian-jira",
-    "backup-google-drive",
-    "backup-pictures",
-    "capitalcom-apikey-dev",
-    "capitalcom-apikey-prod",
-    "check-bot-is-healthy",
-    "check-ftmo-demo-accounts",
-    "complete-longhorn-backups",
-    "complete-rsync-backups",
-    "docker-registry-gc",
-    "home-assistant-update-backup",
-    "lexoffice-invoices",
-    "moneymoney-review",
-    "monthly-review",
-    "opnsense-update",
-    "plan-month",
-    "plan-next-week",
-    "plan-year",
-    "quarter-plan",
-    "quarter-review",
-    "rebuild-trading-dev-prod",
-    "renew-gmail-oauth-tokens",
+    "monthly-1",
+    "monthly-2",
+    "monthly-3",
+    "monthly-4",
+    "yearly-may-2",
+    "yearly-may-1",
+    "weekday-sun-8",
+    "weekday-sat-4",
+    "weekday-sun-2",
+    "weekday-sun-1",
+    "weekday-sun-6",
+    "weekday-sat-8",
+    "weekday-sat-5",
+    "weekday-sat-6",
+    "monthly-5",
+    "weekday-sat-7",
+    "monthly-6",
+    "weekday-sat-10",
+    "yearly-2",
+    "quarterly-2",
+    "quarterly-1",
+    "weekday-sun-7",
+    "weekday-sat-9",
     "run-update-all",
-    "run-update-all-saturday",
-    "shutdown-k3s",
-    "topic-backup-saturday",
-    "trading-profits",
-    "turn-off-fire",
-    "turn-off-hell",
-    "turn-off-sun",
-    "turn-on-hell",
-    "update-finances",
-    "update-frontend",
-    "update-go-mod",
-    "update-inventar",
-    "update-journal",
-    "update-k3s",
-    "update-library",
-    "update-minio",
-    "update-poste",
-    "update-screego",
+    "weekday-sat-11",
+    "weekday-sat-1",
+    "weekday-sat-12",
+    "monthly-7",
+    "weekday-sun-5",
+    "weekday-sun-3",
+    "weekday-sun-4",
+    "weekday-sat-2",
+    "monthly-day5-1",
+    "monthly-8",
+    "monthly-9",
+    "monthly-10",
+    "monthly-11",
+    "monthly-17",
+    "monthly-16",
+    "monthly-15",
+    "monthly-14",
+    "monthly-13",
     "weekly-review",
-    "world-apply",
-    "yearly-review",
+    "monthly-12",
+    "yearly-1",
 }
 ```
 
