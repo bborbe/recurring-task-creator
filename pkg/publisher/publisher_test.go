@@ -681,7 +681,7 @@ var _ = Describe("Publisher", func() {
 
 	Describe("frontmatter", func() {
 		It(
-			"emits the three built-in keys when the operator supplies no frontmatter",
+			"emits the published-author defaults + forced provenance when the operator supplies no frontmatter",
 			func() {
 				def := schedule.TaskDefinition{
 					Slug:          "test-slug",
@@ -734,16 +734,15 @@ var _ = Describe("Publisher", func() {
 		)
 
 		It(
-			"built-in keys win on collision; operator cannot override status/page_type/created_by",
+			"operator can override the published-author defaults (status, page_type)",
 			func() {
 				def := schedule.TaskDefinition{
 					Slug:          "test-slug",
 					TitleTemplate: "t",
 					Recurrence:    schedule.RecurrenceWeekly,
 					Frontmatter: lib.TaskFrontmatter{
-						"status":     "operator-tries-to-override",
-						"page_type":  "operator-tries-to-override",
-						"created_by": "operator-tries-to-override",
+						"status":    "draft",
+						"page_type": "log",
 					},
 				}
 				Expect(pub.Publish(
@@ -752,9 +751,33 @@ var _ = Describe("Publisher", func() {
 					schedule.NewDate(2025, time.January, 4),
 				)).To(Succeed())
 				fm := capture().Frontmatter
+				Expect(fm).To(HaveKeyWithValue("status", "draft"))
+				Expect(fm).To(HaveKeyWithValue("page_type", "log"))
+				Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
+				Expect(fm).To(HaveLen(3))
+			},
+		)
+
+		It(
+			"operator cannot override the forced provenance key (created_by)",
+			func() {
+				def := schedule.TaskDefinition{
+					Slug:          "test-slug",
+					TitleTemplate: "t",
+					Recurrence:    schedule.RecurrenceWeekly,
+					Frontmatter: lib.TaskFrontmatter{
+						"created_by": "operator-tries-to-impersonate",
+					},
+				}
+				Expect(pub.Publish(
+					context.Background(),
+					def,
+					schedule.NewDate(2025, time.January, 4),
+				)).To(Succeed())
+				fm := capture().Frontmatter
+				Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
 				Expect(fm).To(HaveKeyWithValue("status", "in_progress"))
 				Expect(fm).To(HaveKeyWithValue("page_type", "task"))
-				Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
 				Expect(fm).To(HaveLen(3))
 			},
 		)

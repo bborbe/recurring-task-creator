@@ -108,7 +108,7 @@ After this work, the running binary self-installs the CRD on boot, then maintain
 ## Verification
 
 ```
-cd /Users/bborbe/Documents/workspaces/recurring-task-creator-informer-inventory
+cd ~/workspaces/recurring-task-creator-informer-inventory
 make precommit
 ls pkg/schedule/inventory.go 2>&1 | grep -c 'No such file'
 grep -RnE 'schedule\.Inventory\(\)' --include='*.go' . || echo "no consumers remain"

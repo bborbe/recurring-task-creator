@@ -70,7 +70,7 @@ type CreateCommandSender interface {
 }
 ```
 
-`github.com/bborbe/cqrs/cdb` — verified signature (canonical wiring lives at `/Users/bborbe/Documents/workspaces/agent/task/executor/pkg/factory/factory.go:149`):
+`github.com/bborbe/cqrs/cdb` — verified signature (canonical wiring lives at `~/workspaces/agent/task/executor/pkg/factory/factory.go:149`):
 ```go
 func NewCommandObjectSender(
     syncProducer libkafka.SyncProducer,
@@ -375,11 +375,11 @@ func (a *application) runHTTPServer() run.Func {
 ```
 
 Notes on the above:
-- `cdb.NewCommandObjectSender` is `github.com/bborbe/cqrs/cdb.NewCommandObjectSender(syncProducer, branch, logSamplerFactory)` — three args, NO topic name. Topic is derived from `branch` + schema by the CQRS layer. The canonical wiring lives at `/Users/bborbe/Documents/workspaces/agent/task/executor/pkg/factory/factory.go:149`. Use `cqrsbase.Branch("master")` and `liblog.DefaultSamplerFactory`.
+- `cdb.NewCommandObjectSender` is `github.com/bborbe/cqrs/cdb.NewCommandObjectSender(syncProducer, branch, logSamplerFactory)` — three args, NO topic name. Topic is derived from `branch` + schema by the CQRS layer. The canonical wiring lives at `~/workspaces/agent/task/executor/pkg/factory/factory.go:149`. Use `cqrsbase.Branch("master")` and `liblog.DefaultSamplerFactory`.
 - `run.CancelOnFirstFinish(ctx, a.runHTTPServer(), tickLoop.Run)` matches the spec's "run.CancelOnFirstFinish semantics: if one exits, the other is cancelled". The HTTP server `run.Func` and the tick loop's `Run` method both satisfy `func(ctx context.Context) error`. `tickLoop.Run` is a method value bound to the concrete `*tick.tick` value; `run.Func` accepts it directly.
 - `log.NewSetLoglevelHandler` and `log.NewLogLevelSetter` come from `github.com/bborbe/log` — the import was previously `github.com/bborbe/log` and is preserved.
 - `libmetrics.NewBuildInfoMetrics().SetBuildInfo(...)` is the existing build-info metrics call; preserved.
-- The `sentryClient` parameter to `Run` is unused inside `Run` (it was previously used by the `/sentryalert` handler). The signature must stay `Run(ctx context.Context, _ libsentry.Client) error` per the `service.Main` contract. Use the blank identifier `_` — this matches the canonical pattern at `/Users/bborbe/Documents/workspaces/maintainer/watcher/github-build/main.go:73`.
+- The `sentryClient` parameter to `Run` is unused inside `Run` (it was previously used by the `/sentryalert` handler). The signature must stay `Run(ctx context.Context, _ libsentry.Client) error` per the `service.Main` contract. Use the blank identifier `_` — this matches the canonical pattern at `~/workspaces/maintainer/watcher/github-build/main.go:73`.
 - The HTTP router has EXACTLY four `router.Path(...)` lines: `/healthz`, `/readiness`, `/metrics`, `/setloglevel/{level}`. The spec AC says "grep -nE 'router\.Path' main.go returns exactly four lines matching these four paths". Do NOT add `/gc` even though the canonical k8s-binary-conventions doc says it is always required — the spec explicitly removes it.
 - `Listen` keeps its existing tag (no default added). The spec does not specify a default; do not add one unilaterally.
 - The order of `defer` calls in `Run` matters: `defer saramaClient.Close()` and `defer syncProducer.Close()` execute in LIFO order. Close `syncProducer` first (most recent), then `saramaClient`. (This matches the existing main.go.) The `run.CancelOnFirstFinish` is the LAST return value — defer cleanup happens after `Run` returns, so the producer+client close after the run.Funcs are done. Good.

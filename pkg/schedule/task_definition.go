@@ -54,10 +54,10 @@ type TaskDefinition struct {
 	// Frontmatter is operator-defined YAML frontmatter stamped onto the
 	// generated vault file. Sourced from the `spec.template.frontmatter`
 	// field on the Schedule CR (free-form map[string]interface{}). The
-	// publisher merges this with three hardcoded built-in keys it
-	// always emits (`status`, `page_type`, `created_by`); the built-in
-	// keys WIN on collision — the publisher's invariants are not
-	// operator-overrideable.
+	// publisher seeds two defaults (`status: in_progress`,
+	// `page_type: task`) and lets operator keys override them on
+	// collision. `created_by: recurring-task-creator` is force-set as
+	// provenance and cannot be overridden by configuration.
 	Frontmatter Frontmatter
 }
 

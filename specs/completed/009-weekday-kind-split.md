@@ -89,7 +89,7 @@ Not applicable — no HTTP surface, no user-controlled input, no new file paths.
 ## Verification
 
 ```
-cd /Users/bborbe/Documents/workspaces/recurring-task-creator-weekday-kind
+cd ~/workspaces/recurring-task-creator-weekday-kind
 make precommit
 go test -v -run 'WeekdayKind|RecurrenceWeekday|RecurrenceWeekly|PeriodToken|UUID5' ./...
 grep -c 'RecurrenceWeekly' pkg/schedule/inventory.go    # expect 0
@@ -112,7 +112,7 @@ Expected: `make precommit` exits 0; all matched tests PASS; grep counts as annot
 ## Verification Result
 
 **Verified:** 2026-06-16T15:22:08Z (HEAD 2d668b5)
-**Binary:** dark-factory v0.177.1 (/Users/bborbe/Documents/workspaces/go/bin/dark-factory)
+**Binary:** dark-factory v0.177.1 (~/workspaces/go/bin/dark-factory)
 **Scenario:** built tree from worktree HEAD; ran `go test ./pkg/schedule/...` (22 specs PASS), `go test ./pkg/publisher/...` (PASS, including 21-entry UUID5 stability table), and `make precommit` (exit 0).
 **Evidence:**
 - `pkg/schedule/recurrence.go:13` declares `RecurrenceWeekday RecurrenceKind = "weekday"`; `AllRecurrenceKinds` grows to 6 entries.
