@@ -56,10 +56,10 @@
                 │                                                 │
                 │  Container image from AgentConfig.Image:        │
                 │    agent-claude  · agent-pi · agent-code        │
-                │    agent-gemini · agent-backtest-agent          │
-                │    agent-trade-analysis · agent-hypothesis      │
+                │    agent-gemini                                 │
                 │    maintainer-agent-pr-reviewer                 │
                 │    maintainer-agent-github-releaser             │
+                │    (plus operator-specific domain agents)       │
                 │                                                 │
                 │  Env: TASK_ID, TASK_CONTENT, PHASE,             │
                 │       KAFKA_BROKERS, BRANCH                     │
@@ -97,15 +97,14 @@ The set of registered AI assignees is discoverable at runtime:
 ```bash
 $ kubectl get configs.agent.benjamin-borbe.de -A
 NAMESPACE   NAME                               AGE
-dev         agent-backtest-agent               61d
 dev         agent-claude                       60d
-dev         agent-hypothesis                   54d
 dev         agent-pi                           22d
-dev         agent-trade-analysis               61d
 dev         maintainer-agent-github-releaser   18d
 dev         maintainer-agent-pr-reviewer       42d
 prod        ... (same set)
 ```
+
+(An operator's cluster also typically registers their own domain-specific agents; only the generic + platform set is shown above.)
 
 ### Agent shapes
 
@@ -115,9 +114,6 @@ prod        ... (same set)
 | `agent-pi` | all-MiniMax-`pi` — Tier-D sibling of Claude Agent (cheap LLM swap) | budget reference |
 | `agent-code` | pure-Go — 3 distinct deterministic steps, no LLM | deterministic reference |
 | `agent-gemini` | hybrid — Gemini at planning edge, Go steps for execution + verify | boundary-translator reference |
-| `agent-backtest-agent` | per-domain (trading) — runs strategy backtests | domain-specific (trading) |
-| `agent-trade-analysis` | per-domain (trading) — analyses trades vs strategy | domain-specific (trading) |
-| `agent-hypothesis` | orchestrator — drives backtest + trade-analysis as child tasks | domain-specific (trading) |
 | `maintainer-agent-pr-reviewer` | per-phase — reviews `bborbe/*` PRs | platform |
 | `maintainer-agent-github-releaser` | per-phase — semver classify + tag releases | platform |
 
@@ -144,7 +140,6 @@ This repo ships **exactly the first producer**: Schedule CR → Kafka `task.Crea
 | `git-rest` | [bborbe/git-rest](https://github.com/bborbe/git-rest) | (private) | HTTP CRUD over a git remote (vault writer) |
 | `task-controller`, `task-executor`, `agent-{claude,pi,code,gemini}` | [bborbe/agent](https://github.com/bborbe/agent) | (private) | shared task pipeline + reference agents |
 | `github-pr-watcher`, `github-build-watcher`, `github-release-watcher`, `maintainer-agent-pr-reviewer`, `maintainer-agent-github-releaser` | [bborbe/maintainer](https://github.com/bborbe/maintainer) | (private) | GitHub-source producers + platform agents |
-| `agent-backtest-agent`, `agent-trade-analysis`, `agent-hypothesis` | bborbe/trading | (private) | trading-domain agents |
 | `vault-cli` | bborbe/vault-cli | (private) | operator CLI / Claude Code plugin |
 | `task-orchestrator` | bborbe/task-orchestrator | (private) | operator web UI (Kanban + session driver) |
 | Cluster infra (helm services, monitoring, the operator's own Schedule CRs) | bborbe/quant | (private) | operational config + per-operator content |
