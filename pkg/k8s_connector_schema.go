@@ -119,15 +119,26 @@ func scheduleSpecSchema() apiextensionsv1.JSONSchemaProps {
 					},
 					"frontmatter": {
 						Type:        "object",
-						Description: "YAML frontmatter of the generated task. Free-form — see k8s/apis/.../v1.ScheduleSpec.Template.Frontmatter (lib.TaskFrontmatter).",
-						// XPreserveUnknownFields is NOT set: the frontmatter shape
-						// is part of the contract; unknown keys are a config bug
-						// that should fail at apply-time, not silently pass.
+						Description: "YAML frontmatter stamped onto the generated task. Free-form map of operator-defined keys (assignee, priority, goals, category, ...). The publisher merges these with three built-in keys (status, page_type, created_by) that always win on collision.",
+						// XPreserveUnknownFields is set to true: frontmatter is an
+						// operator-defined free-form map. The publisher wires it
+						// through verbatim (lib.TaskFrontmatter is
+						// map[string]interface{}); the API server preserves whatever
+						// keys the operator supplies.
+						XPreserveUnknownFields: ptrTrue(),
 					},
 				},
 			},
 		},
 	}
+}
+
+// ptrTrue returns a pointer to true; the k8s OpenAPI schema represents
+// boolean toggles as *bool so an unset pointer is distinguishable from
+// an explicit false.
+func ptrTrue() *bool {
+	t := true
+	return &t
 }
 
 // jsonEnumValues wraps each string in an apiextensionsv1.JSON so the
