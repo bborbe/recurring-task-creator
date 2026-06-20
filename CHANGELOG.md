@@ -8,7 +8,7 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
-## Unreleased
+## v0.3.0
 
 - feat!: remove the pre-v0.2.0 kebab-case placeholder aliases (`{{date}}`, `{{iso-week}}`, `{{next-iso-week}}`, `{{month}}`, `{{last-month}}`, `{{quarter}}`, `{{last-quarter}}`, `{{year}}`, `{{last-year}}`). Use the canonical snake_case names introduced in v0.2.0 (`{{current_date}}`, `{{current_week}}`, `{{next_week}}`, `{{current_month}}`, `{{last_month}}`, `{{current_quarter}}`, `{{last_quarter}}`, `{{current_year}}`, `{{last_year}}`). BREAKING CHANGE — Schedule CRs that still use kebab-case names will land literal `{{...}}` strings in their generated task files. Operator must migrate every Schedule CR YAML to the canonical names before deploying this release.
 
