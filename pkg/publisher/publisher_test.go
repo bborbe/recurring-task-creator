@@ -29,7 +29,7 @@ var _ = Describe("Publisher", func() {
 	BeforeEach(func() {
 		sender = &taskmocks.TaskCreateCommandSender{}
 		sender.SendCommandReturns(nil)
-		pub = publisher.NewPublisher(sender, false)
+		pub = publisher.NewPublisher(sender, publisher.NewFrontmatterFormatter(), false)
 	})
 
 	capture := func() task.CreateCommand {
@@ -70,7 +70,11 @@ var _ = Describe("Publisher", func() {
 			// suite's capture() reads call index 0.
 			localSender := &taskmocks.TaskCreateCommandSender{}
 			localSender.SendCommandReturns(nil)
-			localPub := publisher.NewPublisher(localSender, false)
+			localPub := publisher.NewPublisher(
+				localSender,
+				publisher.NewFrontmatterFormatter(),
+				false,
+			)
 			def := schedule.TaskDefinition{
 				Slug:          slug,
 				TitleTemplate: "t",
@@ -362,7 +366,11 @@ var _ = Describe("Publisher", func() {
 			// always points at the most recent Publish.
 			localSender := &taskmocks.TaskCreateCommandSender{}
 			localSender.SendCommandReturns(nil)
-			localPub := publisher.NewPublisher(localSender, false)
+			localPub := publisher.NewPublisher(
+				localSender,
+				publisher.NewFrontmatterFormatter(),
+				false,
+			)
 			Expect(localPub.Publish(context.Background(), def, c.d)).To(Succeed())
 			_, cmd := localSender.SendCommandArgsForCall(0)
 			want := uuid.NewSHA1(
@@ -577,7 +585,11 @@ var _ = Describe("Publisher", func() {
 			func(rec schedule.RecurrenceKind, date schedule.Date, expectedToken string) {
 				localSender := &taskmocks.TaskCreateCommandSender{}
 				localSender.SendCommandReturns(nil)
-				localPub := publisher.NewPublisher(localSender, false)
+				localPub := publisher.NewPublisher(
+					localSender,
+					publisher.NewFrontmatterFormatter(),
+					false,
+				)
 				def := schedule.TaskDefinition{
 					Slug:          "kind-" + string(rec),
 					TitleTemplate: "Bare",
@@ -661,7 +673,11 @@ var _ = Describe("Publisher", func() {
 				// always points at the most recent Publish.
 				localSender := &taskmocks.TaskCreateCommandSender{}
 				localSender.SendCommandReturns(nil)
-				localPub := publisher.NewPublisher(localSender, false)
+				localPub := publisher.NewPublisher(
+					localSender,
+					publisher.NewFrontmatterFormatter(),
+					false,
+				)
 				Expect(localPub.Publish(context.Background(), def, refDate)).To(Succeed())
 				_, cmd := localSender.SendCommandArgsForCall(0)
 				expectedToken, err := publisher.BuildPeriodTokenForTest(
@@ -911,7 +927,7 @@ var _ = Describe("Publisher", func() {
 		})
 
 		It("does not call SendCommand when dryRun is true", func() {
-			dryPub := publisher.NewPublisher(sender, true)
+			dryPub := publisher.NewPublisher(sender, publisher.NewFrontmatterFormatter(), true)
 			def := schedule.TaskDefinition{
 				Slug:          "weekly-review",
 				TitleTemplate: "t",
@@ -1150,7 +1166,11 @@ var _ = Describe("Publisher", func() {
 			func(c stabilityCase) {
 				localSender := &taskmocks.TaskCreateCommandSender{}
 				localSender.SendCommandReturns(nil)
-				localPub := publisher.NewPublisher(localSender, false)
+				localPub := publisher.NewPublisher(
+					localSender,
+					publisher.NewFrontmatterFormatter(),
+					false,
+				)
 				def := schedule.TaskDefinition{
 					Slug:          c.slug,
 					TitleTemplate: "t",

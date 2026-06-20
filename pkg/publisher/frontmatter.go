@@ -10,22 +10,40 @@ import (
 	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 )
 
-// buildFrontmatter returns the frontmatter stamped onto every published
-// task. Three published-author defaults seed the output (`status:
-// in_progress`, `page_type: task`); operator-supplied keys from
-// `Schedule.spec.template.frontmatter` are then merged on top and may
-// override those defaults. Finally `created_by: recurring-task-creator`
-// is force-set so a Schedule CR cannot impersonate a different author
-// of the published vault file — `created_by` is provenance, not
-// configuration. Every other key is operator-configurable.
-//
-// String values in operatorFrontmatter are passed through renderTemplate
-// using the same closed placeholder set as title/body, so a Schedule CR
-// can stamp dynamic fields such as `planned_date: "{{date}}"`. Non-string
-// values (ints, slices, maps) pass through unchanged — placeholder
-// substitution is a string-level transform.
-func buildFrontmatter(
-	operatorFrontmatter lib.TaskFrontmatter,
+//counterfeiter:generate -o ../../mocks/publisher-frontmatter-formatter.go --fake-name PublisherFrontmatterFormatter . FrontmatterFormatter
+
+// FrontmatterFormatter builds the YAML frontmatter stamped onto every
+// published task. The formatter is the single seam between operator-
+// supplied frontmatter (from `Schedule.spec.template.frontmatter`) and
+// the wire-level `task.CreateCommand.Frontmatter` payload: it seeds
+// published-author defaults, renders placeholder tokens in string
+// values via the publisher's closed placeholder set, merges operator
+// keys (which may override the defaults), and force-sets the provenance
+// key `created_by: recurring-task-creator` last so a Schedule CR cannot
+// impersonate a different author.
+type FrontmatterFormatter interface {
+	// Format returns the frontmatter for one published task. String
+	// values in `operator` are rendered through the same placeholder
+	// substitution as title/body (`{{date}}`, `{{iso-week}}`, etc.);
+	// non-string values (ints, slices, maps) pass through unchanged.
+	// `slug` and `date` parameterize the placeholder render; `date` is
+	// the Berlin civil date the task fires for (the publisher converts
+	// wall-clock once at the tick boundary).
+	Format(operator lib.TaskFrontmatter, slug string, date schedule.Date) lib.TaskFrontmatter
+}
+
+// NewFrontmatterFormatter returns the default FrontmatterFormatter that
+// renders placeholders in string values via the publisher's closed
+// placeholder set (see render.go). Stateless: safe to construct once
+// and share across goroutines.
+func NewFrontmatterFormatter() FrontmatterFormatter {
+	return &frontmatterFormatter{}
+}
+
+type frontmatterFormatter struct{}
+
+func (f *frontmatterFormatter) Format(
+	operator lib.TaskFrontmatter,
 	slug string,
 	date schedule.Date,
 ) lib.TaskFrontmatter {
@@ -33,7 +51,7 @@ func buildFrontmatter(
 		"status":    "in_progress",
 		"page_type": "task",
 	}
-	for k, v := range operatorFrontmatter {
+	for k, v := range operator {
 		if s, ok := v.(string); ok {
 			out[k] = renderTemplate(s, slug, date)
 			continue
