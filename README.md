@@ -48,22 +48,62 @@ metadata:
   namespace: default               # the recurring-task-creator pod watches its own namespace
 spec:
   vault: default                   # routes to agent-task-controller-<vault>
-  title: Weekly Review             # Go text/template; period token suffixed by publisher
+  title: Weekly Review {{current_week}}   # placeholder-rendered; period token also suffixed
   schedule:
     recurrence: Weekday            # Daily | Weekly | Weekday | Monthly | Quarterly | Yearly
     weekday: Saturday              # required iff recurrence == Weekday (Monday..Sunday)
   template:
     body: |
-      Reflect on the past week.
-      Plan the next.
+      Reflect on the past week ({{current_week}}).
+      Plan the next ({{next_week}}).
     frontmatter:                   # YAML frontmatter stamped onto the generated task file
       priority: 2
       status: in_progress
       page_type: task
       assignee: bborbe
+      planned_date: "{{current_date}}"   # placeholder-rendered in string values
+      due_date: "{{next_sun_date}}"
 ```
 
 The CRD's OpenAPI schema enforces the recurrence enum, the weekday enum, and a CEL rule that requires `weekday` iff `recurrence == "Weekday"`.
+
+## Template placeholders
+
+Substituted in `title`, `body`, and any **string-valued** `frontmatter` field. Non-string frontmatter values (ints, slices, maps) pass through unchanged. Closed set — unknown tokens like `{{foo}}` render verbatim. All values are computed against the Berlin civil date the task fires for.
+
+| Placeholder | Renders | Example (Sat 2026-06-20) |
+|---|---|---|
+| `{{current_date}}` | `YYYY-MM-DD` | `2026-06-20` |
+| `{{next_sat_date}}` | `YYYY-MM-DD` (today if today IS Sat) | `2026-06-20` |
+| `{{next_sun_date}}` | `YYYY-MM-DD` (today if today IS Sun) | `2026-06-21` |
+| `{{current_week}}` | `YYYYWNN` (ISO) | `2026W25` |
+| `{{next_week}}` | `YYYYWNN +7d` | `2026W26` |
+| `{{current_month}}` | `YYYY-MM` | `2026-06` |
+| `{{next_month}}` | `YYYY-MM +1mo` | `2026-07` |
+| `{{last_month}}` | `YYYY-MM −1mo` | `2026-05` |
+| `{{current_quarter}}` | `YYYYQN` | `2026Q2` |
+| `{{last_quarter}}` | `YYYYQN −1q` | `2026Q1` |
+| `{{current_year}}` | `YYYY` | `2026` |
+| `{{next_year}}` | `YYYY +1y` | `2027` |
+| `{{last_year}}` | `YYYY −1y` | `2025` |
+
+`{{next_sat_date}}` / `{{next_sun_date}}` use **inclusive-today** semantics so a Sunday Schedule firing on Sun stamps `planned_date=<today>`, not `<today+7>`.
+
+### Deprecated aliases
+
+The pre-rename kebab-case names still render (aliased to the canonical names above) but are scheduled for removal in the next minor. Migrate Schedule CR YAMLs at leisure:
+
+| Deprecated | Canonical |
+|---|---|
+| `{{date}}` | `{{current_date}}` |
+| `{{iso-week}}` | `{{current_week}}` |
+| `{{next-iso-week}}` | `{{next_week}}` |
+| `{{month}}` | `{{current_month}}` |
+| `{{last-month}}` | `{{last_month}}` |
+| `{{quarter}}` | `{{current_quarter}}` |
+| `{{last-quarter}}` | `{{last_quarter}}` |
+| `{{year}}` | `{{current_year}}` |
+| `{{last-year}}` | `{{last_year}}` |
 
 ## Build + deploy
 
