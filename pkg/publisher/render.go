@@ -6,53 +6,16 @@ package publisher
 
 import (
 	"fmt"
-	"strings"
 	"time"
-
-	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 )
 
-// renderTemplate replaces every placeholder in template with its rendered
-// value for date. Substitutes the exact slice returned by
-// schedule.SupportedPlaceholders — one strings.ReplaceAll per token, in
-// slice order. No regex, no template engine. Unknown placeholders cannot
-// appear at this layer (Spec 1's inventory validation rejects them at
-// test time).
-func renderTemplate(template, slug string, date schedule.Date) string {
-	values := buildPlaceholderValues(slug, date)
-	out := template
-	for _, ph := range schedule.SupportedPlaceholders {
-		out = strings.ReplaceAll(out, ph, values[ph])
-	}
-	return out
-}
-
-// buildPlaceholderValues returns a map from each supported placeholder to
-// its rendered string for date. The map covers every entry in
-// schedule.SupportedPlaceholders. The slug parameter is reserved for
-// future placeholders that depend on the slug itself; the current set
-// (date/iso-week/next-iso-week/month/last-month/quarter/last-quarter/
-// year/last-year) does not.
-func buildPlaceholderValues(slug string, date schedule.Date) map[string]string {
-	_ = slug
-	base := date.Time()
-	isoYear, isoWeek := base.ISOWeek()
-	next := base.AddDate(0, 0, 7)
-	nextIsoYear, nextIsoWeek := next.ISOWeek()
-	lastMonth := firstOfPreviousMonth(base)
-	lastQuarterYear, lastQuarter := previousQuarter(base.Year(), int(base.Month()))
-	return map[string]string{
-		"{{date}}":          fmtDate(date.Year, int(date.Month), date.Day),
-		"{{iso-week}}":      fmtIsoWeek(isoYear, isoWeek),
-		"{{next-iso-week}}": fmtIsoWeek(nextIsoYear, nextIsoWeek),
-		"{{month}}":         fmtMonthYear(base.Year(), int(base.Month())),
-		"{{last-month}}":    fmtMonthYear(lastMonth.Year(), int(lastMonth.Month())),
-		"{{quarter}}":       fmtQuarter(base.Year(), quarterOf(base.Month())),
-		"{{last-quarter}}":  fmtQuarter(lastQuarterYear, lastQuarter),
-		"{{year}}":          fmtYear(base.Year()),
-		"{{last-year}}":     fmtYear(base.Year() - 1),
-	}
-}
+// The placeholder substitution function previously declared here moved
+// to pkg/publisher/renderer.go behind the Renderer interface — Publisher
+// and FrontmatterFormatter now both depend on an injected Renderer
+// rather than calling a same-package private helper. The format helpers
+// (fmtDate / fmtIsoWeek / fmtMonthYear / fmtQuarter / fmtYear and the
+// period-arithmetic helpers below) remain here as a leaf-level utility
+// set consumed by the placeholders table.
 
 // fmtDate renders YYYY-MM-DD.
 func fmtDate(year, month, day int) string {

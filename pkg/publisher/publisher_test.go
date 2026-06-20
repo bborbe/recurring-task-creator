@@ -29,7 +29,12 @@ var _ = Describe("Publisher", func() {
 	BeforeEach(func() {
 		sender = &taskmocks.TaskCreateCommandSender{}
 		sender.SendCommandReturns(nil)
-		pub = publisher.NewPublisher(sender, publisher.NewFrontmatterFormatter(), false)
+		pub = publisher.NewPublisher(
+			sender,
+			publisher.NewRenderer(),
+			publisher.NewFrontmatterFormatter(publisher.NewRenderer()),
+			false,
+		)
 	})
 
 	capture := func() task.CreateCommand {
@@ -72,7 +77,8 @@ var _ = Describe("Publisher", func() {
 			localSender.SendCommandReturns(nil)
 			localPub := publisher.NewPublisher(
 				localSender,
-				publisher.NewFrontmatterFormatter(),
+				publisher.NewRenderer(),
+				publisher.NewFrontmatterFormatter(publisher.NewRenderer()),
 				false,
 			)
 			def := schedule.TaskDefinition{
@@ -368,7 +374,8 @@ var _ = Describe("Publisher", func() {
 			localSender.SendCommandReturns(nil)
 			localPub := publisher.NewPublisher(
 				localSender,
-				publisher.NewFrontmatterFormatter(),
+				publisher.NewRenderer(),
+				publisher.NewFrontmatterFormatter(publisher.NewRenderer()),
 				false,
 			)
 			Expect(localPub.Publish(context.Background(), def, c.d)).To(Succeed())
@@ -587,7 +594,8 @@ var _ = Describe("Publisher", func() {
 				localSender.SendCommandReturns(nil)
 				localPub := publisher.NewPublisher(
 					localSender,
-					publisher.NewFrontmatterFormatter(),
+					publisher.NewRenderer(),
+					publisher.NewFrontmatterFormatter(publisher.NewRenderer()),
 					false,
 				)
 				def := schedule.TaskDefinition{
@@ -675,7 +683,8 @@ var _ = Describe("Publisher", func() {
 				localSender.SendCommandReturns(nil)
 				localPub := publisher.NewPublisher(
 					localSender,
-					publisher.NewFrontmatterFormatter(),
+					publisher.NewRenderer(),
+					publisher.NewFrontmatterFormatter(publisher.NewRenderer()),
 					false,
 				)
 				Expect(localPub.Publish(context.Background(), def, refDate)).To(Succeed())
@@ -927,7 +936,12 @@ var _ = Describe("Publisher", func() {
 		})
 
 		It("does not call SendCommand when dryRun is true", func() {
-			dryPub := publisher.NewPublisher(sender, publisher.NewFrontmatterFormatter(), true)
+			dryPub := publisher.NewPublisher(
+				sender,
+				publisher.NewRenderer(),
+				publisher.NewFrontmatterFormatter(publisher.NewRenderer()),
+				true,
+			)
 			def := schedule.TaskDefinition{
 				Slug:          "weekly-review",
 				TitleTemplate: "t",
@@ -1168,7 +1182,8 @@ var _ = Describe("Publisher", func() {
 				localSender.SendCommandReturns(nil)
 				localPub := publisher.NewPublisher(
 					localSender,
-					publisher.NewFrontmatterFormatter(),
+					publisher.NewRenderer(),
+					publisher.NewFrontmatterFormatter(publisher.NewRenderer()),
 					false,
 				)
 				def := schedule.TaskDefinition{

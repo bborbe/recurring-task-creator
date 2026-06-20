@@ -29,7 +29,13 @@ import (
 // the would-be CreateCommand and skips the sender call. Pure plumbing: no
 // business logic.
 func CreatePublisher(sender task.CreateCommandSender, dryRun bool) publisher.Publisher {
-	return publisher.NewPublisher(sender, publisher.NewFrontmatterFormatter(), dryRun)
+	renderer := publisher.NewRenderer()
+	return publisher.NewPublisher(
+		sender,
+		renderer,
+		publisher.NewFrontmatterFormatter(renderer),
+		dryRun,
+	)
 }
 
 // CreateTick builds the hourly cron loop. scheduleStore provides the

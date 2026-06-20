@@ -8,6 +8,14 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
+## Unreleased
+
+- feat: add canonical placeholder names — `{{current_date}}`, `{{current_week}}`, `{{next_week}}`, `{{current_month}}`, `{{next_month}}`, `{{last_month}}`, `{{current_quarter}}`, `{{last_quarter}}`, `{{current_year}}`, `{{next_year}}`, `{{last_year}}`
+- feat: add weekday-targeted date placeholders — `{{next_sat_date}}`, `{{next_sun_date}}` (inclusive-today: when today IS the target weekday, return today's date rather than +7)
+- refactor: declarative `[]placeholder{name, compute func}` table in `pkg/publisher/placeholders.go`; `SupportedPlaceholders` derives from the table — adding a placeholder is now one row
+- refactor: extract `Renderer` interface + `NewRenderer` constructor; `NewPublisher` and `NewFrontmatterFormatter` take the renderer as a constructor dep. Mockable via Counterfeiter (`mocks/publisher-renderer.go`), tested in isolation in `pkg/publisher/placeholders_test.go`
+- deprecate: kebab-case alias names — `{{date}}`, `{{iso-week}}`, `{{next-iso-week}}`, `{{month}}`, `{{last-month}}`, `{{quarter}}`, `{{last-quarter}}`, `{{year}}`, `{{last-year}}` — still rendered (alias to new canonical names) but slated for removal in the next minor. Migrate Schedule CR YAMLs at leisure.
+
 ## v0.1.0
 
 - feat: render placeholders in operator-supplied string frontmatter values (same closed set as title/body); non-string values pass through unchanged. Enables `planned_date: "{{date}}"` and similar dynamic frontmatter in Schedule CRs.

@@ -22,7 +22,8 @@ type TaskDefinition struct {
 	Slug string
 
 	// TitleTemplate is the title shown to the user. Supports only the
-	// placeholders listed in SupportedPlaceholders below.
+	// placeholders listed in publisher.SupportedPlaceholders (declared
+	// in pkg/publisher/placeholders.go).
 	TitleTemplate string
 
 	// BodyTemplate is raw markdown. Supports the same placeholder set.
@@ -61,17 +62,9 @@ type TaskDefinition struct {
 	Frontmatter Frontmatter
 }
 
-// SupportedPlaceholders lists the EXACT set of placeholders accepted in
-// TitleTemplate and BodyTemplate. Any other `{{...}}` token in an inventory
-// entry is a build-time test failure.
-var SupportedPlaceholders = []string{
-	"{{date}}",
-	"{{iso-week}}",
-	"{{next-iso-week}}",
-	"{{month}}",
-	"{{last-month}}",
-	"{{quarter}}",
-	"{{last-quarter}}",
-	"{{year}}",
-	"{{last-year}}",
-}
+// The closed list of accepted placeholder tokens lives in
+// pkg/publisher/placeholders.go as the publisher's `placeholders`
+// table (and is exposed as `publisher.SupportedPlaceholders` for any
+// caller needing the names). It was relocated out of this pure-data
+// package because rendering is a publisher concern; the schedule
+// layer carries only operator-authored template strings.
