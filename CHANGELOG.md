@@ -8,7 +8,7 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
-## Unreleased
+## v0.1.0
 
 - feat: render placeholders in operator-supplied string frontmatter values (same closed set as title/body); non-string values pass through unchanged. Enables `planned_date: "{{date}}"` and similar dynamic frontmatter in Schedule CRs.
 - refactor: extract `FrontmatterFormatter` interface + `NewFrontmatterFormatter` constructor; `NewPublisher` now takes the formatter as a constructor dependency. Mockable via Counterfeiter (`mocks/publisher-frontmatter-formatter.go`), tested in isolation in `pkg/publisher/frontmatter_test.go`.
