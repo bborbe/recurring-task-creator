@@ -6,6 +6,8 @@ package publisher
 
 import (
 	lib "github.com/bborbe/agent/lib"
+
+	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 )
 
 // buildFrontmatter returns the frontmatter stamped onto every published
@@ -16,12 +18,26 @@ import (
 // is force-set so a Schedule CR cannot impersonate a different author
 // of the published vault file — `created_by` is provenance, not
 // configuration. Every other key is operator-configurable.
-func buildFrontmatter(operatorFrontmatter lib.TaskFrontmatter) lib.TaskFrontmatter {
+//
+// String values in operatorFrontmatter are passed through renderTemplate
+// using the same closed placeholder set as title/body, so a Schedule CR
+// can stamp dynamic fields such as `planned_date: "{{date}}"`. Non-string
+// values (ints, slices, maps) pass through unchanged — placeholder
+// substitution is a string-level transform.
+func buildFrontmatter(
+	operatorFrontmatter lib.TaskFrontmatter,
+	slug string,
+	date schedule.Date,
+) lib.TaskFrontmatter {
 	out := lib.TaskFrontmatter{
 		"status":    "in_progress",
 		"page_type": "task",
 	}
 	for k, v := range operatorFrontmatter {
+		if s, ok := v.(string); ok {
+			out[k] = renderTemplate(s, slug, date)
+			continue
+		}
 		out[k] = v
 	}
 	out["created_by"] = "recurring-task-creator"

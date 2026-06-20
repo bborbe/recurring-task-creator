@@ -75,7 +75,7 @@ func (p *publisher) Publish(
 		Title: strings.TrimSpace(
 			renderTemplate(def.TitleTemplate, def.Slug, date),
 		) + " - " + periodToken,
-		Frontmatter: buildFrontmatter(def.Frontmatter),
+		Frontmatter: buildFrontmatter(def.Frontmatter, def.Slug, date),
 		Body:        renderTemplate(def.BodyTemplate, def.Slug, date),
 	}
 	if p.dryRun {

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- render placeholders in operator-supplied string frontmatter values (same closed set as title/body); non-string values pass through unchanged. Enables `planned_date: "{{date}}"` and similar dynamic frontmatter in Schedule CRs.
+
 ## v0.0.2
 
 - bump alpine 3.23 → 3.24 in Dockerfile

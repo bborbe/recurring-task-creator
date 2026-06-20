@@ -782,6 +782,62 @@ var _ = Describe("Publisher", func() {
 			},
 		)
 
+		It(
+			"renders placeholders in operator-supplied string frontmatter values",
+			func() {
+				def := schedule.TaskDefinition{
+					Slug:          "test-slug",
+					TitleTemplate: "t",
+					Recurrence:    schedule.RecurrenceWeekday,
+					Weekday:       time.Saturday,
+					Frontmatter: lib.TaskFrontmatter{
+						"planned_date": "{{date}}",
+						"due_date":     "{{date}}",
+						"period_week":  "{{iso-week}}",
+						"period_month": "{{month}}",
+						// Non-string values must pass through unchanged.
+						"priority": 4,
+						"goals":    []interface{}{"[[Example Goal]]"},
+					},
+				}
+				Expect(pub.Publish(
+					context.Background(),
+					def,
+					schedule.NewDate(2026, time.June, 20),
+				)).To(Succeed())
+				fm := capture().Frontmatter
+				Expect(fm).To(HaveKeyWithValue("planned_date", "2026-06-20"))
+				Expect(fm).To(HaveKeyWithValue("due_date", "2026-06-20"))
+				Expect(fm).To(HaveKeyWithValue("period_week", "2026W25"))
+				Expect(fm).To(HaveKeyWithValue("period_month", "2026-06"))
+				Expect(fm).To(HaveKeyWithValue("priority", 4))
+				Expect(fm).To(HaveKeyWithValue("goals", []interface{}{"[[Example Goal]]"}))
+			},
+		)
+
+		It(
+			"leaves operator strings without placeholders unchanged",
+			func() {
+				def := schedule.TaskDefinition{
+					Slug:          "test-slug",
+					TitleTemplate: "t",
+					Recurrence:    schedule.RecurrenceWeekly,
+					Frontmatter: lib.TaskFrontmatter{
+						"assignee": "alice",
+						"category": "ops",
+					},
+				}
+				Expect(pub.Publish(
+					context.Background(),
+					def,
+					schedule.NewDate(2025, time.January, 4),
+				)).To(Succeed())
+				fm := capture().Frontmatter
+				Expect(fm).To(HaveKeyWithValue("assignee", "alice"))
+				Expect(fm).To(HaveKeyWithValue("category", "ops"))
+			},
+		)
+
 		It("does not depend on the entry's RecurrenceKind (no kind-specific keys)", func() {
 			// After spec 008 the frontmatter shape is identical for every
 			// RecurrenceKind — there is no kind-encoded field anymore. Two
