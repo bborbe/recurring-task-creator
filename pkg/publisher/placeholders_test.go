@@ -71,27 +71,24 @@ var _ = Describe("placeholders table", func() {
 	)
 
 	DescribeTable(
-		"backward-compat aliases render same value as canonical names",
-		func(alias, canonical string) {
-			aliasOut := publisher.NewRenderer().Render(alias, "s", saturday)
-			canonicalOut := publisher.NewRenderer().Render(canonical, "s", saturday)
-			Expect(aliasOut).To(Equal(canonicalOut))
-			Expect(aliasOut).NotTo(BeEmpty())
+		"removed pre-v0.3.0 kebab-case alias names no longer render",
+		func(removed string) {
+			Expect(publisher.NewRenderer().Render(removed, "s", saturday)).To(Equal(removed))
 		},
-		Entry("date == current_date", "{{date}}", "{{current_date}}"),
-		Entry("iso-week == current_week", "{{iso-week}}", "{{current_week}}"),
-		Entry("next-iso-week == next_week", "{{next-iso-week}}", "{{next_week}}"),
-		Entry("month == current_month", "{{month}}", "{{current_month}}"),
-		Entry("last-month == last_month", "{{last-month}}", "{{last_month}}"),
-		Entry("quarter == current_quarter", "{{quarter}}", "{{current_quarter}}"),
-		Entry("last-quarter == last_quarter", "{{last-quarter}}", "{{last_quarter}}"),
-		Entry("year == current_year", "{{year}}", "{{current_year}}"),
-		Entry("last-year == last_year", "{{last-year}}", "{{last_year}}"),
+		Entry("date", "{{date}}"),
+		Entry("iso-week", "{{iso-week}}"),
+		Entry("next-iso-week", "{{next-iso-week}}"),
+		Entry("month", "{{month}}"),
+		Entry("last-month", "{{last-month}}"),
+		Entry("quarter", "{{quarter}}"),
+		Entry("last-quarter", "{{last-quarter}}"),
+		Entry("year", "{{year}}"),
+		Entry("last-year", "{{last-year}}"),
 	)
 
 	Describe("SupportedPlaceholders", func() {
-		It("derives from the table — 13 canonical + 9 aliases = 22 entries", func() {
-			Expect(publisher.SupportedPlaceholders).To(HaveLen(22))
+		It("derives from the table — 13 canonical entries", func() {
+			Expect(publisher.SupportedPlaceholders).To(HaveLen(13))
 		})
 
 		It("contains every canonical name", func() {
@@ -115,8 +112,8 @@ var _ = Describe("placeholders table", func() {
 			}
 		})
 
-		It("contains every backward-compat alias", func() {
-			aliases := []string{
+		It("does not contain the removed pre-v0.3.0 aliases", func() {
+			removed := []string{
 				"{{date}}",
 				"{{iso-week}}",
 				"{{next-iso-week}}",
@@ -127,8 +124,8 @@ var _ = Describe("placeholders table", func() {
 				"{{year}}",
 				"{{last-year}}",
 			}
-			for _, name := range aliases {
-				Expect(publisher.SupportedPlaceholders).To(ContainElement(name))
+			for _, name := range removed {
+				Expect(publisher.SupportedPlaceholders).NotTo(ContainElement(name))
 			}
 		})
 	})

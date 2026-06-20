@@ -46,7 +46,7 @@ var _ = Describe("Publisher", func() {
 		It("is the UUID5 of the canonical key", func() {
 			def := schedule.TaskDefinition{
 				Slug:          "weekly-review",
-				TitleTemplate: "Weekly Review {{iso-week}}",
+				TitleTemplate: "Weekly Review {{current_week}}",
 				Recurrence:    schedule.RecurrenceWeekday,
 				Weekday:       time.Saturday,
 			}
@@ -407,8 +407,8 @@ var _ = Describe("Publisher", func() {
 		It("two calls with the same (def, date) produce deep-equal commands", func() {
 			def := schedule.TaskDefinition{
 				Slug:          "weekly-review",
-				TitleTemplate: "Title {{date}}",
-				BodyTemplate:  "Body {{date}}",
+				TitleTemplate: "Title {{current_date}}",
+				BodyTemplate:  "Body {{current_date}}",
 				Recurrence:    schedule.RecurrenceWeekly,
 			}
 			date := schedule.NewDate(2025, time.January, 4)
@@ -438,57 +438,57 @@ var _ = Describe("Publisher", func() {
 				Expect(pub.Publish(context.Background(), def, c.date)).To(Succeed())
 				Expect(capture().Title).To(Equal(c.want))
 			},
-			Entry("{{date}}", renderCase{
-				name:     "{{date}}",
-				template: "prefix {{date}} suffix",
+			Entry("{{current_date}}", renderCase{
+				name:     "{{current_date}}",
+				template: "prefix {{current_date}} suffix",
 				date:     schedule.NewDate(2025, time.January, 4),
 				want:     "prefix 2025-01-04 suffix - 2025W01",
 			}),
-			Entry("{{iso-week}}", renderCase{
-				name:     "{{iso-week}}",
-				template: "Week {{iso-week}}",
+			Entry("{{current_week}}", renderCase{
+				name:     "{{current_week}}",
+				template: "Week {{current_week}}",
 				date:     schedule.NewDate(2025, time.January, 4),
 				want:     "Week 2025W01 - 2025W01",
 			}),
-			Entry("{{next-iso-week}}", renderCase{
-				name:     "{{next-iso-week}}",
-				template: "Next {{next-iso-week}}",
+			Entry("{{next_week}}", renderCase{
+				name:     "{{next_week}}",
+				template: "Next {{next_week}}",
 				date:     schedule.NewDate(2025, time.January, 4),
 				want:     "Next 2025W02 - 2025W01",
 			}),
-			Entry("{{month}}", renderCase{
-				name:     "{{month}}",
-				template: "Month {{month}}",
+			Entry("{{current_month}}", renderCase{
+				name:     "{{current_month}}",
+				template: "Month {{current_month}}",
 				date:     schedule.NewDate(2025, time.January, 4),
 				want:     "Month 2025-01 - 2025W01",
 			}),
-			Entry("{{last-month}} with year roll-back", renderCase{
-				name:     "{{last-month}}",
-				template: "Last {{last-month}}",
+			Entry("{{last_month}} with year roll-back", renderCase{
+				name:     "{{last_month}}",
+				template: "Last {{last_month}}",
 				date:     schedule.NewDate(2025, time.January, 4),
 				want:     "Last 2024-12 - 2025W01",
 			}),
-			Entry("{{quarter}}", renderCase{
-				name:     "{{quarter}}",
-				template: "Q {{quarter}}",
+			Entry("{{current_quarter}}", renderCase{
+				name:     "{{current_quarter}}",
+				template: "Q {{current_quarter}}",
 				date:     schedule.NewDate(2025, time.April, 1),
 				want:     "Q 2025Q2 - 2025W14",
 			}),
-			Entry("{{last-quarter}} with year roll-back", renderCase{
-				name:     "{{last-quarter}}",
-				template: "Last {{last-quarter}}",
+			Entry("{{last_quarter}} with year roll-back", renderCase{
+				name:     "{{last_quarter}}",
+				template: "Last {{last_quarter}}",
 				date:     schedule.NewDate(2025, time.January, 1),
 				want:     "Last 2024Q4 - 2025W01",
 			}),
-			Entry("{{year}}", renderCase{
-				name:     "{{year}}",
-				template: "Year {{year}}",
+			Entry("{{current_year}}", renderCase{
+				name:     "{{current_year}}",
+				template: "Year {{current_year}}",
 				date:     schedule.NewDate(2025, time.April, 1),
 				want:     "Year 2025 - 2025W14",
 			}),
-			Entry("{{last-year}}", renderCase{
-				name:     "{{last-year}}",
-				template: "Last {{last-year}}",
+			Entry("{{last_year}}", renderCase{
+				name:     "{{last_year}}",
+				template: "Last {{last_year}}",
 				date:     schedule.NewDate(2025, time.January, 1),
 				want:     "Last 2024 - 2025W01",
 			}),
@@ -498,7 +498,7 @@ var _ = Describe("Publisher", func() {
 			def := schedule.TaskDefinition{
 				Slug:          "test-slug",
 				TitleTemplate: "t",
-				BodyTemplate:  "body contains {{date}}",
+				BodyTemplate:  "body contains {{current_date}}",
 				Recurrence:    schedule.RecurrenceWeekly,
 			}
 			Expect(pub.Publish(
@@ -512,7 +512,7 @@ var _ = Describe("Publisher", func() {
 		It("renders the ISO-week year (not calendar year) at year boundary", func() {
 			def := schedule.TaskDefinition{
 				Slug:          "test-slug",
-				TitleTemplate: "{{iso-week}}",
+				TitleTemplate: "{{current_week}}",
 				Recurrence:    schedule.RecurrenceWeekly,
 			}
 			// 2024-12-30 (Monday) belongs to ISO 2025W01.
@@ -575,7 +575,7 @@ var _ = Describe("Publisher", func() {
 			func() {
 				def := schedule.TaskDefinition{
 					Slug:          "placeholder-only",
-					TitleTemplate: "{{month}}",
+					TitleTemplate: "{{current_month}}",
 					Recurrence:    schedule.RecurrenceMonthly,
 				}
 				Expect(pub.Publish(
@@ -816,10 +816,10 @@ var _ = Describe("Publisher", func() {
 					Recurrence:    schedule.RecurrenceWeekday,
 					Weekday:       time.Saturday,
 					Frontmatter: lib.TaskFrontmatter{
-						"planned_date": "{{date}}",
-						"due_date":     "{{date}}",
-						"period_week":  "{{iso-week}}",
-						"period_month": "{{month}}",
+						"planned_date": "{{current_date}}",
+						"due_date":     "{{current_date}}",
+						"period_week":  "{{current_week}}",
+						"period_month": "{{current_month}}",
 						// Non-string values must pass through unchanged.
 						"priority": 4,
 						"goals":    []interface{}{"[[Example Goal]]"},

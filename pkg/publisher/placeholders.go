@@ -24,50 +24,35 @@ type placeholder struct {
 // SupportedPlaceholders both derive from this slice — single source
 // of truth.
 //
-// Order matters: canonical `{{current_*}}` / `{{next_*}}` / `{{last_*}}`
-// names occupy the head; backward-compat kebab-case aliases (deprecated,
-// scheduled for removal in the next minor) occupy the tail. The order
-// has no semantic effect — strings.ReplaceAll runs each substitution
-// against an already-substituted output, and the alias set is disjoint
-// from the canonical set — but keeping canonical-first makes the
-// intended public surface obvious to readers.
-//
 // `{{next_sat_date}}` / `{{next_sun_date}}` return *today* when today's
 // weekday equals the target (delta 0); they return the following
 // occurrence (delta 1-6) otherwise. Rationale: a Sunday Schedule firing
 // on Sun should stamp `planned_date: <today>`, not `<+7 days>`.
+//
+// The pre-v0.2.0 kebab-case alias names (`{{date}}`, `{{iso-week}}`,
+// `{{next-iso-week}}`, `{{month}}`, `{{last-month}}`, `{{quarter}}`,
+// `{{last-quarter}}`, `{{year}}`, `{{last-year}}`) were removed in
+// v0.3.0 after every operator-owned Schedule CR migrated to the
+// canonical names.
 var placeholders = []placeholder{
-	// Date (canonical)
+	// Date
 	{"{{current_date}}", currentDate},
 	{"{{next_sat_date}}", nextSatDate},
 	{"{{next_sun_date}}", nextSunDate},
-	// Week (canonical)
+	// Week
 	{"{{current_week}}", currentWeek},
 	{"{{next_week}}", nextWeek},
-	// Month (canonical)
+	// Month
 	{"{{current_month}}", currentMonth},
 	{"{{next_month}}", nextMonth},
 	{"{{last_month}}", lastMonth},
-	// Quarter (canonical)
+	// Quarter
 	{"{{current_quarter}}", currentQuarter},
 	{"{{last_quarter}}", lastQuarter},
-	// Year (canonical)
+	// Year
 	{"{{current_year}}", currentYear},
 	{"{{next_year}}", nextYear},
 	{"{{last_year}}", lastYear},
-
-	// Backward-compat aliases — deprecated; removed in next minor.
-	// Kept for one release so Schedule CR YAMLs can migrate without
-	// coupling the code release to an atomic CR sweep.
-	{"{{date}}", currentDate},
-	{"{{iso-week}}", currentWeek},
-	{"{{next-iso-week}}", nextWeek},
-	{"{{month}}", currentMonth},
-	{"{{last-month}}", lastMonth},
-	{"{{quarter}}", currentQuarter},
-	{"{{last-quarter}}", lastQuarter},
-	{"{{year}}", currentYear},
-	{"{{last-year}}", lastYear},
 }
 
 // SupportedPlaceholders is the ordered list of every placeholder name
