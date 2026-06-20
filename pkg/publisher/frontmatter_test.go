@@ -63,20 +63,20 @@ var _ = Describe("FrontmatterFormatter", func() {
 				)
 				Expect(fm).To(HaveKeyWithValue(key, expected))
 			},
-			Entry("date", "planned_date", "{{date}}", "2026-06-20"),
-			Entry("iso-week", "period_week", "{{iso-week}}", "2026W25"),
-			Entry("next-iso-week", "next_week", "{{next-iso-week}}", "2026W26"),
-			Entry("month", "period_month", "{{month}}", "2026-06"),
-			Entry("last-month", "previous_month", "{{last-month}}", "2026-05"),
-			Entry("quarter", "period_quarter", "{{quarter}}", "2026Q2"),
-			Entry("last-quarter", "previous_quarter", "{{last-quarter}}", "2026Q1"),
-			Entry("year", "period_year", "{{year}}", "2026"),
-			Entry("last-year", "previous_year", "{{last-year}}", "2025"),
+			Entry("date", "planned_date", "{{current_date}}", "2026-06-20"),
+			Entry("iso-week", "period_week", "{{current_week}}", "2026W25"),
+			Entry("next-iso-week", "next_week", "{{next_week}}", "2026W26"),
+			Entry("month", "period_month", "{{current_month}}", "2026-06"),
+			Entry("last-month", "previous_month", "{{last_month}}", "2026-05"),
+			Entry("quarter", "period_quarter", "{{current_quarter}}", "2026Q2"),
+			Entry("last-quarter", "previous_quarter", "{{last_quarter}}", "2026Q1"),
+			Entry("year", "period_year", "{{current_year}}", "2026"),
+			Entry("last-year", "previous_year", "{{last_year}}", "2025"),
 		)
 
 		It("substitutes inside longer strings, not just bare placeholders", func() {
 			fm := f.Format(
-				lib.TaskFrontmatter{"note": "due by {{date}} (week {{iso-week}})"},
+				lib.TaskFrontmatter{"note": "due by {{current_date}} (week {{current_week}})"},
 				"test-slug", date,
 			)
 			Expect(fm).To(HaveKeyWithValue("note", "due by 2026-06-20 (week 2026W25)"))
@@ -109,7 +109,7 @@ var _ = Describe("FrontmatterFormatter", func() {
 	Describe("determinism", func() {
 		It("same input on a second call produces an equal map", func() {
 			input := lib.TaskFrontmatter{
-				"planned_date": "{{date}}",
+				"planned_date": "{{current_date}}",
 				"priority":     4,
 				"assignee":     "alice",
 			}

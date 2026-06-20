@@ -89,21 +89,7 @@ Substituted in `title`, `body`, and any **string-valued** `frontmatter` field. N
 
 `{{next_sat_date}}` / `{{next_sun_date}}` use **inclusive-today** semantics so a Sunday Schedule firing on Sun stamps `planned_date=<today>`, not `<today+7>`.
 
-### Deprecated aliases
-
-The pre-rename kebab-case names still render (aliased to the canonical names above) but are scheduled for removal in the next minor. Migrate Schedule CR YAMLs at leisure:
-
-| Deprecated | Canonical |
-|---|---|
-| `{{date}}` | `{{current_date}}` |
-| `{{iso-week}}` | `{{current_week}}` |
-| `{{next-iso-week}}` | `{{next_week}}` |
-| `{{month}}` | `{{current_month}}` |
-| `{{last-month}}` | `{{last_month}}` |
-| `{{quarter}}` | `{{current_quarter}}` |
-| `{{last-quarter}}` | `{{last_quarter}}` |
-| `{{year}}` | `{{current_year}}` |
-| `{{last-year}}` | `{{last_year}}` |
+> **Removed in v0.3.0:** the pre-v0.2.0 kebab-case alias names (`{{date}}`, `{{iso-week}}`, `{{next-iso-week}}`, `{{month}}`, `{{last-month}}`, `{{quarter}}`, `{{last-quarter}}`, `{{year}}`, `{{last-year}}`) no longer render. Use the canonical snake_case names above.
 
 ## Build + deploy
 
