@@ -21,7 +21,7 @@ var _ = Describe("FrontmatterFormatter", func() {
 		date schedule.Date
 	)
 	BeforeEach(func() {
-		f = publisher.NewFrontmatterFormatter()
+		f = publisher.NewFrontmatterFormatter(publisher.NewRenderer())
 		date = schedule.NewDate(2026, time.June, 20)
 	})
 

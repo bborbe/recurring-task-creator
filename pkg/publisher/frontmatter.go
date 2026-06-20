@@ -33,14 +33,16 @@ type FrontmatterFormatter interface {
 }
 
 // NewFrontmatterFormatter returns the default FrontmatterFormatter that
-// renders placeholders in string values via the publisher's closed
-// placeholder set (see render.go). Stateless: safe to construct once
-// and share across goroutines.
-func NewFrontmatterFormatter() FrontmatterFormatter {
-	return &frontmatterFormatter{}
+// renders string-valued frontmatter via the injected Renderer (same
+// placeholder semantics as title/body). Stateless: safe to construct
+// once and share across goroutines.
+func NewFrontmatterFormatter(renderer Renderer) FrontmatterFormatter {
+	return &frontmatterFormatter{renderer: renderer}
 }
 
-type frontmatterFormatter struct{}
+type frontmatterFormatter struct {
+	renderer Renderer
+}
 
 func (f *frontmatterFormatter) Format(
 	operator lib.TaskFrontmatter,
@@ -53,7 +55,7 @@ func (f *frontmatterFormatter) Format(
 	}
 	for k, v := range operator {
 		if s, ok := v.(string); ok {
-			out[k] = renderTemplate(s, slug, date)
+			out[k] = f.renderer.Render(s, slug, date)
 			continue
 		}
 		out[k] = v
