@@ -26,19 +26,25 @@ type Publisher interface {
 	Publish(ctx context.Context, def schedule.TaskDefinition, date schedule.Date) error
 }
 
-// NewPublisher returns a Publisher that sends through sender. The sender
-// is invoked exactly once per Publish call (when inputs are valid). It
-// validates the constructed command internally — see
-// task.CreateCommandSender.SendCommand in github.com/bborbe/agent/lib/command/task.
-// When dryRun is true, the publisher logs the would-be CreateCommand and
-// skips the sender call (intended for local smoke-testing via cmd/run-once).
-func NewPublisher(sender task.CreateCommandSender, dryRun bool) Publisher {
-	return &publisher{sender: sender, dryRun: dryRun}
+// NewPublisher returns a Publisher that sends through sender, formatting
+// frontmatter via formatter. The sender is invoked exactly once per
+// Publish call (when inputs are valid). It validates the constructed
+// command internally — see task.CreateCommandSender.SendCommand in
+// github.com/bborbe/agent/lib/command/task. When dryRun is true, the
+// publisher logs the would-be CreateCommand and skips the sender call
+// (intended for local smoke-testing via cmd/run-once).
+func NewPublisher(
+	sender task.CreateCommandSender,
+	formatter FrontmatterFormatter,
+	dryRun bool,
+) Publisher {
+	return &publisher{sender: sender, formatter: formatter, dryRun: dryRun}
 }
 
 type publisher struct {
-	sender task.CreateCommandSender
-	dryRun bool
+	sender    task.CreateCommandSender
+	formatter FrontmatterFormatter
+	dryRun    bool
 }
 
 func (p *publisher) Publish(
@@ -75,7 +81,7 @@ func (p *publisher) Publish(
 		Title: strings.TrimSpace(
 			renderTemplate(def.TitleTemplate, def.Slug, date),
 		) + " - " + periodToken,
-		Frontmatter: buildFrontmatter(def.Frontmatter),
+		Frontmatter: p.formatter.Format(def.Frontmatter, def.Slug, date),
 		Body:        renderTemplate(def.BodyTemplate, def.Slug, date),
 	}
 	if p.dryRun {
