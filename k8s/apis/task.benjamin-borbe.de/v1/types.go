@@ -66,6 +66,20 @@ type ScheduleTrigger struct {
 	// `has(self.weekday)`. Optionality is encoded by `omitempty` + the CEL
 	// rule — no separate `+optional` marker is needed.
 	Weekday string `json:"weekday,omitempty"`
+
+	// PeriodOffset shifts the period-anchored token by N periods. Default 0
+	// (current period). Negative values name a prior period; positive values
+	// name a future period. The shift applies to the period token suffix
+	// appended to the task title AND the UUID5 input — so a Monthly schedule
+	// firing on 2026-07-01 with PeriodOffset=-1 produces token "2026-06" and
+	// the task is named "<title> - 2026-06". Body placeholders ({{current_month}}
+	// etc.) render against the unshifted fire date — this is intentional.
+	//
+	// Only valid for Recurrence in {Monthly, Quarterly, Yearly}. Non-zero
+	// values for Daily/Weekly/Weekday are rejected by the CEL rule in
+	// scheduleSpecSchema (semantics undefined; date-anchored kinds don't
+	// have a meaningful period offset distinct from a date shift).
+	PeriodOffset int `json:"periodOffset,omitempty"`
 }
 
 // ScheduleTemplate is the body + frontmatter the generated task carries.

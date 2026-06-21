@@ -61,7 +61,14 @@ func (p *publisher) Publish(
 	if date.IsZero() {
 		return errors.Errorf(ctx, "publish failed: zero date for slug %q", def.Slug)
 	}
-	token, err := buildTaskIdentifier(ctx, def.Slug, def.Recurrence, date, def.Weekday)
+	token, err := buildTaskIdentifier(
+		ctx,
+		def.Slug,
+		def.Recurrence,
+		date,
+		def.Weekday,
+		def.PeriodOffset,
+	)
 	if err != nil {
 		return errors.Wrapf(
 			ctx,
@@ -70,7 +77,7 @@ func (p *publisher) Publish(
 			def.Slug,
 		)
 	}
-	periodToken, err := buildPeriodToken(ctx, def.Recurrence, date, def.Weekday)
+	periodToken, err := buildPeriodToken(ctx, def.Recurrence, date, def.Weekday, def.PeriodOffset)
 	if err != nil {
 		return errors.Wrapf(
 			ctx,

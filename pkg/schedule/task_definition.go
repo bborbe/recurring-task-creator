@@ -60,6 +60,14 @@ type TaskDefinition struct {
 	// collision. `created_by: recurring-task-creator` is force-set as
 	// provenance and cannot be overridden by configuration.
 	Frontmatter Frontmatter
+
+	// PeriodOffset shifts the period-anchored token by N periods. Default 0
+	// (current period). Only meaningful for RecurrenceMonthly /
+	// RecurrenceQuarterly / RecurrenceYearly — the CRD's CEL rule rejects
+	// non-zero values for the date-anchored kinds (Daily / Weekly / Weekday).
+	// Negative offsets name a prior period; the publisher's buildPeriodToken
+	// applies the shift to the fire date before formatting the token.
+	PeriodOffset int
 }
 
 // The closed list of accepted placeholder tokens lives in

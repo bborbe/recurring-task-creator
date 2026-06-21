@@ -152,4 +152,32 @@ var _ = Describe("adaptSchedule", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(def.Frontmatter).To(BeNil())
 	})
+
+	It("propagates PeriodOffset from CR to TaskDefinition", func() {
+		cr := &v1.Schedule{
+			ObjectMeta: metav1.ObjectMeta{Name: "review"},
+			Spec: v1.ScheduleSpec{
+				Title:    "Review Month",
+				Schedule: v1.ScheduleTrigger{Recurrence: "Monthly", PeriodOffset: -1},
+				Template: v1.ScheduleTemplate{Body: "B"},
+			},
+		}
+		def, err := store.AdaptScheduleForTest(ctx, cr)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(def.PeriodOffset).To(Equal(-1))
+	})
+
+	It("defaults PeriodOffset to 0 when omitted on the CR", func() {
+		cr := &v1.Schedule{
+			ObjectMeta: metav1.ObjectMeta{Name: "plan"},
+			Spec: v1.ScheduleSpec{
+				Title:    "Plan Month",
+				Schedule: v1.ScheduleTrigger{Recurrence: "Monthly"},
+				Template: v1.ScheduleTemplate{Body: "B"},
+			},
+		}
+		def, err := store.AdaptScheduleForTest(ctx, cr)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(def.PeriodOffset).To(Equal(0))
+	})
 })

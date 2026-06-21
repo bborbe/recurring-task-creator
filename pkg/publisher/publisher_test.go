@@ -645,6 +645,103 @@ var _ = Describe("Publisher", func() {
 				"2026",
 			),
 		)
+
+		DescribeTable(
+			"applies PeriodOffset to period token (and to UUID5 input)",
+			func(
+				rec schedule.RecurrenceKind,
+				date schedule.Date,
+				offset int,
+				expectedToken string,
+			) {
+				localSender := &taskmocks.TaskCreateCommandSender{}
+				localSender.SendCommandReturns(nil)
+				localPub := publisher.NewPublisher(
+					localSender,
+					publisher.NewRenderer(),
+					publisher.NewFrontmatterFormatter(publisher.NewRenderer()),
+					false,
+				)
+				def := schedule.TaskDefinition{
+					Slug:          "offset-" + string(rec),
+					TitleTemplate: "Review",
+					Recurrence:    rec,
+					PeriodOffset:  offset,
+				}
+				Expect(localPub.Publish(context.Background(), def, date)).To(Succeed())
+				_, cmd := localSender.SendCommandArgsForCall(0)
+				Expect(cmd.Title).To(Equal("Review - " + expectedToken))
+
+				expectedID, err := publisher.BuildPeriodTokenForTest(
+					context.Background(), rec, date, def.Weekday, offset,
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(expectedID).To(Equal(expectedToken))
+			},
+			Entry(
+				"monthly offset=-1 names prior month",
+				schedule.RecurrenceMonthly,
+				schedule.NewDate(2026, time.July, 1),
+				-1,
+				"2026-06",
+			),
+			Entry(
+				"monthly offset=-1 across year boundary",
+				schedule.RecurrenceMonthly,
+				schedule.NewDate(2026, time.January, 1),
+				-1,
+				"2025-12",
+			),
+			Entry(
+				"monthly offset=+1 names next month",
+				schedule.RecurrenceMonthly,
+				schedule.NewDate(2026, time.June, 15),
+				1,
+				"2026-07",
+			),
+			Entry(
+				"quarterly offset=-1 names prior quarter",
+				schedule.RecurrenceQuarterly,
+				schedule.NewDate(2026, time.July, 1),
+				-1,
+				"2026Q2",
+			),
+			Entry(
+				"quarterly offset=-1 across year boundary",
+				schedule.RecurrenceQuarterly,
+				schedule.NewDate(2026, time.January, 1),
+				-1,
+				"2025Q4",
+			),
+			Entry(
+				"quarterly offset=-3 wraps three quarters back",
+				schedule.RecurrenceQuarterly,
+				schedule.NewDate(2026, time.October, 1),
+				-3,
+				"2026Q1",
+			),
+			Entry(
+				"yearly offset=-1 names prior year",
+				schedule.RecurrenceYearly,
+				schedule.NewDate(2026, time.January, 1),
+				-1,
+				"2025",
+			),
+			Entry(
+				"yearly offset=+1 names next year",
+				schedule.RecurrenceYearly,
+				schedule.NewDate(2026, time.January, 1),
+				1,
+				"2027",
+			),
+			Entry(
+				"monthly offset=0 unchanged (default behavior)",
+				schedule.RecurrenceMonthly,
+				schedule.NewDate(2026, time.June, 15),
+				0,
+				"2026-06",
+			),
+		)
 	})
 
 	Describe("per-kind render", func() {
@@ -694,6 +791,7 @@ var _ = Describe("Publisher", func() {
 					def.Recurrence,
 					refDate,
 					def.Weekday,
+					def.PeriodOffset,
 				)
 				Expect(err).NotTo(HaveOccurred(), def.Slug)
 				expectedSuffix := " - " + expectedToken

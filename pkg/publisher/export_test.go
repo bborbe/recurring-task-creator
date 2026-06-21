@@ -28,6 +28,7 @@ func BuildPeriodTokenForTest(
 	recurrence schedule.RecurrenceKind,
 	date schedule.Date,
 	weekday time.Weekday,
+	periodOffset int,
 ) (string, error) {
-	return buildPeriodToken(ctx, recurrence, date, weekday)
+	return buildPeriodToken(ctx, recurrence, date, weekday, periodOffset)
 }

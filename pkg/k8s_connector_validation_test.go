@@ -201,3 +201,51 @@ var _ = Describe("scheduleSpecSchema CEL validation", func() {
 		Expect(err.Error()).To(ContainSubstring("vault"))
 	})
 })
+
+var _ = Describe("periodOffset CEL validation", func() {
+	evalRule := func(self map[string]interface{}) string {
+		rule := pkg.PeriodOffsetOnlyForPeriodKindsRuleForTest()
+		env, err := cel.NewEnv(
+			cel.Variable("self", cel.MapType(cel.StringType, cel.DynType)),
+		)
+		Expect(err).NotTo(HaveOccurred())
+		ast, issues := env.Compile(rule)
+		Expect(issues.Err()).NotTo(HaveOccurred(), "compile %q", rule)
+		program, err := env.Program(ast)
+		Expect(err).NotTo(HaveOccurred())
+		out, _, err := program.Eval(map[string]interface{}{"self": self})
+		Expect(err).NotTo(HaveOccurred())
+		if b, ok := out.(types.Bool); ok && bool(b) {
+			return ""
+		}
+		return pkg.PeriodOffsetOnlyForPeriodKindsMessageForTest()
+	}
+
+	DescribeTable(
+		"accepts/rejects (recurrence, periodOffset) combos",
+		func(recurrence string, withOffset bool, offset int, expectPass bool) {
+			self := map[string]interface{}{"recurrence": recurrence}
+			if withOffset {
+				self["periodOffset"] = offset
+			}
+			result := evalRule(self)
+			if expectPass {
+				Expect(result).To(BeEmpty())
+			} else {
+				Expect(result).To(ContainSubstring("periodOffset"))
+			}
+		},
+		Entry("Monthly + offset=-1 → accept", "Monthly", true, -1, true),
+		Entry("Quarterly + offset=-1 → accept", "Quarterly", true, -1, true),
+		Entry("Yearly + offset=-1 → accept", "Yearly", true, -1, true),
+		Entry("Monthly + offset=+1 → accept", "Monthly", true, 1, true),
+		Entry("Monthly + offset=0 → accept", "Monthly", true, 0, true),
+		Entry("Daily + offset=0 → accept", "Daily", true, 0, true),
+		Entry("Daily without periodOffset → accept", "Daily", false, 0, true),
+		Entry("Weekly without periodOffset → accept", "Weekly", false, 0, true),
+		Entry("Weekday without periodOffset → accept", "Weekday", false, 0, true),
+		Entry("Daily + offset=-1 → reject", "Daily", true, -1, false),
+		Entry("Weekly + offset=1 → reject", "Weekly", true, 1, false),
+		Entry("Weekday + offset=-1 → reject", "Weekday", true, -1, false),
+	)
+})

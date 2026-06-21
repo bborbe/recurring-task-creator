@@ -8,6 +8,10 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
+## Unreleased
+
+- feat: add optional `spec.schedule.periodOffset` (int, default 0) on `Schedule` CR — shifts the period-anchored token by N periods. Lets review-style schedules fire on the first day of the next period and name the just-completed period (e.g. `monthly-review` with `periodOffset: -1` firing on 2026-07-01 produces task `Review Month - 2026-06`). The shift also feeds into the UUID5 input, so re-publishing the same `(slug, fire-date, offset)` triple stays idempotent. Only valid for `Monthly` / `Quarterly` / `Yearly`; date-anchored kinds (`Daily` / `Weekly` / `Weekday`) reject non-zero values via a CEL rule. Body placeholders (`{{current_month}}` etc.) still render against the unshifted fire date — only the period-token suffix and the identifier shift.
+
 ## v0.4.0
 
 - feat: `/trigger` `date` query parameter is now optional — falls back to the clock's current civil date when missing, empty, or unparseable (via `libtime.ParseDateTimeDefault`).

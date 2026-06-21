@@ -50,6 +50,17 @@ const weekdayRequiredIfWeekdayRule = "self.recurrence == 'Weekday' ? has(self.we
 // `kubectl apply` output.
 const weekdayRequiredIfWeekdayMessage = "weekday is required when recurrence is 'Weekday', and forbidden otherwise"
 
+// periodOffsetOnlyForPeriodKindsRule rejects non-zero periodOffset on
+// date-anchored recurrence kinds (Daily/Weekly/Weekday). Those kinds
+// don't carry a period concept distinct from the fire date; a date
+// shift is the user-visible knob there, not an offset. Only Monthly,
+// Quarterly, Yearly accept a non-zero offset.
+const periodOffsetOnlyForPeriodKindsRule = "!has(self.periodOffset) || self.periodOffset == 0 || self.recurrence in ['Monthly', 'Quarterly', 'Yearly']"
+
+// periodOffsetOnlyForPeriodKindsMessage is the operator-facing error
+// for the rule above.
+const periodOffsetOnlyForPeriodKindsMessage = "periodOffset is only allowed for Monthly/Quarterly/Yearly recurrence"
+
 // scheduleCRSchemaPtr returns the OpenAPI v3 schema for the WHOLE Schedule
 // custom resource (the top-level object with apiVersion/kind/metadata/spec).
 // This is what gets registered as the CRD's OpenAPIV3Schema — registering
@@ -103,11 +114,21 @@ func scheduleSpecSchema() apiextensionsv1.JSONSchemaProps {
 						Description: "time.Weekday string (Monday..Sunday). Required when recurrence is 'Weekday'; forbidden otherwise.",
 						Enum:        jsonEnumValues(weekdayEnum),
 					},
+					"periodOffset": {
+						Type:        "integer",
+						Description: "Shifts the period-anchored token by N periods. Default 0 (current period). Use -1 for prior period (e.g. review-style schedules that fire on month-start but name the just-completed month). Only valid for Monthly/Quarterly/Yearly.",
+					},
 				},
-				XValidations: apiextensionsv1.ValidationRules{{
-					Rule:    weekdayRequiredIfWeekdayRule,
-					Message: weekdayRequiredIfWeekdayMessage,
-				}},
+				XValidations: apiextensionsv1.ValidationRules{
+					{
+						Rule:    weekdayRequiredIfWeekdayRule,
+						Message: weekdayRequiredIfWeekdayMessage,
+					},
+					{
+						Rule:    periodOffsetOnlyForPeriodKindsRule,
+						Message: periodOffsetOnlyForPeriodKindsMessage,
+					},
+				},
 			},
 			"template": {
 				Type:        "object",
