@@ -34,6 +34,7 @@ func CreatePublisher(sender task.CreateCommandSender, dryRun bool) publisher.Pub
 		sender,
 		renderer,
 		publisher.NewFrontmatterFormatter(renderer),
+		publisher.NewTaskIdentifierCreator(publisher.NewPeriodTokenBuilder()),
 		dryRun,
 	)
 }
