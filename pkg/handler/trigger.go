@@ -51,7 +51,7 @@ type triggerResponse struct {
 // deployed cluster-internal-only (no k8s Ingress); idempotency via
 // deterministic UUID5 makes accidental replay safe.
 func NewTriggerHandler(
-	clock libtime.CurrentDateTimeGetter,
+	currentDateTimeGetter libtime.CurrentDateTimeGetter,
 	scheduleStore store.ScheduleStore,
 	pub publisher.Publisher,
 ) http.Handler {
@@ -60,8 +60,8 @@ func NewTriggerHandler(
 			func(ctx context.Context, req *http.Request) (any, error) {
 				dt := libtime.ParseDateTimeDefault(
 					ctx,
-					req.URL.Query().Get("date"),
-					clock.Now(),
+					req.FormValue("date"),
+					currentDateTimeGetter.Now(),
 				)
 				date := schedule.NewDate(dt.Year(), dt.Month(), dt.Day())
 
