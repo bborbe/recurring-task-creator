@@ -8,6 +8,12 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
+## Unreleased
+
+- feat: `/trigger` `date` query parameter is now optional — falls back to the clock's current civil date when missing, empty, or unparseable (via `libtime.ParseDateTimeDefault`).
+- refactor: `NewTriggerHandler` switched to the `libhttp.NewErrorHandler` + `NewJSONHandler` + `JSONHandlerFunc` pattern; `CurrentDateTimeGetter` injected for the NOW fallback.
+- chore: bump indirect deps (`vault-cli` v0.68.0 → v0.83.0, `sarama`, `fatih/color`, `cel.dev/expr`).
+
 ## v0.3.0
 
 - feat!: remove the pre-v0.2.0 kebab-case placeholder aliases (`{{date}}`, `{{iso-week}}`, `{{next-iso-week}}`, `{{month}}`, `{{last-month}}`, `{{quarter}}`, `{{last-quarter}}`, `{{year}}`, `{{last-year}}`). Use the canonical snake_case names introduced in v0.2.0 (`{{current_date}}`, `{{current_week}}`, `{{next_week}}`, `{{current_month}}`, `{{last_month}}`, `{{current_quarter}}`, `{{last_quarter}}`, `{{current_year}}`, `{{last_year}}`). BREAKING CHANGE — Schedule CRs that still use kebab-case names will land literal `{{...}}` strings in their generated task files. Operator must migrate every Schedule CR YAML to the canonical names before deploying this release.

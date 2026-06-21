@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/bborbe/errors"
+	libtime "github.com/bborbe/time"
+	libtimetest "github.com/bborbe/time/test"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -53,6 +55,7 @@ var _ = Describe("TriggerHandler", func() {
 	var (
 		fakePublisher *mocks.PublisherPublisher
 		fakeStore     *mocks.FakeScheduleStore
+		clock         libtime.CurrentDateTime
 		httpHandler   http.Handler
 	)
 
@@ -60,50 +63,52 @@ var _ = Describe("TriggerHandler", func() {
 		fakePublisher = &mocks.PublisherPublisher{}
 		fakeStore = &mocks.FakeScheduleStore{}
 		fakeStore.ListReturns(triggerTestDefs, nil)
-		httpHandler = handler.NewTriggerHandler(fakeStore, fakePublisher)
+		clock = libtime.NewCurrentDateTime()
+		// 2025-01-04 Saturday 10:00 UTC
+		clock.SetNow(libtimetest.ParseDateTime("2025-01-04T10:00:00Z"))
+		httpHandler = handler.NewTriggerHandler(clock, fakeStore, fakePublisher)
 	})
 
-	// ---------- 400 paths (missing/invalid date) ----------
+	// ---------- date fallback (no/empty/unparseable date query) ----------
 
-	It("returns 400 with 'missing date parameter' when no date query is set", func() {
+	It("falls back to clock's civil date when no date query is set", func() {
 		req := httptest.NewRequest("GET", "/trigger", nil)
 		resp := httptest.NewRecorder()
 		httpHandler.ServeHTTP(resp, req)
 
-		Expect(resp.Code).To(Equal(http.StatusBadRequest))
-		Expect(resp.Header().Get("Content-Type")).To(Equal("application/json"))
-		Expect(resp.Body.String()).To(ContainSubstring("missing date parameter"))
-		Expect(fakePublisher.PublishCallCount()).To(Equal(0))
+		Expect(resp.Code).To(Equal(http.StatusOK))
+		// 2025-01-04 is Saturday; fixture fires 4 entries on Saturday.
+		Expect(fakePublisher.PublishCallCount()).To(Equal(countForDate(
+			schedule.NewDate(2025, time.January, 4))))
+
+		var body struct {
+			Date string `json:"date"`
+		}
+		Expect(json.NewDecoder(resp.Body).Decode(&body)).To(Succeed())
+		Expect(body.Date).To(Equal("2025-01-04"))
 	})
 
-	It("returns 400 with 'missing date parameter' when date query is empty", func() {
+	It("falls back to clock when date query is empty", func() {
 		req := httptest.NewRequest("GET", "/trigger?date=", nil)
 		resp := httptest.NewRecorder()
 		httpHandler.ServeHTTP(resp, req)
 
-		Expect(resp.Code).To(Equal(http.StatusBadRequest))
-		Expect(resp.Body.String()).To(ContainSubstring("missing date parameter"))
-		Expect(fakePublisher.PublishCallCount()).To(Equal(0))
+		Expect(resp.Code).To(Equal(http.StatusOK))
+		Expect(fakePublisher.PublishCallCount()).To(Equal(countForDate(
+			schedule.NewDate(2025, time.January, 4))))
 	})
 
-	It("returns 400 with 'invalid date format' for non-date input", func() {
+	It("falls back to clock when date query is unparseable", func() {
 		req := httptest.NewRequest("GET", "/trigger?date=not-a-date", nil)
 		resp := httptest.NewRecorder()
 		httpHandler.ServeHTTP(resp, req)
 
-		Expect(resp.Code).To(Equal(http.StatusBadRequest))
-		Expect(resp.Body.String()).To(ContainSubstring("invalid date format, expected YYYY-MM-DD"))
-		Expect(fakePublisher.PublishCallCount()).To(Equal(0))
-	})
-
-	It("returns 400 with 'invalid date format' for day-of-month=32 (parse-fail)", func() {
-		req := httptest.NewRequest("GET", "/trigger?date=2025-01-32", nil)
-		resp := httptest.NewRecorder()
-		httpHandler.ServeHTTP(resp, req)
-
-		Expect(resp.Code).To(Equal(http.StatusBadRequest))
-		Expect(resp.Body.String()).To(ContainSubstring("invalid date format, expected YYYY-MM-DD"))
-		Expect(fakePublisher.PublishCallCount()).To(Equal(0))
+		Expect(resp.Code).To(Equal(http.StatusOK))
+		var body struct {
+			Date string `json:"date"`
+		}
+		Expect(json.NewDecoder(resp.Body).Decode(&body)).To(Succeed())
+		Expect(body.Date).To(Equal("2025-01-04"))
 	})
 
 	// ---------- 500 path (store error) ----------
@@ -116,7 +121,6 @@ var _ = Describe("TriggerHandler", func() {
 		httpHandler.ServeHTTP(resp, req)
 
 		Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-		Expect(resp.Header().Get("Content-Type")).To(Equal("application/json"))
 		Expect(resp.Body.String()).To(ContainSubstring("failed to read schedule inventory"))
 		Expect(fakePublisher.PublishCallCount()).To(Equal(0))
 	})

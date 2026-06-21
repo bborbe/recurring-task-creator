@@ -80,9 +80,10 @@ var _ = Describe("CreateHealthzHandler", func() {
 
 var _ = Describe("CreateTriggerHandler", func() {
 	var (
-		pubFake   *projmocks.PublisherPublisher
-		storeFake *projmocks.FakeScheduleStore
-		httpHndl  http.Handler
+		pubFake      *projmocks.PublisherPublisher
+		storeFake    *projmocks.FakeScheduleStore
+		triggerClock libtime.CurrentDateTime
+		httpHndl     http.Handler
 	)
 	BeforeEach(func() {
 		pubFake = &projmocks.PublisherPublisher{}
@@ -103,7 +104,8 @@ var _ = Describe("CreateTriggerHandler", func() {
 			},
 			{Slug: "yearly-task", TitleTemplate: "Yearly", Recurrence: schedule.RecurrenceYearly},
 		}, nil)
-		httpHndl = factory.CreateTriggerHandler(storeFake, pubFake)
+		triggerClock = libtime.NewCurrentDateTime()
+		httpHndl = factory.CreateTriggerHandler(triggerClock, storeFake, pubFake)
 	})
 	It("returns a non-nil http.Handler", func() {
 		Expect(httpHndl).NotTo(BeNil())

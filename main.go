@@ -138,7 +138,7 @@ func (a *application) Run(ctx context.Context, _ libsentry.Client) error {
 	tickLoop := factory.CreateTick(ctx, scheduleStore, pub, clock, metrics)
 
 	a.HealthzHandler = factory.CreateHealthzHandler()
-	a.TriggerHandler = factory.CreateTriggerHandler(scheduleStore, pub)
+	a.TriggerHandler = factory.CreateTriggerHandler(clock, scheduleStore, pub)
 
 	return run.CancelOnFirstFinish(
 		ctx,

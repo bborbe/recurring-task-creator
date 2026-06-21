@@ -70,10 +70,15 @@ func CreateHealthzHandler() http.Handler {
 // CreateTriggerHandler returns the operator-replay HTTP handler. The handler
 // reads the current task definitions from scheduleStore, date-filters them
 // via schedule.TasksForDate(all, date) (slug-sorted), and calls
-// publisher.Publish for each entry against the parsed date. Pure plumbing:
-// no business logic, no closure capture, no state.
-func CreateTriggerHandler(scheduleStore store.ScheduleStore, pub publisher.Publisher) http.Handler {
-	return handler.NewTriggerHandler(scheduleStore, pub)
+// publisher.Publish for each entry against the resolved date (the `date`
+// query parameter, or the clock's current civil date if missing/unparseable).
+// Pure plumbing: no business logic, no closure capture, no state.
+func CreateTriggerHandler(
+	clock libtime.CurrentDateTimeGetter,
+	scheduleStore store.ScheduleStore,
+	pub publisher.Publisher,
+) http.Handler {
+	return handler.NewTriggerHandler(clock, scheduleStore, pub)
 }
 
 // CreateTickLoop builds a one-shot tick loop for cmd/run-once. It wires the
