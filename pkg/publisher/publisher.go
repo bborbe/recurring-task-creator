@@ -27,10 +27,11 @@ type Publisher interface {
 }
 
 // NewPublisher returns a Publisher that sends through sender, rendering
-// title + body placeholders via renderer, and formatting frontmatter via
-// formatter. The sender is invoked exactly once per Publish call (when
-// inputs are valid). It validates the constructed command internally —
-// see task.CreateCommandSender.SendCommand in
+// title + body placeholders via renderer, formatting frontmatter via
+// formatter, and deriving the task identifier + period token via
+// identifierCreator. The sender is invoked exactly once per Publish call
+// (when inputs are valid). It validates the constructed command internally
+// — see task.CreateCommandSender.SendCommand in
 // github.com/bborbe/agent/lib/command/task. When dryRun is true, the
 // publisher logs the would-be CreateCommand and skips the sender call
 // (intended for local smoke-testing via cmd/run-once).
@@ -38,16 +39,24 @@ func NewPublisher(
 	sender task.CreateCommandSender,
 	renderer Renderer,
 	formatter FrontmatterFormatter,
+	identifierCreator TaskIdentifierCreator,
 	dryRun bool,
 ) Publisher {
-	return &publisher{sender: sender, renderer: renderer, formatter: formatter, dryRun: dryRun}
+	return &publisher{
+		sender:            sender,
+		renderer:          renderer,
+		formatter:         formatter,
+		identifierCreator: identifierCreator,
+		dryRun:            dryRun,
+	}
 }
 
 type publisher struct {
-	sender    task.CreateCommandSender
-	renderer  Renderer
-	formatter FrontmatterFormatter
-	dryRun    bool
+	sender            task.CreateCommandSender
+	renderer          Renderer
+	formatter         FrontmatterFormatter
+	identifierCreator TaskIdentifierCreator
+	dryRun            bool
 }
 
 func (p *publisher) Publish(
@@ -61,36 +70,20 @@ func (p *publisher) Publish(
 	if date.IsZero() {
 		return errors.Errorf(ctx, "publish failed: zero date for slug %q", def.Slug)
 	}
-	token, err := buildTaskIdentifier(
-		ctx,
-		def.Slug,
-		def.Recurrence,
-		date,
-		def.Weekday,
-		def.PeriodOffset,
-	)
+	identifier, periodToken, err := p.identifierCreator.Create(ctx, def, date)
 	if err != nil {
 		return errors.Wrapf(
 			ctx,
 			err,
-			"publish failed: build identifier for slug %q",
-			def.Slug,
-		)
-	}
-	periodToken, err := buildPeriodToken(ctx, def.Recurrence, date, def.Weekday, def.PeriodOffset)
-	if err != nil {
-		return errors.Wrapf(
-			ctx,
-			err,
-			"publish failed: build period token for slug %q",
+			"publish failed: derive identifier for slug %q",
 			def.Slug,
 		)
 	}
 	cmd := task.CreateCommand{
-		TaskIdentifier: token,
+		TaskIdentifier: identifier,
 		Title: strings.TrimSpace(
 			p.renderer.Render(def.TitleTemplate, def.Slug, date),
-		) + " - " + periodToken,
+		) + " - " + string(periodToken),
 		Frontmatter: p.formatter.Format(def.Frontmatter, def.Slug, date),
 		Body:        p.renderer.Render(def.BodyTemplate, def.Slug, date),
 	}

@@ -33,6 +33,7 @@ var _ = Describe("Publisher", func() {
 			sender,
 			publisher.NewRenderer(),
 			publisher.NewFrontmatterFormatter(publisher.NewRenderer()),
+			publisher.NewTaskIdentifierCreator(publisher.NewPeriodTokenBuilder()),
 			false,
 		)
 	})
@@ -79,6 +80,7 @@ var _ = Describe("Publisher", func() {
 				localSender,
 				publisher.NewRenderer(),
 				publisher.NewFrontmatterFormatter(publisher.NewRenderer()),
+				publisher.NewTaskIdentifierCreator(publisher.NewPeriodTokenBuilder()),
 				false,
 			)
 			def := schedule.TaskDefinition{
@@ -376,6 +378,7 @@ var _ = Describe("Publisher", func() {
 				localSender,
 				publisher.NewRenderer(),
 				publisher.NewFrontmatterFormatter(publisher.NewRenderer()),
+				publisher.NewTaskIdentifierCreator(publisher.NewPeriodTokenBuilder()),
 				false,
 			)
 			Expect(localPub.Publish(context.Background(), def, c.d)).To(Succeed())
@@ -596,6 +599,7 @@ var _ = Describe("Publisher", func() {
 					localSender,
 					publisher.NewRenderer(),
 					publisher.NewFrontmatterFormatter(publisher.NewRenderer()),
+					publisher.NewTaskIdentifierCreator(publisher.NewPeriodTokenBuilder()),
 					false,
 				)
 				def := schedule.TaskDefinition{
@@ -660,6 +664,7 @@ var _ = Describe("Publisher", func() {
 					localSender,
 					publisher.NewRenderer(),
 					publisher.NewFrontmatterFormatter(publisher.NewRenderer()),
+					publisher.NewTaskIdentifierCreator(publisher.NewPeriodTokenBuilder()),
 					false,
 				)
 				def := schedule.TaskDefinition{
@@ -672,11 +677,10 @@ var _ = Describe("Publisher", func() {
 				_, cmd := localSender.SendCommandArgsForCall(0)
 				Expect(cmd.Title).To(Equal("Review - " + expectedToken))
 
-				expectedID, err := publisher.BuildPeriodTokenForTest(
-					context.Background(), rec, date, def.Weekday, offset,
-				)
+				expectedID, err := publisher.NewPeriodTokenBuilder().
+					Build(context.Background(), def, date)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(expectedID).To(Equal(expectedToken))
+				Expect(string(expectedID)).To(Equal(expectedToken))
 			},
 			Entry(
 				"monthly offset=-1 names prior month",
@@ -782,19 +786,15 @@ var _ = Describe("Publisher", func() {
 					localSender,
 					publisher.NewRenderer(),
 					publisher.NewFrontmatterFormatter(publisher.NewRenderer()),
+					publisher.NewTaskIdentifierCreator(publisher.NewPeriodTokenBuilder()),
 					false,
 				)
 				Expect(localPub.Publish(context.Background(), def, refDate)).To(Succeed())
 				_, cmd := localSender.SendCommandArgsForCall(0)
-				expectedToken, err := publisher.BuildPeriodTokenForTest(
-					context.Background(),
-					def.Recurrence,
-					refDate,
-					def.Weekday,
-					def.PeriodOffset,
-				)
+				expectedToken, err := publisher.NewPeriodTokenBuilder().
+					Build(context.Background(), def, refDate)
 				Expect(err).NotTo(HaveOccurred(), def.Slug)
-				expectedSuffix := " - " + expectedToken
+				expectedSuffix := " - " + string(expectedToken)
 				Expect(cmd.Title).To(HaveSuffix(expectedSuffix),
 					"entry %q rendered title %q does not end with %q",
 					def.Slug, cmd.Title, expectedSuffix)
@@ -1038,6 +1038,7 @@ var _ = Describe("Publisher", func() {
 				sender,
 				publisher.NewRenderer(),
 				publisher.NewFrontmatterFormatter(publisher.NewRenderer()),
+				publisher.NewTaskIdentifierCreator(publisher.NewPeriodTokenBuilder()),
 				true,
 			)
 			def := schedule.TaskDefinition{
@@ -1282,6 +1283,7 @@ var _ = Describe("Publisher", func() {
 					localSender,
 					publisher.NewRenderer(),
 					publisher.NewFrontmatterFormatter(publisher.NewRenderer()),
+					publisher.NewTaskIdentifierCreator(publisher.NewPeriodTokenBuilder()),
 					false,
 				)
 				def := schedule.TaskDefinition{

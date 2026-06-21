@@ -10,6 +10,7 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 
 ## v0.5.0
 
+- refactor: extract `PeriodTokenBuilder` and `TaskIdentifierCreator` interfaces in `pkg/publisher`; introduce strong `type PeriodToken string`. Collapses the 6-parameter `buildTaskIdentifier(ctx, slug, recurrence, date, weekday, periodOffset)` into a 3-parameter `Create(ctx, def, date)` returning `(identifier, periodToken)` in one call — eliminates the previous duplicate period-token computation in `publisher.Publish`. Counterfeiter mocks generated for both interfaces. `factory.CreatePublisher` wires the new dependencies; the public `Publisher` contract is unchanged from a caller perspective. Internal-only — no Schedule CR shape change, no UUID5 input change, identifiers stable.
 - feat: add optional `spec.schedule.periodOffset` (int, default 0) on `Schedule` CR — shifts the period-anchored token by N periods. Lets review-style schedules fire on the first day of the next period and name the just-completed period (e.g. `monthly-review` with `periodOffset: -1` firing on 2026-07-01 produces task `Review Month - 2026-06`). The shift also feeds into the UUID5 input, so re-publishing the same `(slug, fire-date, offset)` triple stays idempotent. Only valid for `Monthly` / `Quarterly` / `Yearly`; date-anchored kinds (`Daily` / `Weekly` / `Weekday`) reject non-zero values via a CEL rule. Body placeholders (`{{current_month}}` etc.) still render against the unshifted fire date — only the period-token suffix and the identifier shift.
 
 ## v0.4.0
