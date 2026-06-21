@@ -8,7 +8,7 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
-## Unreleased
+## v0.4.0
 
 - feat: `/trigger` `date` query parameter is now optional — falls back to the clock's current civil date when missing, empty, or unparseable (via `libtime.ParseDateTimeDefault`).
 - refactor: `NewTriggerHandler` switched to the `libhttp.NewErrorHandler` + `NewJSONHandler` + `JSONHandlerFunc` pattern; `CurrentDateTimeGetter` injected for the NOW fallback.
