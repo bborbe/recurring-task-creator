@@ -52,6 +52,7 @@ spec:
   schedule:
     recurrence: Weekday            # Daily | Weekly | Weekday | Monthly | Quarterly | Yearly
     weekday: Saturday              # required iff recurrence == Weekday (Monday..Sunday)
+    periodOffset: 0                # optional, default 0; shifts period-anchored token by N periods (Monthly/Quarterly/Yearly only). Use -1 for "review the just-completed period" schedules.
   template:
     body: |
       Reflect on the past week ({{current_week}}).
@@ -65,7 +66,15 @@ spec:
       due_date: "{{next_sun_date}}"
 ```
 
-The CRD's OpenAPI schema enforces the recurrence enum, the weekday enum, and a CEL rule that requires `weekday` iff `recurrence == "Weekday"`.
+The CRD's OpenAPI schema enforces the recurrence enum, the weekday enum, and two CEL rules: `weekday` is required iff `recurrence == "Weekday"`, and non-zero `periodOffset` is allowed only for `Monthly` / `Quarterly` / `Yearly`.
+
+### periodOffset
+
+`spec.schedule.periodOffset` (int, default 0) shifts the period-anchored token by N periods. The shift applies to both the title suffix and the UUID5 identifier input, so re-publishing the same `(slug, fire-date, offset)` triple stays idempotent. Body placeholders (`{{current_month}}`, `{{last_month}}`, etc.) are NOT affected — they always render against the unshifted fire date.
+
+The motivating case is review-style schedules. A `monthly-review` schedule with `periodOffset: -1` is always-fire (fires every day), but every tick names the prior month: on `2026-07-01` the publisher emits identifier UUID5(...) for token `2026-06`, materializing the task `Review Month - 2026-06.md`. The same identifier is re-published every day in July (dedups), then rolls to `2026-07` on `2026-08-01`. The body's `{{last_month}}` placeholder still renders the correct prior month relative to the fire date — title and content agree.
+
+Quarterly uses `±3 months`; yearly uses `±N years`. Negative values name prior periods; positive values name future periods. Cross-year/quarter boundaries are handled by Go's `time.AddDate` semantics.
 
 ## Template placeholders
 

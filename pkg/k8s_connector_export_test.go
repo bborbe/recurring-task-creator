@@ -25,3 +25,15 @@ func WeekdayRequiredIfWeekdayMessageForTest() string { return weekdayRequiredIfW
 // VaultRegexForTest returns a pre-compiled *regexp.Regexp matching vaultPattern.
 // Used by the validation test's validateSpec helper.
 var VaultRegexForTest = regexp.MustCompile(vaultPattern)
+
+// PeriodOffsetOnlyForPeriodKindsRuleForTest returns the CEL rule that
+// rejects non-zero periodOffset on date-anchored recurrence kinds.
+func PeriodOffsetOnlyForPeriodKindsRuleForTest() string {
+	return periodOffsetOnlyForPeriodKindsRule
+}
+
+// PeriodOffsetOnlyForPeriodKindsMessageForTest returns the operator-facing
+// error message for the rule above.
+func PeriodOffsetOnlyForPeriodKindsMessageForTest() string {
+	return periodOffsetOnlyForPeriodKindsMessage
+}

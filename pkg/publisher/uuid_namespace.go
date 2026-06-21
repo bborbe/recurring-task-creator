@@ -58,6 +58,7 @@ func buildPeriodToken(
 	recurrence schedule.RecurrenceKind,
 	date schedule.Date,
 	weekday time.Weekday,
+	periodOffset int,
 ) (string, error) {
 	base := date.Time()
 	switch recurrence {
@@ -70,11 +71,14 @@ func buildPeriodToken(
 		isoYear, isoWeek := base.ISOWeek()
 		return fmtIsoWeek(isoYear, isoWeek) + "-" + weekdayAbbrev(weekday), nil
 	case schedule.RecurrenceMonthly:
-		return fmtMonthYear(base.Year(), int(base.Month())), nil
+		shifted := base.AddDate(0, periodOffset, 0)
+		return fmtMonthYear(shifted.Year(), int(shifted.Month())), nil
 	case schedule.RecurrenceQuarterly:
-		return fmtQuarter(base.Year(), quarterOf(base.Month())), nil
+		shifted := base.AddDate(0, periodOffset*3, 0)
+		return fmtQuarter(shifted.Year(), quarterOf(shifted.Month())), nil
 	case schedule.RecurrenceYearly:
-		return fmtYear(base.Year()), nil
+		shifted := base.AddDate(periodOffset, 0, 0)
+		return fmtYear(shifted.Year()), nil
 	default:
 		return "", errors.Errorf(
 			ctx,
@@ -103,8 +107,9 @@ func buildTaskIdentifier(
 	recurrence schedule.RecurrenceKind,
 	date schedule.Date,
 	weekday time.Weekday,
+	periodOffset int,
 ) (lib.TaskIdentifier, error) {
-	token, err := buildPeriodToken(ctx, recurrence, date, weekday)
+	token, err := buildPeriodToken(ctx, recurrence, date, weekday, periodOffset)
 	if err != nil {
 		return "", errors.Wrapf(ctx, err, "buildTaskIdentifier: slug %q", slug)
 	}
