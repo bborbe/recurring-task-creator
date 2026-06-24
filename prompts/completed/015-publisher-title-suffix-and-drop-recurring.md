@@ -1,6 +1,6 @@
 ---
 status: completed
-spec: ["011"]
+spec: [011-title-period-tokens-and-drop-recurring-frontmatter]
 summary: Publisher now appends ' - <period-token>' to every Title and emits a six-key frontmatter (no `recurring`); new specs lock the new shape; existing placeholder-rendering tests updated to include the suffix; `make precommit` exits 0 with pkg/publisher coverage 90.0%.
 container: recurring-task-creator-title-period-exec-015-publisher-title-suffix-and-drop-recurring
 dark-factory-version: v0.177.1

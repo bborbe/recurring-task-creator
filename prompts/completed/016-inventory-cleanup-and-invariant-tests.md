@@ -1,6 +1,6 @@
 ---
 status: completed
-spec: ["011"]
+spec: [011-title-period-tokens-and-drop-recurring-frontmatter]
 summary: Stripped 8 period placeholders from inventory TitleTemplate values, added periodTitlePlaceholders test var + 2 new validation specs, added BuildPeriodTokenForTest accessor, added full-inventory render test (45 cases), appended changelog entry; make precommit exits 0
 container: recurring-task-creator-title-period-exec-016-inventory-cleanup-and-invariant-tests
 dark-factory-version: v0.177.1
