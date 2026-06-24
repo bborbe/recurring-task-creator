@@ -8,6 +8,10 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
+## Unreleased
+
+- feat: widen `spec.schedule.weekday` CRD field to accept a single day string OR a non-empty list of day strings — one `Schedule` CR can now target Mon–Fri instead of five near-identical CRs. Adds 14-value weekday enum (long form `Monday..Sunday` + short form `Mon..Sun`). CEL rules added to reject empty lists (`weekday: []`) and duplicate days including cross-form pairs like `[Mon, Monday]`. Existing single-string CRs are unaffected. Go-side normalization of short forms to `time.Weekday` lands in Prompt 2.
+
 ## v0.5.0
 
 - refactor: extract `PeriodTokenBuilder` and `TaskIdentifierCreator` interfaces in `pkg/publisher`; introduce strong `type PeriodToken string`. Collapses the 6-parameter `buildTaskIdentifier(ctx, slug, recurrence, date, weekday, periodOffset)` into a 3-parameter `Create(ctx, def, date)` returning `(identifier, periodToken)` in one call — eliminates the previous duplicate period-token computation in `publisher.Publish`. Counterfeiter mocks generated for both interfaces. `factory.CreatePublisher` wires the new dependencies; the public `Publisher` contract is unchanged from a caller perspective. Internal-only — no Schedule CR shape change, no UUID5 input change, identifiers stable.

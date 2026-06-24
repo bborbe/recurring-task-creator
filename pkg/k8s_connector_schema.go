@@ -20,17 +20,13 @@ import (
 var recurrenceEnum = []string{"Daily", "Weekly", "Weekday", "Monthly", "Quarterly", "Yearly"}
 
 // weekdayEnum is the closed set of valid weekday strings on the CRD
-// wire, matching time.Weekday.String() output. Locked in v1 — typos
-// like "Satuday" are rejected at the API-server boundary instead of
-// failing later inside the controller's switch statement.
+// wire. Both long forms (Monday..Sunday, matching time.Weekday.String())
+// and short forms (Mon..Sun) are accepted; short forms are normalized to
+// long form Go-side at parse time (Prompt 2). Locked in v1 — typos like
+// "Satuday" or "FunDay" are rejected at the API-server boundary.
 var weekdayEnum = []string{
-	"Monday",
-	"Tuesday",
-	"Wednesday",
-	"Thursday",
-	"Friday",
-	"Saturday",
-	"Sunday",
+	"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
+	"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun",
 }
 
 // vaultPattern is the regex the API server enforces on spec.vault.
@@ -61,6 +57,39 @@ const periodOffsetOnlyForPeriodKindsRule = "!has(self.periodOffset) || self.peri
 // for the rule above.
 const periodOffsetOnlyForPeriodKindsMessage = "periodOffset is only allowed for Monthly/Quarterly/Yearly recurrence"
 
+// weekdayListNonEmptyRule rejects an empty weekday list. Only applies
+// when weekday is present AND is a list; a single string is never empty
+// in this sense. self.weekday is the string-or-list union from the
+// OpenAPI OneOf branch.
+const weekdayListNonEmptyRule = "!has(self.weekday) || type(self.weekday) != list || size(self.weekday) > 0"
+
+// weekdayListNonEmptyMessage is the operator-facing error when an empty
+// weekday list is supplied.
+const weekdayListNonEmptyMessage = "weekday list must be non-empty"
+
+// weekdayNoDuplicateRule rejects a weekday list that names the same
+// logical day twice, including cross-form duplicates ([Mon, Monday]).
+// Each entry is canonicalized to its long form via a literal map, then
+// the rule asserts the canonical list has no element appearing more than
+// once. Only applies when weekday is a list.
+const weekdayNoDuplicateRule = "!has(self.weekday) || type(self.weekday) != list || " +
+	"self.weekday.map(d, " +
+	"{'Mon':'Monday','Tue':'Tuesday','Wed':'Wednesday','Thu':'Thursday'," +
+	"'Fri':'Friday','Sat':'Saturday','Sun':'Sunday'," +
+	"'Monday':'Monday','Tuesday':'Tuesday','Wednesday':'Wednesday'," +
+	"'Thursday':'Thursday','Friday':'Friday','Saturday':'Saturday'," +
+	"'Sunday':'Sunday'}[d])" +
+	".all(c, self.weekday.map(d2, " +
+	"{'Mon':'Monday','Tue':'Tuesday','Wed':'Wednesday','Thu':'Thursday'," +
+	"'Fri':'Friday','Sat':'Saturday','Sun':'Sunday'," +
+	"'Monday':'Monday','Tuesday':'Tuesday','Wednesday':'Wednesday'," +
+	"'Thursday':'Thursday','Friday':'Friday','Saturday':'Saturday'," +
+	"'Sunday':'Sunday'}[d2]).exists_one(c2, c2 == c))"
+
+// weekdayNoDuplicateMessage is the operator-facing error when a weekday
+// list contains the same logical day more than once.
+const weekdayNoDuplicateMessage = "weekday list must not contain the same day twice (including cross-form duplicates like [Mon, Monday])"
+
 // scheduleCRSchemaPtr returns the OpenAPI v3 schema for the WHOLE Schedule
 // custom resource (the top-level object with apiVersion/kind/metadata/spec).
 // This is what gets registered as the CRD's OpenAPIV3Schema — registering
@@ -76,6 +105,58 @@ func scheduleCRSchemaPtr() *apiextensionsv1.JSONSchemaProps {
 			"kind":       {Type: "string"},
 			"metadata":   {Type: "object"},
 			"spec":       scheduleSpecSchema(),
+		},
+	}
+}
+
+// scheduleTriggerSchema returns the OpenAPI v3 schema for spec.schedule.
+// Extracted from scheduleSpecSchema to satisfy funlen. All CEL rules on the
+// schedule object live here alongside the field definitions they guard.
+func scheduleTriggerSchema() apiextensionsv1.JSONSchemaProps {
+	return apiextensionsv1.JSONSchemaProps{
+		Type:        "object",
+		Description: "Recurrence trigger. The weekday-required-iff-weekday invariant is enforced by the CEL x-kubernetes-validations rule below.",
+		Required:    []string{"recurrence"},
+		Properties: map[string]apiextensionsv1.JSONSchemaProps{
+			"recurrence": {
+				Type:        "string",
+				Description: "One of: Daily, Weekly, Weekday, Monthly, Quarterly, Yearly.",
+				Enum:        jsonEnumValues(recurrenceEnum),
+			},
+			"weekday": {
+				Description: "A single weekday or a non-empty list of weekdays. Each entry is one of the 14 accepted day strings (long form Monday..Sunday or short form Mon..Sun); the two forms may be mixed in one list. Required when recurrence is 'Weekday'; forbidden otherwise. Normalized to canonical time.Weekday values Go-side at parse time.",
+				OneOf: []apiextensionsv1.JSONSchemaProps{
+					{
+						Type: "string",
+						Enum: jsonEnumValues(weekdayEnum),
+					},
+					{
+						Type:     "array",
+						MinItems: ptrInt64(1),
+						Items: &apiextensionsv1.JSONSchemaPropsOrArray{
+							Schema: &apiextensionsv1.JSONSchemaProps{
+								Type: "string",
+								Enum: jsonEnumValues(weekdayEnum),
+							},
+						},
+					},
+				},
+			},
+			"periodOffset": {
+				Type: "integer",
+				Description: "Shifts the period-anchored token by N periods. Default 0 (current period). " +
+					"Use -1 for prior period (e.g. review-style schedules that fire on month-start but name " +
+					"the just-completed month). Only valid for Monthly/Quarterly/Yearly.",
+			},
+		},
+		XValidations: apiextensionsv1.ValidationRules{
+			{Rule: weekdayRequiredIfWeekdayRule, Message: weekdayRequiredIfWeekdayMessage},
+			{
+				Rule:    periodOffsetOnlyForPeriodKindsRule,
+				Message: periodOffsetOnlyForPeriodKindsMessage,
+			},
+			{Rule: weekdayListNonEmptyRule, Message: weekdayListNonEmptyMessage},
+			{Rule: weekdayNoDuplicateRule, Message: weekdayNoDuplicateMessage},
 		},
 	}
 }
@@ -96,40 +177,11 @@ func scheduleSpecSchema() apiextensionsv1.JSONSchemaProps {
 				Pattern:     vaultPattern,
 			},
 			"title": {
-				Type:        "string",
-				Description: "Title shown to the user in the generated vault task. Go text/template — placeholders rendered with the period token.",
+				Type: "string",
+				Description: "Title shown to the user in the generated vault task. " +
+					"Go text/template — placeholders rendered with the period token.",
 			},
-			"schedule": {
-				Type:        "object",
-				Description: "Recurrence trigger. The weekday-required-iff-weekday invariant is enforced by the CEL x-kubernetes-validations rule below.",
-				Required:    []string{"recurrence"},
-				Properties: map[string]apiextensionsv1.JSONSchemaProps{
-					"recurrence": {
-						Type:        "string",
-						Description: "One of: Daily, Weekly, Weekday, Monthly, Quarterly, Yearly.",
-						Enum:        jsonEnumValues(recurrenceEnum),
-					},
-					"weekday": {
-						Type:        "string",
-						Description: "time.Weekday string (Monday..Sunday). Required when recurrence is 'Weekday'; forbidden otherwise.",
-						Enum:        jsonEnumValues(weekdayEnum),
-					},
-					"periodOffset": {
-						Type:        "integer",
-						Description: "Shifts the period-anchored token by N periods. Default 0 (current period). Use -1 for prior period (e.g. review-style schedules that fire on month-start but name the just-completed month). Only valid for Monthly/Quarterly/Yearly.",
-					},
-				},
-				XValidations: apiextensionsv1.ValidationRules{
-					{
-						Rule:    weekdayRequiredIfWeekdayRule,
-						Message: weekdayRequiredIfWeekdayMessage,
-					},
-					{
-						Rule:    periodOffsetOnlyForPeriodKindsRule,
-						Message: periodOffsetOnlyForPeriodKindsMessage,
-					},
-				},
-			},
+			"schedule": scheduleTriggerSchema(),
 			"template": {
 				Type:        "object",
 				Description: "Body and frontmatter stamped onto the generated task. Per spec design pins, body is optional (some recurring tasks only need a title).",
@@ -139,13 +191,13 @@ func scheduleSpecSchema() apiextensionsv1.JSONSchemaProps {
 						Description: "Raw markdown body of the generated task. Go text/template.",
 					},
 					"frontmatter": {
-						Type:        "object",
-						Description: "YAML frontmatter stamped onto the generated task. Free-form map of operator-defined keys (assignee, priority, goals, category, ...). The publisher merges these with three built-in keys (status, page_type, created_by) that always win on collision.",
-						// XPreserveUnknownFields is set to true: frontmatter is an
-						// operator-defined free-form map. The publisher wires it
-						// through verbatim (lib.TaskFrontmatter is
-						// map[string]interface{}); the API server preserves whatever
-						// keys the operator supplies.
+						Type: "object",
+						Description: "YAML frontmatter stamped onto the generated task. Free-form map of " +
+							"operator-defined keys (assignee, priority, goals, category, ...). The publisher " +
+							"merges these with three built-in keys (status, page_type, created_by) that always " +
+							"win on collision.",
+						// XPreserveUnknownFields: frontmatter is operator-defined free-form; the publisher
+						// wires it through verbatim (lib.TaskFrontmatter is map[string]interface{}).
 						XPreserveUnknownFields: ptrTrue(),
 					},
 				},
@@ -160,6 +212,12 @@ func scheduleSpecSchema() apiextensionsv1.JSONSchemaProps {
 func ptrTrue() *bool {
 	t := true
 	return &t
+}
+
+// ptrInt64 returns a pointer to the given int64; the k8s OpenAPI schema
+// represents MinItems and similar numeric bounds as *int64.
+func ptrInt64(n int64) *int64 {
+	return &n
 }
 
 // jsonEnumValues wraps each string in an apiextensionsv1.JSON so the
