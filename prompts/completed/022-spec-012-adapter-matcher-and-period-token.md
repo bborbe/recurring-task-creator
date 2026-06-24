@@ -1,8 +1,12 @@
 ---
-status: approved
+status: completed
 spec: [012-weekday-list-and-short-forms]
+container: recurring-task-creator-weekday-list-exec-022-spec-012-adapter-matcher-and-period-token
+dark-factory-version: v0.182.0
 created: "2026-06-24T20:31:00Z"
 queued: "2026-06-24T21:06:16Z"
+started: "2026-06-24T21:21:18Z"
+completed: "2026-06-24T21:40:49Z"
 branch: dark-factory/weekday-list-and-short-forms
 ---
 

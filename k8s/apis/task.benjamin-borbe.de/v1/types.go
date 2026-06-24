@@ -8,9 +8,61 @@
 package v1
 
 import (
+	"bytes"
+	"encoding/json"
+
 	lib "github.com/bborbe/agent/lib"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// WeekdayList is the spec.schedule.weekday value. The CRD wire shape is
+// a single day string OR a non-empty list of day strings (long form
+// Monday..Sunday or short form Mon..Sun, freely mixed) — see the OpenAPI
+// OneOf in pkg/k8s_connector_schema.go. WeekdayList normalizes both wire
+// shapes to a []string on decode: a bare string decodes to a one-element
+// slice. Canonicalization of short->long form and the mapping to
+// time.Weekday happens Go-side in the store adapter, not here — this type
+// only unifies the two JSON shapes.
+type WeekdayList []string
+
+// UnmarshalJSON accepts either a JSON string ("Monday") or a JSON array
+// (["Mon","Wed"]) and stores the result as a []string. A null or absent
+// value yields a nil slice.
+func (w *WeekdayList) UnmarshalJSON(data []byte) error {
+	trimmed := bytes.TrimSpace(data)
+	if len(trimmed) == 0 || string(trimmed) == "null" {
+		*w = nil
+		return nil
+	}
+	if trimmed[0] == '[' {
+		var list []string
+		if err := json.Unmarshal(trimmed, &list); err != nil {
+			return err
+		}
+		*w = list
+		return nil
+	}
+	var single string
+	if err := json.Unmarshal(trimmed, &single); err != nil {
+		return err
+	}
+	*w = []string{single}
+	return nil
+}
+
+// MarshalJSON renders a one-element list back as a bare string (so an
+// applied single-day CR round-trips to the same wire form) and a
+// multi-element list as a JSON array. An empty list renders as null.
+func (w WeekdayList) MarshalJSON() ([]byte, error) {
+	switch len(w) {
+	case 0:
+		return []byte("null"), nil
+	case 1:
+		return json.Marshal(w[0])
+	default:
+		return json.Marshal([]string(w))
+	}
+}
 
 // +kubebuilder:object:root=true
 // +genclient
@@ -59,13 +111,11 @@ type ScheduleTrigger struct {
 	Recurrence string `json:"recurrence"`
 
 	// Weekday is required when Recurrence == "Weekday"; forbidden otherwise.
-	// Values are time.Weekday.String() form: "Monday", "Tuesday", "Wednesday",
-	// "Thursday", "Friday", "Saturday", "Sunday". Encoded as the CEL rule in
-	// scheduleSpecSchema. The Go type is `string` (not `*string`) so JSON
-	// omits the field cleanly when unset; the schema's presence check is
-	// `has(self.weekday)`. Optionality is encoded by `omitempty` + the CEL
-	// rule — no separate `+optional` marker is needed.
-	Weekday string `json:"weekday,omitempty"`
+	// Wire shape is a single day string OR a non-empty list (long form
+	// Monday..Sunday or short form Mon..Sun, mixable). Enforced by the
+	// OpenAPI OneOf + CEL rules in scheduleSpecSchema. Normalized to a
+	// canonical time.Weekday set Go-side by the store adapter.
+	Weekday WeekdayList `json:"weekday,omitempty"`
 
 	// PeriodOffset shifts the period-anchored token by N periods. Default 0
 	// (current period). Negative values name a prior period; positive values

@@ -53,7 +53,7 @@ var _ = Describe("ScheduleStore", func() {
 					Title: "Valid Task",
 					Schedule: v1.ScheduleTrigger{
 						Recurrence: "Weekday",
-						Weekday:    "Friday",
+						Weekday:    v1.WeekdayList{"Friday"},
 					},
 					Template: v1.ScheduleTemplate{Body: "some body"},
 				},
@@ -95,7 +95,7 @@ var _ = Describe("ScheduleStore", func() {
 			Expect(defs).To(HaveLen(1))
 			Expect(defs[0].Slug).To(Equal("valid-slug"))
 			Expect(defs[0].Recurrence).To(Equal(schedule.RecurrenceWeekday))
-			Expect(defs[0].Weekday).To(Equal(time.Friday))
+			Expect(defs[0].Weekdays).To(Equal([]time.Weekday{time.Friday}))
 		})
 	})
 

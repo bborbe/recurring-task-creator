@@ -20,6 +20,16 @@ import (
 // this one with a distinct name and do not edit this one.
 var uuidNamespace uuid.UUID = uuid.MustParse("f4e1c5b7-3a82-4d59-9e7c-1c8b9d2e4f6a")
 
+// weekdayInSet reports whether w appears in set.
+func weekdayInSet(w time.Weekday, set []time.Weekday) bool {
+	for _, s := range set {
+		if s == w {
+			return true
+		}
+	}
+	return false
+}
+
 // weekdayAbbrev returns the lowercase 3-letter abbreviation of w
 // (e.g. "mon" for Monday, "sun" for Sunday). Used by PeriodTokenBuilder
 // to encode the weekday suffix in the weekly period token. All seven

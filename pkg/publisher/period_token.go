@@ -24,9 +24,10 @@ type PeriodToken string
 
 // PeriodTokenBuilder builds the period-anchored token for a given
 // (definition, date) pair. The token formula honors def.Recurrence,
-// def.Weekday (only meaningful for RecurrenceWeekday), and
 // def.PeriodOffset (only meaningful for the period-anchored kinds —
-// Monthly, Quarterly, Yearly).
+// Monthly, Quarterly, Yearly). For RecurrenceWeekday the weekday suffix
+// is derived from the firing date (guaranteed to be in def.Weekdays on
+// a firing day), not from a stored single value.
 type PeriodTokenBuilder interface {
 	// Build returns the period-anchored token for (def, date). An unknown
 	// RecurrenceKind is a build-time data error (closed enum, no valid
@@ -55,8 +56,16 @@ func (b *periodTokenBuilder) Build(
 		isoYear, isoWeek := base.ISOWeek()
 		return PeriodToken(fmtIsoWeek(isoYear, isoWeek)), nil
 	case schedule.RecurrenceWeekday:
+		dateWeekday := base.Weekday()
+		if !weekdayInSet(dateWeekday, def.Weekdays) {
+			return "", errors.Errorf(
+				ctx,
+				"PeriodTokenBuilder.Build: date weekday %s is not in schedule %q weekday set %v",
+				dateWeekday, def.Slug, def.Weekdays,
+			)
+		}
 		isoYear, isoWeek := base.ISOWeek()
-		return PeriodToken(fmtIsoWeek(isoYear, isoWeek) + "-" + weekdayAbbrev(def.Weekday)), nil
+		return PeriodToken(fmtIsoWeek(isoYear, isoWeek) + "-" + weekdayAbbrev(dateWeekday)), nil
 	case schedule.RecurrenceMonthly:
 		shifted := base.AddDate(0, def.PeriodOffset, 0)
 		return PeriodToken(fmtMonthYear(shifted.Year(), int(shifted.Month()))), nil

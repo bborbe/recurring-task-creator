@@ -16,13 +16,12 @@ import (
 )
 
 var weekdayByName = map[string]time.Weekday{
-	"Sunday":    time.Sunday,
-	"Monday":    time.Monday,
-	"Tuesday":   time.Tuesday,
-	"Wednesday": time.Wednesday,
-	"Thursday":  time.Thursday,
-	"Friday":    time.Friday,
-	"Saturday":  time.Saturday,
+	"Sunday": time.Sunday, "Monday": time.Monday, "Tuesday": time.Tuesday,
+	"Wednesday": time.Wednesday, "Thursday": time.Thursday, "Friday": time.Friday,
+	"Saturday": time.Saturday,
+	"Sun":      time.Sunday, "Mon": time.Monday, "Tue": time.Tuesday,
+	"Wed": time.Wednesday, "Thu": time.Thursday, "Fri": time.Friday,
+	"Sat": time.Saturday,
 }
 
 func adaptSchedule(ctx context.Context, cr *v1.Schedule) (schedule.TaskDefinition, error) {
@@ -42,17 +41,22 @@ func adaptSchedule(ctx context.Context, cr *v1.Schedule) (schedule.TaskDefinitio
 		)
 	}
 
-	var weekday time.Weekday
-	if cr.Spec.Schedule.Weekday != "" {
-		wd, ok := weekdayByName[cr.Spec.Schedule.Weekday]
+	var weekdays []time.Weekday
+	seen := map[time.Weekday]bool{}
+	for _, name := range cr.Spec.Schedule.Weekday {
+		wd, ok := weekdayByName[name]
 		if !ok {
 			return schedule.TaskDefinition{}, errors.Errorf(
 				ctx,
-				"unknown weekday %q",
-				cr.Spec.Schedule.Weekday,
+				"unknown weekday %q in schedule %q",
+				name, cr.Name,
 			)
 		}
-		weekday = wd
+		if seen[wd] {
+			continue
+		}
+		seen[wd] = true
+		weekdays = append(weekdays, wd)
 	}
 
 	return schedule.TaskDefinition{
@@ -60,7 +64,7 @@ func adaptSchedule(ctx context.Context, cr *v1.Schedule) (schedule.TaskDefinitio
 		TitleTemplate: cr.Spec.Title,
 		BodyTemplate:  cr.Spec.Template.Body,
 		Recurrence:    kind,
-		Weekday:       weekday,
+		Weekdays:      weekdays,
 		Frontmatter:   cr.Spec.Template.Frontmatter,
 		PeriodOffset:  cr.Spec.Schedule.PeriodOffset,
 	}, nil

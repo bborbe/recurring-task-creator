@@ -31,19 +31,19 @@ var testDefs = []schedule.TaskDefinition{
 		Slug:          "sat-1",
 		TitleTemplate: "Sat Task 1",
 		Recurrence:    schedule.RecurrenceWeekday,
-		Weekday:       time.Saturday,
+		Weekdays:      []time.Weekday{time.Saturday},
 	},
 	{
 		Slug:          "sat-2",
 		TitleTemplate: "Sat Task 2",
 		Recurrence:    schedule.RecurrenceWeekday,
-		Weekday:       time.Saturday,
+		Weekdays:      []time.Weekday{time.Saturday},
 	},
 	{
 		Slug:          "sun-1",
 		TitleTemplate: "Sun Task 1",
 		Recurrence:    schedule.RecurrenceWeekday,
-		Weekday:       time.Sunday,
+		Weekdays:      []time.Weekday{time.Sunday},
 	},
 	{Slug: "monthly-1", TitleTemplate: "Monthly Task 1", Recurrence: schedule.RecurrenceMonthly},
 	{

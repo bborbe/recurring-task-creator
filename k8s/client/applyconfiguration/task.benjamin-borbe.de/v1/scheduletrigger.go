@@ -18,6 +18,10 @@ limitations under the License.
 
 package v1
 
+import (
+	apisv1 "github.com/bborbe/recurring-task-creator/k8s/apis/task.benjamin-borbe.de/v1"
+)
+
 // ScheduleTriggerApplyConfiguration represents a declarative configuration of the ScheduleTrigger type for use
 // with apply.
 //
@@ -30,13 +34,11 @@ type ScheduleTriggerApplyConfiguration struct {
 	// scheduleSpecSchema.
 	Recurrence *string `json:"recurrence,omitempty"`
 	// Weekday is required when Recurrence == "Weekday"; forbidden otherwise.
-	// Values are time.Weekday.String() form: "Monday", "Tuesday", "Wednesday",
-	// "Thursday", "Friday", "Saturday", "Sunday". Encoded as the CEL rule in
-	// scheduleSpecSchema. The Go type is `string` (not `*string`) so JSON
-	// omits the field cleanly when unset; the schema's presence check is
-	// `has(self.weekday)`. Optionality is encoded by `omitempty` + the CEL
-	// rule — no separate `+optional` marker is needed.
-	Weekday *string `json:"weekday,omitempty"`
+	// Wire shape is a single day string OR a non-empty list (long form
+	// Monday..Sunday or short form Mon..Sun, mixable). Enforced by the
+	// OpenAPI OneOf + CEL rules in scheduleSpecSchema. Normalized to a
+	// canonical time.Weekday set Go-side by the store adapter.
+	Weekday *apisv1.WeekdayList `json:"weekday,omitempty"`
 	// PeriodOffset shifts the period-anchored token by N periods. Default 0
 	// (current period). Negative values name a prior period; positive values
 	// name a future period. The shift applies to the period token suffix
@@ -72,7 +74,7 @@ func (b *ScheduleTriggerApplyConfiguration) WithRecurrence(
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Weekday field is set to the value of the last call.
 func (b *ScheduleTriggerApplyConfiguration) WithWeekday(
-	value string,
+	value apisv1.WeekdayList,
 ) *ScheduleTriggerApplyConfiguration {
 	b.Weekday = &value
 	return b
