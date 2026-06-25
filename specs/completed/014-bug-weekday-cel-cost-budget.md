@@ -1,11 +1,13 @@
 ---
-status: prompted
+status: completed
 tags:
     - dark-factory
     - spec
 approved: "2026-06-25T09:53:48Z"
 generating: "2026-06-25T09:53:48Z"
 prompted: "2026-06-25T09:53:48Z"
+verifying: "2026-06-25T11:08:41Z"
+completed: "2026-06-25T14:15:20Z"
 branch: dark-factory/bug-weekday-cel-cost-budget
 ---
 
