@@ -8,7 +8,7 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
-## Unreleased
+## v0.6.0
 
 - fix: cap `spec.schedule.weekdays` at `maxItems: 7` and rewrite the cross-form no-duplicates CEL rule to a bounded set-size form, so the Kubernetes API server's CEL cost estimator stops rejecting the `Schedule` CRD ("estimated rule cost exceeds budget"); resolves the dev-pod CrashLoopBackOff. Duplicate-day rejection (`[Mon, Monday]`, `[Tue, Tue]`) is unchanged.
 - fix: replace structurally-invalid `oneOf{string,array}` on `spec.schedule.weekday` with two type-pure sibling fields — `weekday: string` (7 long-form days, backward-compatible) and `weekdays: []string` (new, 14-value enum, `minItems: 1`) — resolving the dev-pod CrashLoopBackOff caused by the Kubernetes API server rejecting the non-structural CRD schema.
