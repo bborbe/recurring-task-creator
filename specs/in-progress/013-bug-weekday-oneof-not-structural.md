@@ -1,11 +1,12 @@
 ---
-status: prompted
+status: verifying
 tags:
     - dark-factory
     - spec
 approved: "2026-06-25T08:04:39Z"
 generating: "2026-06-25T08:04:40Z"
 prompted: "2026-06-25T08:15:46Z"
+verifying: "2026-06-25T08:37:02Z"
 branch: dark-factory/bug-weekday-oneof-not-structural
 ---
 

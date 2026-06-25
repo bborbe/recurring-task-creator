@@ -5,7 +5,9 @@
 package pkg_test
 
 import (
+	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/common/types"
@@ -13,6 +15,7 @@ import (
 	. "github.com/onsi/gomega"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsvalidation "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/validation"
 	structuralschema "k8s.io/apiextensions-apiserver/pkg/apiserver/schema"
 
 	"github.com/bborbe/recurring-task-creator/pkg"
@@ -462,6 +465,60 @@ var _ = Describe("weekdays list — no-duplicate CEL rule", func() {
 			true,
 		),
 		Entry("absent weekdays → accept (rule short-circuits)", nil, true),
+	)
+})
+
+var _ = Describe("weekdays MaxItems bound", func() {
+	It("weekdays property carries MaxItems == 7 and keeps MinItems == 1", func() {
+		schema := pkg.ScheduleCRSchemaPtrForTest()
+		weekdays := schema.Properties["spec"].Properties["schedule"].Properties["weekdays"]
+		Expect(weekdays.MaxItems).NotTo(BeNil(), "weekdays must declare MaxItems")
+		Expect(*weekdays.MaxItems).To(Equal(int64(7)))
+		Expect(weekdays.MinItems).NotTo(BeNil(), "weekdays must keep MinItems")
+		Expect(*weekdays.MinItems).To(Equal(int64(1)))
+	})
+})
+
+var _ = Describe("Schedule CRD CEL cost-budget regression-lock", func() {
+	It(
+		"no x-kubernetes-validations rule on the assembled CRD exceeds the API-server per-rule cost budget",
+		func() {
+			// Convert the assembled v1 CRD to the internal apiextensions type, then
+			// run it through the exact public function the API server uses at CRD
+			// admission. ValidateCustomResourceDefinition compiles every CEL rule,
+			// estimates worst-case cost using each array's maxItems, and emits a
+			// field.Forbidden error whose detail contains "exceeds budget" when a
+			// rule's estimated cost exceeds StaticEstimatedCostLimit. This is a
+			// byte-equivalent verdict to production admission. Regression lock for
+			// the spec-014 CrashLoopBackOff: this It FAILS on the pre-fix schema
+			// (unbounded weekdays + nested map().all().exists_one()) and PASSES
+			// after MaxItems:7 + the rewritten dup rule.
+			v1CRD := pkg.DesiredScheduleCRDForTest()
+			Expect(v1CRD).NotTo(BeNil())
+
+			var internalCRD apiextensions.CustomResourceDefinition
+			err := apiextensionsv1.Convert_v1_CustomResourceDefinition_To_apiextensions_CustomResourceDefinition(
+				v1CRD,
+				&internalCRD,
+				nil,
+			)
+			Expect(err).NotTo(HaveOccurred(), "v1->internal CRD conversion must succeed")
+
+			errs := apiextensionsvalidation.ValidateCustomResourceDefinition(
+				context.Background(),
+				&internalCRD,
+			)
+
+			var costErrs []string
+			for _, e := range errs {
+				if strings.Contains(e.Detail, "exceeds budget") {
+					costErrs = append(costErrs, e.Error())
+				}
+			}
+			Expect(
+				costErrs,
+			).To(BeEmpty(), "no CEL rule may exceed the per-rule cost budget; offending rules: %v", costErrs)
+		},
 	)
 })
 

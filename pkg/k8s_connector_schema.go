@@ -72,8 +72,16 @@ const periodOffsetOnlyForPeriodKindsMessage = "periodOffset is only allowed for 
 // weekdayNoDuplicateRule rejects a weekdays list that names the same
 // logical day twice, including cross-form duplicates ([Mon, Monday]).
 // Each entry is canonicalized to its long form via a literal map, then
-// the rule asserts each canonical value appears exactly once. Only
-// applies when weekdays is present.
+// the rule asserts every canonical value appears exactly once: for each
+// canonical day c, the count of list entries that canonicalize to c must
+// be 1. Bounded by the weekdays MaxItems:7 cap, this form's estimated
+// cost stays under the API server's per-rule CEL cost budget.
+// (The prior map().all().exists_one() form blew the budget because, with
+// no maxItems, the cost estimator assumed n up to int32 max.) The bare
+// cel.NewEnv the tests build does not load the Kubernetes Lists library,
+// so index-range forms like 0.until(size(...)) do NOT compile here; this
+// map().all().filter().size() form does. Only applies when weekdays is
+// present.
 const weekdayNoDuplicateRule = "!has(self.weekdays) || type(self.weekdays) != list || " +
 	"self.weekdays.map(d, " +
 	"{'Mon':'Monday','Tue':'Tuesday','Wed':'Wednesday','Thu':'Thursday'," +
@@ -86,7 +94,7 @@ const weekdayNoDuplicateRule = "!has(self.weekdays) || type(self.weekdays) != li
 	"'Fri':'Friday','Sat':'Saturday','Sun':'Sunday'," +
 	"'Monday':'Monday','Tuesday':'Tuesday','Wednesday':'Wednesday'," +
 	"'Thursday':'Thursday','Friday':'Friday','Saturday':'Saturday'," +
-	"'Sunday':'Sunday'}[d2]).exists_one(c2, c2 == c))"
+	"'Sunday':'Sunday'}[d2]).filter(x, x == c).size() == 1)"
 
 // weekdayNoDuplicateMessage is the operator-facing error when a weekday
 // list contains the same logical day more than once.
@@ -132,8 +140,9 @@ func scheduleTriggerSchema() apiextensionsv1.JSONSchemaProps {
 			},
 			"weekdays": {
 				Type:        "array",
-				Description: "A non-empty list of weekdays. Each entry is one of the 14 accepted day strings (long form Monday..Sunday or short form Mon..Sun); the two forms may be mixed in one list. Required-XOR with weekday when recurrence is 'Weekday'; both fields forbidden otherwise. Normalized to canonical time.Weekday values Go-side at parse time.",
+				Description: "A non-empty list of weekdays, at most 7 (the number of distinct days in a week). Each entry is one of the 14 accepted day strings (long form Monday..Sunday or short form Mon..Sun); the two forms may be mixed in one list. Required-XOR with weekday when recurrence is 'Weekday'; both fields forbidden otherwise. Normalized to canonical time.Weekday values Go-side at parse time.",
 				MinItems:    ptrInt64(1),
+				MaxItems:    ptrInt64(7),
 				Items: &apiextensionsv1.JSONSchemaPropsOrArray{
 					Schema: &apiextensionsv1.JSONSchemaProps{
 						Type: "string",

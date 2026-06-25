@@ -10,6 +10,7 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+- fix: cap `spec.schedule.weekdays` at `maxItems: 7` and rewrite the cross-form no-duplicates CEL rule to a bounded set-size form, so the Kubernetes API server's CEL cost estimator stops rejecting the `Schedule` CRD ("estimated rule cost exceeds budget"); resolves the dev-pod CrashLoopBackOff. Duplicate-day rejection (`[Mon, Monday]`, `[Tue, Tue]`) is unchanged.
 - fix: replace structurally-invalid `oneOf{string,array}` on `spec.schedule.weekday` with two type-pure sibling fields — `weekday: string` (7 long-form days, backward-compatible) and `weekdays: []string` (new, 14-value enum, `minItems: 1`) — resolving the dev-pod CrashLoopBackOff caused by the Kubernetes API server rejecting the non-structural CRD schema.
 - fix: Replace structurally-invalid oneOf weekday CRD schema with type-pure `weekday` string + new `weekdays` list field; CEL enforces exactly-one-of on Weekday recurrence. Fixes dev-pod CrashLoopBackOff on CRD install.
 - feat: widen `spec.schedule.weekday` CRD field to accept a single day string OR a non-empty list of day strings — one `Schedule` CR can now target Mon–Fri instead of five near-identical CRs. Adds 14-value weekday enum (long form `Monday..Sunday` + short form `Mon..Sun`). CEL rules added to reject empty lists (`weekday: []`) and duplicate days including cross-form pairs like `[Mon, Monday]`. Existing single-string CRs are unaffected. Go-side normalization of short forms to `time.Weekday` lands in Prompt 2.

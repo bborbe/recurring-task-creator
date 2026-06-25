@@ -78,7 +78,7 @@ Frozen invariants (any change requires a separate spec):
 
 ## Schedule CR Weekday Field
 
-The `spec.schedule` trigger has two mutually exclusive weekday fields. Exactly one of `weekday` (single long-form day) or `weekdays` (non-empty list of long-or-short day names) is required iff recurrence == `Weekday`; both fields are rejected on other recurrences. The CEL rule in the CRD schema enforces the exactly-one-of constraint at `kubectl apply` time.
+The `spec.schedule` trigger has two mutually exclusive weekday fields. Exactly one of `weekday` (single long-form day) or `weekdays` (non-empty list of at most 7 long-or-short day names) is required iff recurrence == `Weekday`; both fields are rejected on other recurrences. The CEL rule in the CRD schema enforces the exactly-one-of constraint at `kubectl apply` time.
 
 ```yaml
 spec:
