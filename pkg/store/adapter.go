@@ -41,9 +41,17 @@ func adaptSchedule(ctx context.Context, cr *v1.Schedule) (schedule.TaskDefinitio
 		)
 	}
 
+	var names []string
+	switch {
+	case cr.Spec.Schedule.Weekday != "":
+		names = []string{cr.Spec.Schedule.Weekday}
+	case len(cr.Spec.Schedule.Weekdays) > 0:
+		names = cr.Spec.Schedule.Weekdays
+	}
+
 	var weekdays []time.Weekday
 	seen := map[time.Weekday]bool{}
-	for _, name := range cr.Spec.Schedule.Weekday {
+	for _, name := range names {
 		wd, ok := weekdayByName[name]
 		if !ok {
 			return schedule.TaskDefinition{}, errors.Errorf(

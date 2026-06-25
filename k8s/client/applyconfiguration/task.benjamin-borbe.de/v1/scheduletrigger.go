@@ -18,10 +18,6 @@ limitations under the License.
 
 package v1
 
-import (
-	apisv1 "github.com/bborbe/recurring-task-creator/k8s/apis/task.benjamin-borbe.de/v1"
-)
-
 // ScheduleTriggerApplyConfiguration represents a declarative configuration of the ScheduleTrigger type for use
 // with apply.
 //
@@ -33,12 +29,19 @@ type ScheduleTriggerApplyConfiguration struct {
 	// fires only on its target weekday. Constrained by the OpenAPI enum in
 	// scheduleSpecSchema.
 	Recurrence *string `json:"recurrence,omitempty"`
-	// Weekday is required when Recurrence == "Weekday"; forbidden otherwise.
-	// Wire shape is a single day string OR a non-empty list (long form
-	// Monday..Sunday or short form Mon..Sun, mixable). Enforced by the
-	// OpenAPI OneOf + CEL rules in scheduleSpecSchema. Normalized to a
-	// canonical time.Weekday set Go-side by the store adapter.
-	Weekday *apisv1.WeekdayList `json:"weekday,omitempty"`
+	// Weekday is a single weekday (long form Monday..Sunday). Set when
+	// Recurrence == "Weekday" and the schedule targets exactly one day;
+	// mutually exclusive with Weekdays (the CEL XOR rule in
+	// scheduleTriggerSchema enforces exactly-one-of on Weekday recurrence,
+	// neither otherwise). Normalized to a canonical time.Weekday Go-side by
+	// the store adapter.
+	Weekday *string `json:"weekday,omitempty"`
+	// Weekdays is a non-empty list of weekdays (long form Monday..Sunday or
+	// short form Mon..Sun, mixable). Set when Recurrence == "Weekday" and the
+	// schedule targets multiple days; mutually exclusive with Weekday.
+	// Normalized and deduplicated to a canonical time.Weekday set Go-side by
+	// the store adapter.
+	Weekdays *[]string `json:"weekdays,omitempty"`
 	// PeriodOffset shifts the period-anchored token by N periods. Default 0
 	// (current period). Negative values name a prior period; positive values
 	// name a future period. The shift applies to the period token suffix
@@ -74,9 +77,19 @@ func (b *ScheduleTriggerApplyConfiguration) WithRecurrence(
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Weekday field is set to the value of the last call.
 func (b *ScheduleTriggerApplyConfiguration) WithWeekday(
-	value apisv1.WeekdayList,
+	value string,
 ) *ScheduleTriggerApplyConfiguration {
 	b.Weekday = &value
+	return b
+}
+
+// WithWeekdays sets the Weekdays field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Weekdays field is set to the value of the last call.
+func (b *ScheduleTriggerApplyConfiguration) WithWeekdays(
+	value []string,
+) *ScheduleTriggerApplyConfiguration {
+	b.Weekdays = &value
 	return b
 }
 

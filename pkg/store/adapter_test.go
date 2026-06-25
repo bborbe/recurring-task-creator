@@ -53,7 +53,7 @@ var _ = Describe("adaptSchedule", func() {
 					Title: "Test",
 					Schedule: v1.ScheduleTrigger{
 						Recurrence: "Weekday",
-						Weekday:    v1.WeekdayList{input},
+						Weekday:    input,
 					},
 				},
 			}
@@ -77,14 +77,14 @@ var _ = Describe("adaptSchedule", func() {
 		Entry("Sun short", "Sun", time.Sunday),
 	)
 
-	It("maps weekday Saturday (single-element list)", func() {
+	It("maps weekday Saturday (single-string path)", func() {
 		cr := &v1.Schedule{
 			ObjectMeta: metav1.ObjectMeta{Name: "test-slug"},
 			Spec: v1.ScheduleSpec{
 				Title: "Test",
 				Schedule: v1.ScheduleTrigger{
 					Recurrence: "Weekday",
-					Weekday:    v1.WeekdayList{"Saturday"},
+					Weekday:    "Saturday",
 				},
 			},
 		}
@@ -100,7 +100,7 @@ var _ = Describe("adaptSchedule", func() {
 				Title: "Test",
 				Schedule: v1.ScheduleTrigger{
 					Recurrence: "Weekday",
-					Weekday:    v1.WeekdayList{"Mon", "Wednesday", "Fri"},
+					Weekdays:   []string{"Mon", "Wednesday", "Fri"},
 				},
 			},
 		}
@@ -118,7 +118,7 @@ var _ = Describe("adaptSchedule", func() {
 					Title: "Test",
 					Schedule: v1.ScheduleTrigger{
 						Recurrence: "Weekday",
-						Weekday:    v1.WeekdayList{"Monday", "Wednesday", "Friday"},
+						Weekdays:   []string{"Monday", "Wednesday", "Friday"},
 					},
 				},
 			}
@@ -128,7 +128,7 @@ var _ = Describe("adaptSchedule", func() {
 					Title: "Test",
 					Schedule: v1.ScheduleTrigger{
 						Recurrence: "Weekday",
-						Weekday:    v1.WeekdayList{"Mon", "Wednesday", "Fri"},
+						Weekdays:   []string{"Mon", "Wednesday", "Fri"},
 					},
 				},
 			}
@@ -137,6 +137,38 @@ var _ = Describe("adaptSchedule", func() {
 			defMixed, err := store.AdaptScheduleForTest(ctx, crMixed)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(defLong.Weekdays).To(Equal(defMixed.Weekdays))
+		},
+	)
+
+	It(
+		"single-string weekday and one-element list weekdays produce identical def.Weekdays",
+		func() {
+			crSingle := &v1.Schedule{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-single"},
+				Spec: v1.ScheduleSpec{
+					Title: "Test",
+					Schedule: v1.ScheduleTrigger{
+						Recurrence: "Weekday",
+						Weekday:    "Monday",
+					},
+				},
+			}
+			crList := &v1.Schedule{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-list"},
+				Spec: v1.ScheduleSpec{
+					Title: "Test",
+					Schedule: v1.ScheduleTrigger{
+						Recurrence: "Weekday",
+						Weekdays:   []string{"Monday"},
+					},
+				},
+			}
+			defSingle, err := store.AdaptScheduleForTest(ctx, crSingle)
+			Expect(err).NotTo(HaveOccurred())
+			defList, err := store.AdaptScheduleForTest(ctx, crList)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(defSingle.Weekdays).To(Equal(defList.Weekdays))
+			Expect(defSingle.Weekdays).To(Equal([]time.Weekday{time.Monday}))
 		},
 	)
 
@@ -166,14 +198,30 @@ var _ = Describe("adaptSchedule", func() {
 		Expect(err.Error()).To(ContainSubstring("unknown recurrence"))
 	})
 
-	It("returns error for unknown weekday", func() {
+	It("returns error for unknown weekday (single-string path)", func() {
 		cr := &v1.Schedule{
 			ObjectMeta: metav1.ObjectMeta{Name: "test-slug"},
 			Spec: v1.ScheduleSpec{
 				Title: "Test",
 				Schedule: v1.ScheduleTrigger{
 					Recurrence: "Weekday",
-					Weekday:    v1.WeekdayList{"Funday"},
+					Weekday:    "Funday",
+				},
+			},
+		}
+		_, err := store.AdaptScheduleForTest(ctx, cr)
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("unknown weekday"))
+	})
+
+	It("returns error for unknown weekday (list path)", func() {
+		cr := &v1.Schedule{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-slug"},
+			Spec: v1.ScheduleSpec{
+				Title: "Test",
+				Schedule: v1.ScheduleTrigger{
+					Recurrence: "Weekday",
+					Weekdays:   []string{"Funday"},
 				},
 			},
 		}

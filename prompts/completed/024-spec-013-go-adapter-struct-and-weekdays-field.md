@@ -1,8 +1,12 @@
 ---
-status: approved
+status: completed
 spec: [013-bug-weekday-oneof-not-structural]
+container: recurring-task-creator-weekday-list-exec-024-spec-013-go-adapter-struct-and-weekdays-field
+dark-factory-version: v0.182.0
 created: "2026-06-25T08:11:00Z"
 queued: "2026-06-25T08:15:54Z"
+started: "2026-06-25T08:28:52Z"
+completed: "2026-06-25T08:37:02Z"
 ---
 
 <summary>

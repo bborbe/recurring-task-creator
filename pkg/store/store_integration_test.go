@@ -53,7 +53,7 @@ var _ = Describe("ScheduleStore", func() {
 					Title: "Valid Task",
 					Schedule: v1.ScheduleTrigger{
 						Recurrence: "Weekday",
-						Weekday:    v1.WeekdayList{"Friday"},
+						Weekday:    "Friday",
 					},
 					Template: v1.ScheduleTemplate{Body: "some body"},
 				},
