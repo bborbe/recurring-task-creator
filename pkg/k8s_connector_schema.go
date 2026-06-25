@@ -145,8 +145,9 @@ func scheduleTriggerSchema() apiextensionsv1.JSONSchemaProps {
 				MaxItems:    ptrInt64(7),
 				Items: &apiextensionsv1.JSONSchemaPropsOrArray{
 					Schema: &apiextensionsv1.JSONSchemaProps{
-						Type: "string",
-						Enum: jsonEnumValues(weekdayAllEnum),
+						Type:      "string",
+						MaxLength: ptrInt64(9),
+						Enum:      jsonEnumValues(weekdayAllEnum),
 					},
 				},
 			},
