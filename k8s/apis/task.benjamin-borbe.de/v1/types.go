@@ -8,7 +8,7 @@
 package v1
 
 import (
-	lib "github.com/bborbe/agent/lib"
+	lib "github.com/bborbe/agent"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -94,7 +94,7 @@ type ScheduleTemplate struct {
 	Body string `json:"body,omitempty"`
 
 	// Frontmatter is the YAML frontmatter of the generated vault file.
-	// Reuses lib.TaskFrontmatter from github.com/bborbe/agent/lib.
+	// Reuses lib.TaskFrontmatter from github.com/bborbe/agent.
 	Frontmatter lib.TaskFrontmatter `json:"frontmatter,omitempty"`
 }
 

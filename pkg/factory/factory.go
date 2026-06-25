@@ -8,7 +8,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/bborbe/agent/lib/command/task"
+	"github.com/bborbe/agent/command/task"
 	cqrsbase "github.com/bborbe/cqrs/base"
 	"github.com/bborbe/cqrs/cdb"
 	"github.com/bborbe/errors"

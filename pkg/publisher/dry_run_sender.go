@@ -7,7 +7,7 @@ package publisher
 import (
 	"context"
 
-	"github.com/bborbe/agent/lib/command/task"
+	"github.com/bborbe/agent/command/task"
 )
 
 // NewNoopSender returns a task.CreateCommandSender whose SendCommand

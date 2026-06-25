@@ -5,7 +5,7 @@
 package publisher
 
 import (
-	lib "github.com/bborbe/agent/lib"
+	lib "github.com/bborbe/agent"
 
 	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 )

@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"time"
 
-	lib "github.com/bborbe/agent/lib"
-	"github.com/bborbe/agent/lib/command/task"
-	taskmocks "github.com/bborbe/agent/lib/mocks"
+	lib "github.com/bborbe/agent"
+	"github.com/bborbe/agent/command/task"
+	taskmocks "github.com/bborbe/agent/mocks"
 	"github.com/bborbe/errors"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
