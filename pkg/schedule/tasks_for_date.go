@@ -12,8 +12,9 @@ package schedule
 //     RecurrenceQuarterly, RecurrenceYearly: always-fire (the entry
 //     fires on every day; this is the spec 006 always-fire semantic,
 //     preserved by spec 009).
-//   - RecurrenceWeekday: fires only on the day whose weekday equals
-//     the entry's Weekday field. Computed via date.Time().Weekday().
+//   - RecurrenceWeekday: fires only when date.Time().Weekday() is a
+//     member of the entry's Weekdays set. An empty Weekdays set never
+//     fires (the CRD CEL rule rejects empty lists at apply time).
 //
 // The result is NOT sorted; the caller may sort on Slug if a stable
 // order is required (the HTTP trigger handler does so for the response
@@ -25,7 +26,7 @@ package schedule
 // time.Time with a location.
 //
 // An empty defs slice yields an empty slice. A defs slice that contains
-// only RecurrenceWeekday entries whose Weekday does not match the
+// only RecurrenceWeekday entries whose Weekdays set does not include the
 // given date's weekday also yields an empty slice.
 func TasksForDate(defs []TaskDefinition, date Date) []TaskDefinition {
 	return filterInventoryByDate(defs, date)
@@ -42,8 +43,11 @@ func filterInventoryByDate(defs []TaskDefinition, date Date) []TaskDefinition {
 	for _, def := range defs {
 		switch def.Recurrence {
 		case RecurrenceWeekday:
-			if def.Weekday == dateWeekday {
-				out = append(out, def)
+			for _, wd := range def.Weekdays {
+				if wd == dateWeekday {
+					out = append(out, def)
+					break
+				}
 			}
 		default:
 			// Daily, Weekly, Monthly, Quarterly, Yearly — always-fire.

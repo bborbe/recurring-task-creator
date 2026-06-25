@@ -32,25 +32,16 @@ type TaskDefinition struct {
 	// Recurrence classifies the cadence (daily/weekly/monthly/quarterly/yearly).
 	Recurrence RecurrenceKind
 
-	// Weekday is the day of the week the entry is intended for. Its
-	// semantics depend on the entry's Recurrence:
-	//
-	//   - RecurrenceWeekday: REQUIRED (non-zero). The entry fires only on
-	//     the day whose weekday equals this value; the publisher appends
-	//     the lowercase 3-letter weekday abbreviation to the period token
-	//     (e.g. "2026W25-sat"). The disambiguation from RecurrenceWeekly
-	//     was introduced in spec 009.
-	//
-	//   - RecurrenceWeekly: FORBIDDEN (must be the zero value, time.Sunday).
-	//     The entry fires on every day inside its ISO week (always-fire
-	//     semantic introduced in spec 006); this field is not consulted.
-	//     The inventory contains zero RecurrenceWeekly entries after
-	//     spec 009 — the kind is reserved for future use.
-	//
-	//   - RecurrenceDaily / RecurrenceMonthly / RecurrenceQuarterly /
-	//     RecurrenceYearly: ignored. May be the zero value or any other
-	//     value without effect on firing or rendering.
-	Weekday time.Weekday
+	// Weekdays is the canonical set of weekdays a RecurrenceWeekday entry
+	// fires on. Non-empty for RecurrenceWeekday (one or more days); nil/empty
+	// and ignored for every other kind. Produced by the store adapter, which
+	// normalizes the CR's string-or-list weekday value (long or short form)
+	// to canonical time.Weekday values. The matcher (TasksForDate) fires the
+	// entry on any day whose weekday is in this set; the publisher's period
+	// token encodes the FIRING day's weekday (guaranteed in this set on a
+	// firing day), so a list {Monday,Wednesday,Friday} yields three distinct
+	// task files per ISO week, one per matching day.
+	Weekdays []time.Weekday
 
 	// Frontmatter is operator-defined YAML frontmatter stamped onto the
 	// generated vault file. Sourced from the `spec.template.frontmatter`

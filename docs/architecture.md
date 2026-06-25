@@ -76,6 +76,20 @@ Frozen invariants (any change requires a separate spec):
 - **Inventory shape is frozen** for `pkg/schedule` tests — fidelity asserted against the Jira-source for migration safety.
 - **Recurrence-kind enum is closed** — `daily`, `weekly`, `monthly`, `quarterly`, `yearly`. New kinds = new spec.
 
+## Schedule CR Weekday Field
+
+The `spec.schedule` trigger has two mutually exclusive weekday fields. Exactly one of `weekday` (single long-form day) or `weekdays` (non-empty list of at most 7 long-or-short day names) is required iff recurrence == `Weekday`; both fields are rejected on other recurrences. The CEL rule in the CRD schema enforces the exactly-one-of constraint at `kubectl apply` time.
+
+```yaml
+spec:
+  schedule:
+    recurrence: Weekday
+    weekday: Saturday  # one of {weekday, weekdays} required iff recurrence == Weekday
+# weekdays: [Mon, Wed, Fri]  # alternative: list form (short or long names mix)
+```
+
+Go-side, the store adapter reads from either field — both converge on the same `[]time.Weekday` output that the publisher consumes. Single-string CRs (`weekday: Saturday`) produce byte-identical UUID5 / period token / title / body to pre-list behavior.
+
 ## Time
 
 - Business logic never calls `time.Now()`. The clock is injected as `libtime.CurrentDateTimeGetter`.

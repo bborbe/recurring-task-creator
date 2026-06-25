@@ -5,8 +5,6 @@
 package publisher
 
 import (
-	"time"
-
 	"github.com/google/uuid"
 )
 
@@ -19,27 +17,3 @@ import (
 // If a future spec needs a new namespace, define a new constant alongside
 // this one with a distinct name and do not edit this one.
 var uuidNamespace uuid.UUID = uuid.MustParse("f4e1c5b7-3a82-4d59-9e7c-1c8b9d2e4f6a")
-
-// weekdayAbbrev returns the lowercase 3-letter abbreviation of w
-// (e.g. "mon" for Monday, "sun" for Sunday). Used by PeriodTokenBuilder
-// to encode the weekday suffix in the weekly period token. All seven
-// values are spelled per the conventional time package abbreviations.
-func weekdayAbbrev(w time.Weekday) string {
-	switch w {
-	case time.Monday:
-		return "mon"
-	case time.Tuesday:
-		return "tue"
-	case time.Wednesday:
-		return "wed"
-	case time.Thursday:
-		return "thu"
-	case time.Friday:
-		return "fri"
-	case time.Saturday:
-		return "sat"
-	case time.Sunday:
-		return "sun"
-	}
-	return ""
-}

@@ -95,7 +95,7 @@ var _ = Describe("CreateTriggerHandler", func() {
 				Slug:          "sat-task",
 				TitleTemplate: "Sat",
 				Recurrence:    schedule.RecurrenceWeekday,
-				Weekday:       time.Saturday,
+				Weekdays:      []time.Weekday{time.Saturday},
 			},
 			{
 				Slug:          "monthly-task",

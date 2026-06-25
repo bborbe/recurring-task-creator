@@ -15,14 +15,21 @@ import (
 	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 )
 
+// weekdayByName parses the 14 accepted day strings (long + short forms)
+// the CRD admits for `weekday` and `weekdays` into Go time.Weekday values.
+//
+// MAINTENANCE COUPLING: keys must equal `weekdayAllEnum` in
+// pkg/k8s_connector_schema.go (and the CEL canonicalization map embedded
+// in `weekdayNoDuplicateRule`). Drift = admission accepts a string the
+// runtime can't parse, or a duplicate at admission that the publisher
+// then treats as distinct.
 var weekdayByName = map[string]time.Weekday{
-	"Sunday":    time.Sunday,
-	"Monday":    time.Monday,
-	"Tuesday":   time.Tuesday,
-	"Wednesday": time.Wednesday,
-	"Thursday":  time.Thursday,
-	"Friday":    time.Friday,
-	"Saturday":  time.Saturday,
+	"Sunday": time.Sunday, "Monday": time.Monday, "Tuesday": time.Tuesday,
+	"Wednesday": time.Wednesday, "Thursday": time.Thursday, "Friday": time.Friday,
+	"Saturday": time.Saturday,
+	"Sun":      time.Sunday, "Mon": time.Monday, "Tue": time.Tuesday,
+	"Wed": time.Wednesday, "Thu": time.Thursday, "Fri": time.Friday,
+	"Sat": time.Saturday,
 }
 
 func adaptSchedule(ctx context.Context, cr *v1.Schedule) (schedule.TaskDefinition, error) {
@@ -42,17 +49,30 @@ func adaptSchedule(ctx context.Context, cr *v1.Schedule) (schedule.TaskDefinitio
 		)
 	}
 
-	var weekday time.Weekday
-	if cr.Spec.Schedule.Weekday != "" {
-		wd, ok := weekdayByName[cr.Spec.Schedule.Weekday]
+	var names []string
+	switch {
+	case cr.Spec.Schedule.Weekday != "":
+		names = []string{cr.Spec.Schedule.Weekday}
+	case len(cr.Spec.Schedule.Weekdays) > 0:
+		names = cr.Spec.Schedule.Weekdays
+	}
+
+	var weekdays []time.Weekday
+	seen := map[time.Weekday]bool{}
+	for _, name := range names {
+		wd, ok := weekdayByName[name]
 		if !ok {
 			return schedule.TaskDefinition{}, errors.Errorf(
 				ctx,
-				"unknown weekday %q",
-				cr.Spec.Schedule.Weekday,
+				"unknown weekday %q in schedule %q",
+				name, cr.Name,
 			)
 		}
-		weekday = wd
+		if seen[wd] {
+			continue
+		}
+		seen[wd] = true
+		weekdays = append(weekdays, wd)
 	}
 
 	return schedule.TaskDefinition{
@@ -60,7 +80,7 @@ func adaptSchedule(ctx context.Context, cr *v1.Schedule) (schedule.TaskDefinitio
 		TitleTemplate: cr.Spec.Title,
 		BodyTemplate:  cr.Spec.Template.Body,
 		Recurrence:    kind,
-		Weekday:       weekday,
+		Weekdays:      weekdays,
 		Frontmatter:   cr.Spec.Template.Frontmatter,
 		PeriodOffset:  cr.Spec.Schedule.PeriodOffset,
 	}, nil

@@ -58,14 +58,20 @@ type ScheduleTrigger struct {
 	// scheduleSpecSchema.
 	Recurrence string `json:"recurrence"`
 
-	// Weekday is required when Recurrence == "Weekday"; forbidden otherwise.
-	// Values are time.Weekday.String() form: "Monday", "Tuesday", "Wednesday",
-	// "Thursday", "Friday", "Saturday", "Sunday". Encoded as the CEL rule in
-	// scheduleSpecSchema. The Go type is `string` (not `*string`) so JSON
-	// omits the field cleanly when unset; the schema's presence check is
-	// `has(self.weekday)`. Optionality is encoded by `omitempty` + the CEL
-	// rule — no separate `+optional` marker is needed.
+	// Weekday is a single weekday (long form Monday..Sunday). Set when
+	// Recurrence == "Weekday" and the schedule targets exactly one day;
+	// mutually exclusive with Weekdays (the CEL XOR rule in
+	// scheduleTriggerSchema enforces exactly-one-of on Weekday recurrence,
+	// neither otherwise). Normalized to a canonical time.Weekday Go-side by
+	// the store adapter.
 	Weekday string `json:"weekday,omitempty"`
+
+	// Weekdays is a non-empty list of weekdays (long form Monday..Sunday or
+	// short form Mon..Sun, mixable). Set when Recurrence == "Weekday" and the
+	// schedule targets multiple days; mutually exclusive with Weekday.
+	// Normalized and deduplicated to a canonical time.Weekday set Go-side by
+	// the store adapter.
+	Weekdays []string `json:"weekdays,omitempty"`
 
 	// PeriodOffset shifts the period-anchored token by N periods. Default 0
 	// (current period). Negative values name a prior period; positive values

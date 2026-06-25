@@ -49,7 +49,7 @@ var _ = Describe("Publisher", func() {
 				Slug:          "weekly-review",
 				TitleTemplate: "Weekly Review {{current_week}}",
 				Recurrence:    schedule.RecurrenceWeekday,
-				Weekday:       time.Saturday,
+				Weekdays:      []time.Weekday{time.Saturday},
 			}
 			Expect(pub.Publish(
 				context.Background(),
@@ -89,7 +89,7 @@ var _ = Describe("Publisher", func() {
 				Recurrence:    rec,
 			}
 			if rec == schedule.RecurrenceWeekday {
-				def.Weekday = time.Saturday
+				def.Weekdays = []time.Weekday{time.Saturday}
 			}
 			Expect(localPub.Publish(context.Background(), def, date)).To(Succeed())
 			_, cmd := localSender.SendCommandArgsForCall(0)
@@ -234,7 +234,7 @@ var _ = Describe("Publisher", func() {
 					Recurrence:    rec,
 				}
 				if rec == schedule.RecurrenceWeekday {
-					def.Weekday = time.Monday
+					def.Weekdays = []time.Weekday{time.Monday}
 				}
 				Expect(pub.Publish(context.Background(), def, date)).To(Succeed())
 				cmd := capture()
@@ -281,18 +281,18 @@ var _ = Describe("Publisher", func() {
 		)
 
 		It("weekday: byte-equality with the formatter output (with weekday suffix)", func() {
-			// 2025-06-09 (Mon) is in ISO 2025W24; with Weekday=time.Saturday
-			// the period token must be "2025W24-sat".
+			// 2025-06-14 (Sat) is in ISO 2025W24; with Weekdays={time.Saturday}
+			// the period token must be "2025W24-sat" (firing date drives the abbrev).
 			def := schedule.TaskDefinition{
 				Slug:          "byte-eq-weekday",
 				TitleTemplate: "t",
 				Recurrence:    schedule.RecurrenceWeekday,
-				Weekday:       time.Saturday,
+				Weekdays:      []time.Weekday{time.Saturday},
 			}
 			Expect(pub.Publish(
 				context.Background(),
 				def,
-				schedule.NewDate(2025, time.June, 9),
+				schedule.NewDate(2025, time.June, 14),
 			)).To(Succeed())
 			cmd := capture()
 			expected := "recurring-byte-eq-weekday-2025W24-sat"
@@ -327,30 +327,53 @@ var _ = Describe("Publisher", func() {
 		})
 	})
 
-	It(
-		"buildPeriodToken: weekday token carries the entry's Weekday, not the date's weekday",
-		func() {
-			// 2026-06-17 is a Wednesday, in ISO 2026W25. With Weekday=time.Saturday
-			// on the def, the period token must be "2026W25-sat" (NOT "2026W25-wed").
-			def := schedule.TaskDefinition{
-				Slug:          "weekday-takes-precedence",
-				TitleTemplate: "t",
-				Recurrence:    schedule.RecurrenceWeekday,
-				Weekday:       time.Saturday,
-			}
-			Expect(pub.Publish(
-				context.Background(),
-				def,
-				schedule.NewDate(2026, time.June, 17),
-			)).To(Succeed())
-			captured := capture()
-			expected := uuid.NewSHA1(
+	It("weekday token encodes the firing day's weekday (multi-day set fires per day)", func() {
+		// 2026W25: Mon 2026-06-15, Wed 2026-06-17, Fri 2026-06-19.
+		// A [Mon,Wed,Fri] set fires on each, producing -mon/-wed/-fri tokens.
+		localSender := &taskmocks.TaskCreateCommandSender{}
+		localSender.SendCommandReturns(nil)
+		localPub := publisher.NewPublisher(
+			localSender,
+			publisher.NewRenderer(),
+			publisher.NewFrontmatterFormatter(publisher.NewRenderer()),
+			publisher.NewTaskIdentifierCreator(publisher.NewPeriodTokenBuilder()),
+			false,
+		)
+		def := schedule.TaskDefinition{
+			Slug:          "swing-trade",
+			TitleTemplate: "t",
+			Recurrence:    schedule.RecurrenceWeekday,
+			Weekdays:      []time.Weekday{time.Monday, time.Wednesday, time.Friday},
+		}
+		firingDates := []struct {
+			date schedule.Date
+			tok  string
+		}{
+			{schedule.NewDate(2026, time.June, 15), "2026W25-mon"},
+			{schedule.NewDate(2026, time.June, 17), "2026W25-wed"},
+			{schedule.NewDate(2026, time.June, 19), "2026W25-fri"},
+		}
+		for _, tc := range firingDates {
+			Expect(localPub.Publish(context.Background(), def, tc.date)).To(Succeed())
+		}
+		Expect(localSender.SendCommandCallCount()).To(Equal(3))
+		identifiers := make([]string, 3)
+		for i, tc := range firingDates {
+			_, cmd := localSender.SendCommandArgsForCall(i)
+			want := uuid.NewSHA1(
 				publisher.UuidNamespaceForTest(),
-				[]byte("recurring-weekday-takes-precedence-2026W25-sat"),
+				[]byte("recurring-swing-trade-"+tc.tok),
 			).String()
-			Expect(string(captured.TaskIdentifier)).To(Equal(expected))
-		},
-	)
+			Expect(
+				string(cmd.TaskIdentifier),
+			).To(Equal(want), "firing date %v token %s", tc.date, tc.tok)
+			identifiers[i] = string(cmd.TaskIdentifier)
+		}
+		// Three distinct UUID5s per ISO week — one per firing day.
+		Expect(identifiers[0]).NotTo(Equal(identifiers[1]))
+		Expect(identifiers[1]).NotTo(Equal(identifiers[2]))
+		Expect(identifiers[0]).NotTo(Equal(identifiers[2]))
+	})
 
 	It("non-weekly kinds ignore the Weekday field (token is identical to Spec 6)", func() {
 		for _, c := range []struct {
@@ -363,12 +386,12 @@ var _ = Describe("Publisher", func() {
 			{schedule.RecurrenceQuarterly, schedule.NewDate(2025, time.April, 1), "2025Q2"},
 			{schedule.RecurrenceYearly, schedule.NewDate(2025, time.January, 1), "2025"},
 		} {
-			// Weekday deliberately non-zero to prove it is ignored for non-weekly kinds.
+			// Weekdays deliberately set to prove it is ignored for non-weekday kinds.
 			def := schedule.TaskDefinition{
 				Slug:          "non-weekly-" + string(c.rec),
 				TitleTemplate: "t",
 				Recurrence:    c.rec,
-				Weekday:       time.Wednesday,
+				Weekdays:      []time.Weekday{time.Wednesday},
 			}
 			// Use a fresh sender per iteration so SendCommandArgsForCall(0)
 			// always points at the most recent Publish.
@@ -548,13 +571,13 @@ var _ = Describe("Publisher", func() {
 				Slug:          "weekday-sat-1",
 				TitleTemplate: "Shutdown K3s",
 				Recurrence:    schedule.RecurrenceWeekday,
-				Weekday:       time.Saturday,
+				Weekdays:      []time.Weekday{time.Saturday},
 			}
-			// 2026-06-17 is a Wednesday in ISO 2026W25.
+			// 2026-06-20 is a Saturday in ISO 2026W25; token follows the firing date.
 			Expect(pub.Publish(
 				context.Background(),
 				def,
-				schedule.NewDate(2026, time.June, 17),
+				schedule.NewDate(2026, time.June, 20),
 			)).To(Succeed())
 			Expect(capture().Title).To(Equal("Shutdown K3s - 2026W25-sat"))
 		})
@@ -606,7 +629,7 @@ var _ = Describe("Publisher", func() {
 					Slug:          "kind-" + string(rec),
 					TitleTemplate: "Bare",
 					Recurrence:    rec,
-					Weekday:       time.Saturday,
+					Weekdays:      []time.Weekday{time.Saturday},
 				}
 				Expect(localPub.Publish(context.Background(), def, date)).To(Succeed())
 				_, cmd := localSender.SendCommandArgsForCall(0)
@@ -625,9 +648,10 @@ var _ = Describe("Publisher", func() {
 				"2026W25",
 			),
 			Entry(
+				// weekday firing date must be a Saturday (token follows firing date)
 				"weekday",
 				schedule.RecurrenceWeekday,
-				schedule.NewDate(2026, time.June, 17),
+				schedule.NewDate(2026, time.June, 20),
 				"2026W25-sat",
 			),
 			Entry(
@@ -760,10 +784,10 @@ var _ = Describe("Publisher", func() {
 				{Slug: "daily-x", TitleTemplate: "Daily", Recurrence: schedule.RecurrenceDaily},
 				{Slug: "weekly-x", TitleTemplate: "Weekly", Recurrence: schedule.RecurrenceWeekly},
 				{
-					Slug:          "weekday-sat",
-					TitleTemplate: "Sat Task",
+					Slug:          "weekday-mon",
+					TitleTemplate: "Mon Task",
 					Recurrence:    schedule.RecurrenceWeekday,
-					Weekday:       time.Saturday,
+					Weekdays:      []time.Weekday{time.Monday},
 				},
 				{
 					Slug:          "monthly-x",
@@ -912,7 +936,7 @@ var _ = Describe("Publisher", func() {
 					Slug:          "test-slug",
 					TitleTemplate: "t",
 					Recurrence:    schedule.RecurrenceWeekday,
-					Weekday:       time.Saturday,
+					Weekdays:      []time.Weekday{time.Saturday},
 					Frontmatter: lib.TaskFrontmatter{
 						"planned_date": "{{current_date}}",
 						"due_date":     "{{current_date}}",
@@ -1083,7 +1107,7 @@ var _ = Describe("Publisher", func() {
 					Recurrence:    kind,
 				}
 				if kind == schedule.RecurrenceWeekday {
-					def.Weekday = time.Saturday
+					def.Weekdays = []time.Weekday{time.Saturday}
 				}
 				Expect(pub.Publish(
 					context.Background(),
@@ -1290,7 +1314,7 @@ var _ = Describe("Publisher", func() {
 					Slug:          c.slug,
 					TitleTemplate: "t",
 					Recurrence:    c.recurrence,
-					Weekday:       c.weekday,
+					Weekdays:      []time.Weekday{c.weekday},
 				}
 				Expect(localPub.Publish(context.Background(), def, c.date)).To(Succeed())
 				_, cmd := localSender.SendCommandArgsForCall(0)
@@ -1322,5 +1346,23 @@ var _ = Describe("Publisher", func() {
 			Entry(fmt.Sprintf("%02d-%s", 19, cases[19].slug), cases[19]),
 			Entry(fmt.Sprintf("%02d-%s", 20, cases[20].slug), cases[20]),
 		)
+	})
+})
+
+var _ = Describe("PeriodTokenBuilder.Build error path: date weekday not in def.Weekdays", func() {
+	It("returns an error when the firing date is not in the definition's weekday set", func() {
+		// The publisher is expected to only call Build on a firing day (TasksForDate
+		// guarantees this). The Weekday case in Build defends against a programming
+		// error where the caller passes a non-firing date. Regression-lock the error path.
+		def := schedule.TaskDefinition{
+			Slug:       "bug-test-mismatch",
+			Recurrence: schedule.RecurrenceWeekday,
+			Weekdays:   []time.Weekday{time.Monday, time.Wednesday, time.Friday},
+		}
+		// 2026-06-23 is a Tuesday — not in {Mon, Wed, Fri}.
+		nonFiring := schedule.NewDate(2026, time.June, 23)
+		_, err := publisher.NewPeriodTokenBuilder().Build(context.Background(), def, nonFiring)
+		Expect(err).To(HaveOccurred(),
+			"Build must reject a date whose weekday is not in def.Weekdays")
 	})
 })

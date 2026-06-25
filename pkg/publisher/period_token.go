@@ -6,11 +6,46 @@ package publisher
 
 import (
 	"context"
+	"time"
 
 	"github.com/bborbe/errors"
 
 	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 )
+
+// weekdayInSet reports whether w appears in set.
+func weekdayInSet(w time.Weekday, set []time.Weekday) bool {
+	for _, s := range set {
+		if s == w {
+			return true
+		}
+	}
+	return false
+}
+
+// weekdayAbbrev returns the lowercase 3-letter abbreviation of w
+// (e.g. "mon" for Monday, "sun" for Sunday). Used to encode the weekday
+// suffix in the weekly period token. All seven values are spelled per the
+// conventional time package abbreviations.
+func weekdayAbbrev(w time.Weekday) string {
+	switch w {
+	case time.Monday:
+		return "mon"
+	case time.Tuesday:
+		return "tue"
+	case time.Wednesday:
+		return "wed"
+	case time.Thursday:
+		return "thu"
+	case time.Friday:
+		return "fri"
+	case time.Saturday:
+		return "sat"
+	case time.Sunday:
+		return "sun"
+	}
+	return ""
+}
 
 // PeriodToken is the period-anchored token string appended to a recurring
 // task's title and fed into the UUID5 identifier — "YYYY-MM-DD" for daily,
@@ -24,9 +59,10 @@ type PeriodToken string
 
 // PeriodTokenBuilder builds the period-anchored token for a given
 // (definition, date) pair. The token formula honors def.Recurrence,
-// def.Weekday (only meaningful for RecurrenceWeekday), and
 // def.PeriodOffset (only meaningful for the period-anchored kinds —
-// Monthly, Quarterly, Yearly).
+// Monthly, Quarterly, Yearly). For RecurrenceWeekday the weekday suffix
+// is derived from the firing date (guaranteed to be in def.Weekdays on
+// a firing day), not from a stored single value.
 type PeriodTokenBuilder interface {
 	// Build returns the period-anchored token for (def, date). An unknown
 	// RecurrenceKind is a build-time data error (closed enum, no valid
@@ -55,8 +91,16 @@ func (b *periodTokenBuilder) Build(
 		isoYear, isoWeek := base.ISOWeek()
 		return PeriodToken(fmtIsoWeek(isoYear, isoWeek)), nil
 	case schedule.RecurrenceWeekday:
+		dateWeekday := base.Weekday()
+		if !weekdayInSet(dateWeekday, def.Weekdays) {
+			return "", errors.Errorf(
+				ctx,
+				"PeriodTokenBuilder.Build: date weekday %s is not in schedule %q weekday set %v",
+				dateWeekday, def.Slug, def.Weekdays,
+			)
+		}
 		isoYear, isoWeek := base.ISOWeek()
-		return PeriodToken(fmtIsoWeek(isoYear, isoWeek) + "-" + weekdayAbbrev(def.Weekday)), nil
+		return PeriodToken(fmtIsoWeek(isoYear, isoWeek) + "-" + weekdayAbbrev(dateWeekday)), nil
 	case schedule.RecurrenceMonthly:
 		shifted := base.AddDate(0, def.PeriodOffset, 0)
 		return PeriodToken(fmtMonthYear(shifted.Year(), int(shifted.Month()))), nil

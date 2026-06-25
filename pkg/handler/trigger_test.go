@@ -29,13 +29,13 @@ var triggerTestDefs = []schedule.TaskDefinition{
 		Slug:          "sat-task",
 		TitleTemplate: "Sat Task",
 		Recurrence:    schedule.RecurrenceWeekday,
-		Weekday:       time.Saturday,
+		Weekdays:      []time.Weekday{time.Saturday},
 	},
 	{
 		Slug:          "sun-task",
 		TitleTemplate: "Sun Task",
 		Recurrence:    schedule.RecurrenceWeekday,
-		Weekday:       time.Sunday,
+		Weekdays:      []time.Weekday{time.Sunday},
 	},
 	{Slug: "monthly-task", TitleTemplate: "Monthly Task", Recurrence: schedule.RecurrenceMonthly},
 	{

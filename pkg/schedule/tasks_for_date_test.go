@@ -23,8 +23,16 @@ var _ = Describe("TasksForDate", func() {
 		defs = []schedule.TaskDefinition{
 			{Slug: "daily-x", Recurrence: schedule.RecurrenceDaily},
 			{Slug: "weekly-x", Recurrence: schedule.RecurrenceWeekly},
-			{Slug: "weekday-sat", Recurrence: schedule.RecurrenceWeekday, Weekday: time.Saturday},
-			{Slug: "weekday-sun", Recurrence: schedule.RecurrenceWeekday, Weekday: time.Sunday},
+			{
+				Slug:       "weekday-sat",
+				Recurrence: schedule.RecurrenceWeekday,
+				Weekdays:   []time.Weekday{time.Saturday},
+			},
+			{
+				Slug:       "weekday-sun",
+				Recurrence: schedule.RecurrenceWeekday,
+				Weekdays:   []time.Weekday{time.Sunday},
+			},
 			{Slug: "monthly-x", Recurrence: schedule.RecurrenceMonthly},
 		}
 	})
@@ -71,9 +79,13 @@ var _ = Describe("TasksForDate", func() {
 				{
 					Slug:       "weekday-sat",
 					Recurrence: schedule.RecurrenceWeekday,
-					Weekday:    time.Saturday,
+					Weekdays:   []time.Weekday{time.Saturday},
 				},
-				{Slug: "weekday-sun", Recurrence: schedule.RecurrenceWeekday, Weekday: time.Sunday},
+				{
+					Slug:       "weekday-sun",
+					Recurrence: schedule.RecurrenceWeekday,
+					Weekdays:   []time.Weekday{time.Sunday},
+				},
 			}
 			got := schedule.TasksForDate(
 				weekdayOnly,
@@ -85,8 +97,16 @@ var _ = Describe("TasksForDate", func() {
 
 	It("returns exactly the Sunday weekday entry on a Sunday for a weekday-only inventory", func() {
 		weekdayOnly := []schedule.TaskDefinition{
-			{Slug: "weekday-sat", Recurrence: schedule.RecurrenceWeekday, Weekday: time.Saturday},
-			{Slug: "weekday-sun", Recurrence: schedule.RecurrenceWeekday, Weekday: time.Sunday},
+			{
+				Slug:       "weekday-sat",
+				Recurrence: schedule.RecurrenceWeekday,
+				Weekdays:   []time.Weekday{time.Saturday},
+			},
+			{
+				Slug:       "weekday-sun",
+				Recurrence: schedule.RecurrenceWeekday,
+				Weekdays:   []time.Weekday{time.Sunday},
+			},
 		}
 		got := schedule.TasksForDate(
 			weekdayOnly,
@@ -105,7 +125,11 @@ var _ = Describe("TasksForDate", func() {
 
 	It("returns an empty slice when no weekday entry matches", func() {
 		weekdayOnly := []schedule.TaskDefinition{
-			{Slug: "weekday-sat", Recurrence: schedule.RecurrenceWeekday, Weekday: time.Saturday},
+			{
+				Slug:       "weekday-sat",
+				Recurrence: schedule.RecurrenceWeekday,
+				Weekdays:   []time.Weekday{time.Saturday},
+			},
 		}
 		got := schedule.TasksForDate(
 			weekdayOnly,
@@ -142,6 +166,32 @@ var _ = Describe("TasksForDate", func() {
 			}
 		}
 	})
+
+	DescribeTable(
+		"multi-day set fires on matching days across the week of 2026-06-22..28",
+		func(date schedule.Date, expectFires bool) {
+			multiDay := []schedule.TaskDefinition{
+				{
+					Slug:       "multi-mwf",
+					Recurrence: schedule.RecurrenceWeekday,
+					Weekdays:   []time.Weekday{time.Monday, time.Wednesday, time.Friday},
+				},
+			}
+			got := schedule.TasksForDate(multiDay, date)
+			if expectFires {
+				Expect(slugsOf(got)).To(ConsistOf("multi-mwf"))
+			} else {
+				Expect(got).To(BeEmpty())
+			}
+		},
+		Entry("Mon 2026-06-22 IN", schedule.NewDate(2026, time.June, 22), true),
+		Entry("Tue 2026-06-23 OUT", schedule.NewDate(2026, time.June, 23), false),
+		Entry("Wed 2026-06-24 IN", schedule.NewDate(2026, time.June, 24), true),
+		Entry("Thu 2026-06-25 OUT", schedule.NewDate(2026, time.June, 25), false),
+		Entry("Fri 2026-06-26 IN", schedule.NewDate(2026, time.June, 26), true),
+		Entry("Sat 2026-06-27 OUT", schedule.NewDate(2026, time.June, 27), false),
+		Entry("Sun 2026-06-28 OUT", schedule.NewDate(2026, time.June, 28), false),
+	)
 })
 
 func slugsOf(defs []schedule.TaskDefinition) []string {

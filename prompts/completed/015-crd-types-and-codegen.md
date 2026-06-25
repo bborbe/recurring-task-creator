@@ -1,6 +1,6 @@
 ---
 status: completed
-spec: ["011"]
+spec: [011-title-period-tokens-and-drop-recurring-frontmatter]
 summary: Added k8s/apis/task.benjamin-borbe.de/v1 Go types for the Schedule CRD (Schedule, ScheduleSpec, ScheduleStatus, ScheduleList, ScheduleTrigger, ScheduleTemplate, Placeholders), wired codegen via hack/update-codegen.sh sourcing kube_codegen.sh for clientset/informers/listers/applyconfiguration, added testdata/example.yaml fixture and a sigs.k8s.io/yaml round-trip test that uses UnmarshalStrict to reject unknown fields; make precommit passes; make generatek8s is idempotent.
 container: recurring-task-creator-crd-scaffolding-exec-015-crd-types-and-codegen
 dark-factory-version: v0.177.1
