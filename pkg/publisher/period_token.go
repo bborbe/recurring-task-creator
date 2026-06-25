@@ -6,11 +6,46 @@ package publisher
 
 import (
 	"context"
+	"time"
 
 	"github.com/bborbe/errors"
 
 	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 )
+
+// weekdayInSet reports whether w appears in set.
+func weekdayInSet(w time.Weekday, set []time.Weekday) bool {
+	for _, s := range set {
+		if s == w {
+			return true
+		}
+	}
+	return false
+}
+
+// weekdayAbbrev returns the lowercase 3-letter abbreviation of w
+// (e.g. "mon" for Monday, "sun" for Sunday). Used to encode the weekday
+// suffix in the weekly period token. All seven values are spelled per the
+// conventional time package abbreviations.
+func weekdayAbbrev(w time.Weekday) string {
+	switch w {
+	case time.Monday:
+		return "mon"
+	case time.Tuesday:
+		return "tue"
+	case time.Wednesday:
+		return "wed"
+	case time.Thursday:
+		return "thu"
+	case time.Friday:
+		return "fri"
+	case time.Saturday:
+		return "sat"
+	case time.Sunday:
+		return "sun"
+	}
+	return ""
+}
 
 // PeriodToken is the period-anchored token string appended to a recurring
 // task's title and fed into the UUID5 identifier — "YYYY-MM-DD" for daily,

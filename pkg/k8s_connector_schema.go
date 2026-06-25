@@ -35,6 +35,12 @@ var weekdayLongEnum = []string{
 // forms are normalized to long form Go-side at parse time (Prompt 2).
 // Locked in v1 — typos like "Satuday" or "FunDay" are rejected at the
 // API-server boundary by the item enum.
+//
+// MAINTENANCE COUPLING: every string in this list MUST also be a key in
+// `weekdayByName` in pkg/store/adapter.go (and vice versa). The CEL
+// canonicalization map embedded in `weekdayNoDuplicateRule` below also
+// mirrors this set. If you add a new accepted string here, update all
+// three sites or admission-time + runtime parsing will silently disagree.
 var weekdayAllEnum = []string{
 	"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
 	"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun",

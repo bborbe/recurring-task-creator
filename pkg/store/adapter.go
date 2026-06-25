@@ -15,6 +15,14 @@ import (
 	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 )
 
+// weekdayByName parses the 14 accepted day strings (long + short forms)
+// the CRD admits for `weekday` and `weekdays` into Go time.Weekday values.
+//
+// MAINTENANCE COUPLING: keys must equal `weekdayAllEnum` in
+// pkg/k8s_connector_schema.go (and the CEL canonicalization map embedded
+// in `weekdayNoDuplicateRule`). Drift = admission accepts a string the
+// runtime can't parse, or a duplicate at admission that the publisher
+// then treats as distinct.
 var weekdayByName = map[string]time.Weekday{
 	"Sunday": time.Sunday, "Monday": time.Monday, "Tuesday": time.Tuesday,
 	"Wednesday": time.Wednesday, "Thursday": time.Thursday, "Friday": time.Friday,

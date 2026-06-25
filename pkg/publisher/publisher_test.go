@@ -1348,3 +1348,21 @@ var _ = Describe("Publisher", func() {
 		)
 	})
 })
+
+var _ = Describe("PeriodTokenBuilder.Build error path: date weekday not in def.Weekdays", func() {
+	It("returns an error when the firing date is not in the definition's weekday set", func() {
+		// The publisher is expected to only call Build on a firing day (TasksForDate
+		// guarantees this). The Weekday case in Build defends against a programming
+		// error where the caller passes a non-firing date. Regression-lock the error path.
+		def := schedule.TaskDefinition{
+			Slug:       "bug-test-mismatch",
+			Recurrence: schedule.RecurrenceWeekday,
+			Weekdays:   []time.Weekday{time.Monday, time.Wednesday, time.Friday},
+		}
+		// 2026-06-23 is a Tuesday — not in {Mon, Wed, Fri}.
+		nonFiring := schedule.NewDate(2026, time.June, 23)
+		_, err := publisher.NewPeriodTokenBuilder().Build(context.Background(), def, nonFiring)
+		Expect(err).To(HaveOccurred(),
+			"Build must reject a date whose weekday is not in def.Weekdays")
+	})
+})
