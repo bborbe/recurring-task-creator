@@ -1,5 +1,5 @@
 ---
-status: verifying
+status: completed
 tags:
     - dark-factory
     - spec
@@ -7,6 +7,7 @@ approved: "2026-06-24T20:19:46Z"
 generating: "2026-06-24T20:20:24Z"
 prompted: "2026-06-24T20:56:15Z"
 verifying: "2026-06-24T21:40:49Z"
+completed: "2026-06-25T07:29:23Z"
 branch: dark-factory/weekday-list-and-short-forms
 ---
 
