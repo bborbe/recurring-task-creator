@@ -7,7 +7,7 @@ package publisher_test
 import (
 	"context"
 
-	"github.com/bborbe/agent/lib/command/task"
+	"github.com/bborbe/agent/command/task"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 

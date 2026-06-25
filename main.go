@@ -10,7 +10,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/bborbe/agent/lib/command/task"
+	"github.com/bborbe/agent/command/task"
 	cqrsbase "github.com/bborbe/cqrs/base"
 	cdb "github.com/bborbe/cqrs/cdb"
 	"github.com/bborbe/errors"

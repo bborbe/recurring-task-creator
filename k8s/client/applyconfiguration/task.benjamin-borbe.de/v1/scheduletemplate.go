@@ -19,7 +19,7 @@ limitations under the License.
 package v1
 
 import (
-	lib "github.com/bborbe/agent/lib"
+	lib "github.com/bborbe/agent"
 )
 
 // ScheduleTemplateApplyConfiguration represents a declarative configuration of the ScheduleTemplate type for use
@@ -30,7 +30,7 @@ type ScheduleTemplateApplyConfiguration struct {
 	// Body is raw markdown. Free-form; not validated.
 	Body *string `json:"body,omitempty"`
 	// Frontmatter is the YAML frontmatter of the generated vault file.
-	// Reuses lib.TaskFrontmatter from github.com/bborbe/agent/lib.
+	// Reuses lib.TaskFrontmatter from github.com/bborbe/agent.
 	Frontmatter *lib.TaskFrontmatter `json:"frontmatter,omitempty"`
 }
 

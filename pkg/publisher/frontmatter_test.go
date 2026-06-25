@@ -7,7 +7,7 @@ package publisher_test
 import (
 	"time"
 
-	lib "github.com/bborbe/agent/lib"
+	lib "github.com/bborbe/agent"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 

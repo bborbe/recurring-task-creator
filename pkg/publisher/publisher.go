@@ -8,7 +8,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/bborbe/agent/lib/command/task"
+	"github.com/bborbe/agent/command/task"
 	"github.com/bborbe/errors"
 	"github.com/golang/glog"
 
@@ -32,7 +32,7 @@ type Publisher interface {
 // identifierCreator. The sender is invoked exactly once per Publish call
 // (when inputs are valid). It validates the constructed command internally
 // — see task.CreateCommandSender.SendCommand in
-// github.com/bborbe/agent/lib/command/task. When dryRun is true, the
+// github.com/bborbe/agent/command/task. When dryRun is true, the
 // publisher logs the would-be CreateCommand and skips the sender call
 // (intended for local smoke-testing via cmd/run-once).
 func NewPublisher(
