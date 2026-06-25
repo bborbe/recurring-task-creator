@@ -16,15 +16,19 @@ func VaultPatternForTest() string { return vaultPattern }
 // RecurrenceEnumForTest returns the closed set of valid recurrence strings.
 func RecurrenceEnumForTest() []string { return recurrenceEnum }
 
-// WeekdayEnumForTest returns the closed set of valid weekday strings (14 values: long + short forms).
-func WeekdayEnumForTest() []string { return weekdayEnum }
+// WeekdayLongEnumForTest returns the closed set of valid strings for the
+// single `weekday` field (7 long forms).
+func WeekdayLongEnumForTest() []string { return weekdayLongEnum }
 
-// WeekdayRequiredIfWeekdayRuleForTest returns the CEL rule from XValidations[0].
-func WeekdayRequiredIfWeekdayRuleForTest() string { return weekdayRequiredIfWeekdayRule }
+// WeekdayAllEnumForTest returns the closed set of valid item strings for
+// the `weekdays` list field (14 long + short forms).
+func WeekdayAllEnumForTest() []string { return weekdayAllEnum }
 
-// WeekdayRequiredIfWeekdayMessageForTest returns the human-readable error
-// message the API server emits when the CEL rule fails.
-func WeekdayRequiredIfWeekdayMessageForTest() string { return weekdayRequiredIfWeekdayMessage }
+// WeekdayXorRuleForTest returns the CEL XOR rule from XValidations[0].
+func WeekdayXorRuleForTest() string { return weekdayXorRule }
+
+// WeekdayXorMessageForTest returns the operator-facing XOR error message.
+func WeekdayXorMessageForTest() string { return weekdayXorMessage }
 
 // VaultRegexForTest returns a pre-compiled *regexp.Regexp matching vaultPattern.
 // Used by the validation test's validateSpec helper.
@@ -41,12 +45,6 @@ func PeriodOffsetOnlyForPeriodKindsRuleForTest() string {
 func PeriodOffsetOnlyForPeriodKindsMessageForTest() string {
 	return periodOffsetOnlyForPeriodKindsMessage
 }
-
-// WeekdayListNonEmptyRuleForTest returns the CEL rule rejecting empty weekday lists.
-func WeekdayListNonEmptyRuleForTest() string { return weekdayListNonEmptyRule }
-
-// WeekdayListNonEmptyMessageForTest returns the operator-facing empty-list message.
-func WeekdayListNonEmptyMessageForTest() string { return weekdayListNonEmptyMessage }
 
 // WeekdayNoDuplicateRuleForTest returns the CEL rule rejecting duplicate weekday entries.
 func WeekdayNoDuplicateRuleForTest() string { return weekdayNoDuplicateRule }

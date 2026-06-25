@@ -19,12 +19,23 @@ import (
 // separate API contract).
 var recurrenceEnum = []string{"Daily", "Weekly", "Weekday", "Monthly", "Quarterly", "Yearly"}
 
-// weekdayEnum is the closed set of valid weekday strings on the CRD
-// wire. Both long forms (Monday..Sunday, matching time.Weekday.String())
-// and short forms (Mon..Sun) are accepted; short forms are normalized to
-// long form Go-side at parse time (Prompt 2). Locked in v1 — typos like
-// "Satuday" or "FunDay" are rejected at the API-server boundary.
-var weekdayEnum = []string{
+// weekdayLongEnum is the closed set of valid strings for the single
+// `weekday` field — 7 long forms only (Monday..Sunday, matching
+// time.Weekday.String()). This is the pre-Spec-012 enum, restored so a
+// single-day CR keeps its exact backward-compatible shape. Short forms
+// are NOT accepted on this field; multi-day or short-form usage moves to
+// the `weekdays` list field below.
+var weekdayLongEnum = []string{
+	"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
+}
+
+// weekdayAllEnum is the closed set of valid item strings for the new
+// `weekdays` list field — both long forms (Monday..Sunday) and short
+// forms (Mon..Sun), 14 strings total, freely mixable in one list. Short
+// forms are normalized to long form Go-side at parse time (Prompt 2).
+// Locked in v1 — typos like "Satuday" or "FunDay" are rejected at the
+// API-server boundary by the item enum.
+var weekdayAllEnum = []string{
 	"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
 	"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun",
 }
@@ -33,18 +44,19 @@ var weekdayEnum = []string{
 // Matches the slug convention used in pkg/schedule/inventory.go.
 const vaultPattern = "^[a-z][a-z0-9-]*$"
 
-// weekdayRequiredIfWeekdayRule is the CEL rule encoded in
-// schedule.XValidations. self is bound to the ScheduleTrigger object;
-// `has(self.weekday)` checks field presence (not just non-empty string
-// — this is the OpenAPI semantic). 'Weekday' is the recurrence kind
-// that targets a specific weekday (Spec 9); 'Weekly' (always-fire)
-// forbids the field.
-const weekdayRequiredIfWeekdayRule = "self.recurrence == 'Weekday' ? has(self.weekday) : !has(self.weekday)"
+// weekdayXorRule is the CEL rule encoded in schedule.XValidations. self
+// is bound to the ScheduleTrigger object. On 'Weekday' recurrence,
+// exactly one of weekday/weekdays must be set (XOR via inequality of the
+// two has() booleans). On every other recurrence kind, neither may be
+// set. This replaces the pre-Spec-012 single-field presence rule with a
+// two-field equivalent of the same intent.
+const weekdayXorRule = "self.recurrence == 'Weekday' ? " +
+	"(has(self.weekday) != has(self.weekdays)) : " +
+	"(!has(self.weekday) && !has(self.weekdays))"
 
-// weekdayRequiredIfWeekdayMessage is the human-readable error the API
-// server emits when the rule fails. Surfaced to the operator via
-// `kubectl apply` output.
-const weekdayRequiredIfWeekdayMessage = "weekday is required when recurrence is 'Weekday', and forbidden otherwise"
+// weekdayXorMessage is the human-readable error the API server emits
+// when the rule fails. Surfaced to the operator via kubectl apply output.
+const weekdayXorMessage = "exactly one of weekday or weekdays is required when recurrence is 'Weekday', and both are forbidden otherwise"
 
 // periodOffsetOnlyForPeriodKindsRule rejects non-zero periodOffset on
 // date-anchored recurrence kinds (Daily/Weekly/Weekday). Those kinds
@@ -57,29 +69,19 @@ const periodOffsetOnlyForPeriodKindsRule = "!has(self.periodOffset) || self.peri
 // for the rule above.
 const periodOffsetOnlyForPeriodKindsMessage = "periodOffset is only allowed for Monthly/Quarterly/Yearly recurrence"
 
-// weekdayListNonEmptyRule rejects an empty weekday list. Only applies
-// when weekday is present AND is a list; a single string is never empty
-// in this sense. self.weekday is the string-or-list union from the
-// OpenAPI OneOf branch.
-const weekdayListNonEmptyRule = "!has(self.weekday) || type(self.weekday) != list || size(self.weekday) > 0"
-
-// weekdayListNonEmptyMessage is the operator-facing error when an empty
-// weekday list is supplied.
-const weekdayListNonEmptyMessage = "weekday list must be non-empty"
-
-// weekdayNoDuplicateRule rejects a weekday list that names the same
+// weekdayNoDuplicateRule rejects a weekdays list that names the same
 // logical day twice, including cross-form duplicates ([Mon, Monday]).
 // Each entry is canonicalized to its long form via a literal map, then
-// the rule asserts the canonical list has no element appearing more than
-// once. Only applies when weekday is a list.
-const weekdayNoDuplicateRule = "!has(self.weekday) || type(self.weekday) != list || " +
-	"self.weekday.map(d, " +
+// the rule asserts each canonical value appears exactly once. Only
+// applies when weekdays is present.
+const weekdayNoDuplicateRule = "!has(self.weekdays) || type(self.weekdays) != list || " +
+	"self.weekdays.map(d, " +
 	"{'Mon':'Monday','Tue':'Tuesday','Wed':'Wednesday','Thu':'Thursday'," +
 	"'Fri':'Friday','Sat':'Saturday','Sun':'Sunday'," +
 	"'Monday':'Monday','Tuesday':'Tuesday','Wednesday':'Wednesday'," +
 	"'Thursday':'Thursday','Friday':'Friday','Saturday':'Saturday'," +
 	"'Sunday':'Sunday'}[d])" +
-	".all(c, self.weekday.map(d2, " +
+	".all(c, self.weekdays.map(d2, " +
 	"{'Mon':'Monday','Tue':'Tuesday','Wed':'Wednesday','Thu':'Thursday'," +
 	"'Fri':'Friday','Sat':'Saturday','Sun':'Sunday'," +
 	"'Monday':'Monday','Tuesday':'Tuesday','Wednesday':'Wednesday'," +
@@ -124,21 +126,18 @@ func scheduleTriggerSchema() apiextensionsv1.JSONSchemaProps {
 				Enum:        jsonEnumValues(recurrenceEnum),
 			},
 			"weekday": {
-				Description: "A single weekday or a non-empty list of weekdays. Each entry is one of the 14 accepted day strings (long form Monday..Sunday or short form Mon..Sun); the two forms may be mixed in one list. Required when recurrence is 'Weekday'; forbidden otherwise. Normalized to canonical time.Weekday values Go-side at parse time.",
-				OneOf: []apiextensionsv1.JSONSchemaProps{
-					{
+				Type:        "string",
+				Description: "A single weekday (long form Monday..Sunday). Required-XOR with weekdays when recurrence is 'Weekday'; both fields forbidden otherwise. Normalized to a canonical time.Weekday Go-side at parse time.",
+				Enum:        jsonEnumValues(weekdayLongEnum),
+			},
+			"weekdays": {
+				Type:        "array",
+				Description: "A non-empty list of weekdays. Each entry is one of the 14 accepted day strings (long form Monday..Sunday or short form Mon..Sun); the two forms may be mixed in one list. Required-XOR with weekday when recurrence is 'Weekday'; both fields forbidden otherwise. Normalized to canonical time.Weekday values Go-side at parse time.",
+				MinItems:    ptrInt64(1),
+				Items: &apiextensionsv1.JSONSchemaPropsOrArray{
+					Schema: &apiextensionsv1.JSONSchemaProps{
 						Type: "string",
-						Enum: jsonEnumValues(weekdayEnum),
-					},
-					{
-						Type:     "array",
-						MinItems: ptrInt64(1),
-						Items: &apiextensionsv1.JSONSchemaPropsOrArray{
-							Schema: &apiextensionsv1.JSONSchemaProps{
-								Type: "string",
-								Enum: jsonEnumValues(weekdayEnum),
-							},
-						},
+						Enum: jsonEnumValues(weekdayAllEnum),
 					},
 				},
 			},
@@ -150,12 +149,11 @@ func scheduleTriggerSchema() apiextensionsv1.JSONSchemaProps {
 			},
 		},
 		XValidations: apiextensionsv1.ValidationRules{
-			{Rule: weekdayRequiredIfWeekdayRule, Message: weekdayRequiredIfWeekdayMessage},
+			{Rule: weekdayXorRule, Message: weekdayXorMessage},
 			{
 				Rule:    periodOffsetOnlyForPeriodKindsRule,
 				Message: periodOffsetOnlyForPeriodKindsMessage,
 			},
-			{Rule: weekdayListNonEmptyRule, Message: weekdayListNonEmptyMessage},
 			{Rule: weekdayNoDuplicateRule, Message: weekdayNoDuplicateMessage},
 		},
 	}
