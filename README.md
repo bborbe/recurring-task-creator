@@ -129,11 +129,29 @@ DRY_RUN=true ./recurring-task-creator-run-once -logtostderr -v=2
 
 Skips Kafka init entirely (uses a noop sender); logs every `(slug, date, identifier)` triple the publisher *would* send. Use to verify a Schedule's behavior before deploying.
 
+## Cleanup cron
+
+`recurring-task-creator-cleanup` is a sibling binary that auto-aborts prior-period `in_progress` recurring-task instances via git-rest. It runs on an hourly cron (default `17 * * * *`, offset by 17 minutes from the publisher tick to avoid collision).
+
+```bash
+BRANCH=dev make -f Makefile.docker buca-cleanup   # build + push + apply cleanup STS
+```
+
+Env vars:
+
+| Variable | Required | Default | Purpose |
+|---|---|---|---|
+| `CLEANUP_CRON` | No | `17 * * * *` | Cron expression for cleanup tick |
+| `GIT_REST_URL` | Yes | — | Base URL of the git-rest HTTP service |
+| `GATEWAY_SECRET` | No | (empty) | `X-Gateway-Secret` header forwarded to git-rest |
+
 ## Repo layout
 
 | Path | Purpose |
 |---|---|
 | `main.go` + `cmd/run-once/main.go` | Long-lived service entry point + one-tick smoke binary |
+| `cmd/cleanup/main.go` | Long-lived cleanup cron binary (hourly, via git-rest) |
+| `cmd/cleanup-run-once/main.go` | One-tick smoke-test for the cleanup binary |
 | `pkg/k8s_connector.go` | Self-installing CRD (`SetupCustomResourceDefinition`) — get-or-create-or-update on every binary boot, 30s timeout |
 | `pkg/k8s_connector_schema.go` | The Go-built `JSONSchemaProps` (vault regex, recurrence enum, weekday enum, CEL rule) |
 | `pkg/store` | Informer-backed `ScheduleStore` — the only source of truth at tick time |
@@ -141,6 +159,7 @@ Skips Kafka init entirely (uses a noop sender); logs every `(slug, date, identif
 | `pkg/tick` | Hourly cron loop + Prometheus metrics |
 | `pkg/handler` | HTTP — `/healthz`, `/trigger?date=YYYY-MM-DD`, `/setloglevel/{n}`, `/metrics` |
 | `pkg/factory` | Composition root — `Create*` constructors that wire everything |
+| `pkg/cleanup` | Vault auto-abort logic — `Supersedance`, `VaultReader`, `VaultWriter`, git-rest HTTP client |
 | `pkg/schedule` | Internal types — `Date`, `RecurrenceKind`, `TaskDefinition`, `TasksForDate` |
 | `k8s/apis/task.benjamin-borbe.de/v1/` | CRD Go types (hand-written) + `zz_generated.deepcopy.go` |
 | `k8s/client/` | Generated typed clientset + informers + listers + applyconfiguration |

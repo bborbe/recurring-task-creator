@@ -33,10 +33,13 @@ The service has no direct knowledge of Obsidian, the vault, or Jira. It speaks o
 | `pkg/schedule` | The 45-entry recurring-task inventory + `Date` + `RecurrenceKind` + `TasksForDate(date)`. Pure data, no I/O, no clock. | stdlib only (`time` for calendar math) |
 | `pkg/publisher` | Builds `task.CreateCommand` from `(TaskDefinition, Date)`: renders templates, builds frontmatter, computes deterministic UUID5 identifier, sends via injected `task.CreateCommandSender`. Optional dry-run mode logs + skips send. | `pkg/schedule`, `agent/lib/command/task`, `bborbe/errors`, `glog` |
 | `pkg/tick` | Hourly cron loop. Reads clock (Europe/Berlin civil date), calls `schedule.TasksForDate`, publishes via `publisher.Publisher`. Emits Prometheus counter + gauge metrics. | `pkg/schedule`, `pkg/publisher`, `bborbe/time`, `prometheus` |
+| `pkg/cleanup` | Auto-abort of prior-period `in_progress` tasks via git-rest. `Supersedance` orchestrator + `VaultReader`/`VaultWriter` git-rest HTTP client. | `pkg/schedule`, `pkg/store`, `bborbe/time`, `prometheus` |
 | `pkg/handler` | HTTP handlers — `/healthz` JSON, `/trigger?date=YYYY-MM-DD` manual replay. | `pkg/publisher`, `pkg/schedule` |
-| `pkg/factory` | Composition root — `Create*` constructors that wire everything together. No business logic, no error return. | every other package |
+| `pkg/factory` | Composition root — `Create*` constructors that wire everything together. Includes `CreateCleanup` for the cleanup cron. No business logic, no error return. | every other package |
 | `main.go` | Server entry point. Long-lived HTTP + hourly tick. | `pkg/factory`, `pkg/publisher`, `pkg/tick` |
 | `cmd/run-once` | CLI entry point. Single-tick smoke-test. Same wiring, but exits after one tick. | same as `main.go` |
+| `cmd/cleanup` | Deployed cleanup cron binary. Hourly tick via `cron.NewExpressionCron`; reads/writes vault via git-rest; no HTTP server, no Kafka. | `pkg/factory`, `pkg/cleanup` |
+| `cmd/cleanup-run-once` | Local smoke-test CLI for the cleanup binary. Resolves Berlin civil date, runs one `Supersedance.Run` tick, exits. | same as `cmd/cleanup` |
 
 The dependency graph is a strict DAG: `schedule` ← `publisher` ← `tick` ← `factory` ← `main`, with `handler` consuming `schedule` + `publisher`. No cycles, no upward edges.
 

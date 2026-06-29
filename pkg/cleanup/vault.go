@@ -50,3 +50,10 @@ type VaultWriter interface {
 func IsVaultConflict(err error) bool {
 	return errors.Is(err, ErrVaultConflict)
 }
+
+// VaultClient combines VaultReader and VaultWriter into a single interface
+// so the factory can accept a single implementation.
+type VaultClient interface {
+	VaultReader
+	VaultWriter
+}

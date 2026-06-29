@@ -7,19 +7,25 @@ package factory
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/bborbe/agent/command/task"
 	cqrsbase "github.com/bborbe/cqrs/base"
 	"github.com/bborbe/cqrs/cdb"
+	"github.com/bborbe/cron"
 	"github.com/bborbe/errors"
 	libkafka "github.com/bborbe/kafka"
 	liblog "github.com/bborbe/log"
+	"github.com/bborbe/run"
+	libsentry "github.com/bborbe/sentry"
 	libtime "github.com/bborbe/time"
 
 	versioned "github.com/bborbe/recurring-task-creator/k8s/client/clientset/versioned"
 	externalversions "github.com/bborbe/recurring-task-creator/k8s/client/informers/externalversions"
+	"github.com/bborbe/recurring-task-creator/pkg/cleanup"
 	"github.com/bborbe/recurring-task-creator/pkg/handler"
 	"github.com/bborbe/recurring-task-creator/pkg/publisher"
+	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 	"github.com/bborbe/recurring-task-creator/pkg/store"
 	"github.com/bborbe/recurring-task-creator/pkg/tick"
 )
@@ -136,4 +142,43 @@ func CreateScheduleStore(
 	// touch the informer so the factory registers it before Start
 	_ = informerFactory.Task().V1().Schedules().Informer()
 	return informerFactory, store.NewScheduleStore(lister, namespace)
+}
+
+// CreateCleanup wires the cleanup orchestrator and the cron loop around it.
+// Pure plumbing: schedule store, vault client, clock, metrics, and the cron
+// expression. Returns a run.Runnable so the main binary can compose it
+// with run.CancelOnFirstFinish.
+func CreateCleanup(
+	sentryClient libsentry.Client,
+	currentTimeGetter libtime.CurrentDateTimeGetter,
+	scheduleStore store.ScheduleStore,
+	vaultClient cleanup.VaultClient,
+	metrics cleanup.Metrics,
+	cronExpr cron.Expression,
+) run.Runnable {
+	supersedance := &cleanup.Supersedance{
+		Store:        scheduleStore,
+		TokenBuilder: publisher.NewPeriodTokenBuilder(),
+		Reader:       vaultClient,
+		Writer:       vaultClient,
+		Metrics:      metrics,
+		Clock:        currentTimeGetter,
+	}
+	return cron.NewExpressionCron(
+		cronExpr,
+		run.Func(func(ctx context.Context) error {
+			now := currentTimeGetter.Now().Time()
+			berlinLoc, err := time.LoadLocation("Europe/Berlin")
+			if err != nil {
+				return errors.Wrap(ctx, err, "load Europe/Berlin location")
+			}
+			berlinNow := now.In(berlinLoc)
+			year, month, day := berlinNow.Date()
+			date := schedule.NewDate(year, month, day)
+			if err := supersedance.Run(ctx, date); err != nil {
+				sentryClient.CaptureException(err, nil, nil)
+			}
+			return nil
+		}),
+	)
 }

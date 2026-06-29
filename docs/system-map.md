@@ -85,6 +85,30 @@ Anything that emits `task.CreateCommand` onto the shared Kafka topic counts as a
 
 All producers use the same `task.CreateCommand` schema from `github.com/bborbe/agent/lib`. Downstream stages do not care which producer fired the event.
 
+## Cleanup cron
+
+`recurring-task-creator-cleanup` is a sibling binary to the publisher. It does NOT emit Kafka events — it reads and writes the vault directly via git-rest HTTP. On an hourly cron tick (default `17 * * * *`), it:
+
+1. Lists all `Schedule` CRs for today.
+2. For each schedule, computes the prior-period token.
+3. Checks whether the prior-period `in_progress` file exists AND the next-period file also exists.
+4. If both exist, rewrites the prior file's frontmatter to `status: aborted` / `phase: done` (merge-aware via re-read → mutate → write, with 409 detection).
+
+```
+   Schedule CRs
+        │ watch
+        ▼
+   recurring-task-creator-cleanup pod  ← hourly cron, no Kafka, no HTTP server
+        │ git-rest HTTP GET /files?prefix=<slug>
+        ▼
+   git-rest  ──► Obsidian vault git remote
+        │ git-rest HTTP PUT /files/<path>
+        ▲
+   (mutate prior in_progress file)
+```
+
+The cleanup binary shares the `Schedule` CRD informer with the publisher but has no other coupling to it.
+
 ## Task assignees
 
 Every task carries an `assignee:` frontmatter key. The executor's routing decision is binary:

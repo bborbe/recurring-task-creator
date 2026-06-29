@@ -1,8 +1,13 @@
 ---
-status: approved
+status: completed
 spec: [015-recurring-task-cleanup-cron]
+summary: Added recurring-task-creator-cleanup sibling binary with git-rest HTTP client, hourly cron loop, deployed StatefulSet, Makefile/Dockerfile multi-binary build, and docs
+execution_id: recurring-task-creator-cleanup-exec-028-spec-015-cleanup-binary-gitrest-sts
+dark-factory-version: v0.188.1
 created: "2026-06-29T19:45:00Z"
 queued: "2026-06-29T19:34:17Z"
+started: "2026-06-29T20:11:52Z"
+completed: "2026-06-29T20:32:58Z"
 branch: dark-factory/recurring-task-cleanup-cron
 ---
 
