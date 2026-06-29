@@ -27,17 +27,17 @@ var _ = Describe("FrontmatterFormatter", func() {
 
 	Describe("defaults + provenance", func() {
 		It("seeds status=in_progress and page_type=task when operator supplies nothing", func() {
-			fm := f.Format(lib.TaskFrontmatter{}, "test-slug", date)
+			fm := f.Format(lib.TaskFrontmatter{}, "test-slug", date, false)
 			Expect(fm).To(HaveKeyWithValue("status", "in_progress"))
 			Expect(fm).To(HaveKeyWithValue("page_type", "task"))
 			Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
-			Expect(fm).To(HaveLen(3))
+			Expect(fm).To(HaveLen(4))
 		})
 
 		It("force-sets created_by even when operator tries to override it", func() {
 			fm := f.Format(
 				lib.TaskFrontmatter{"created_by": "impersonator"},
-				"test-slug", date,
+				"test-slug", date, false,
 			)
 			Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
 		})
@@ -45,7 +45,7 @@ var _ = Describe("FrontmatterFormatter", func() {
 		It("lets operator override status + page_type defaults", func() {
 			fm := f.Format(
 				lib.TaskFrontmatter{"status": "draft", "page_type": "log"},
-				"test-slug", date,
+				"test-slug", date, false,
 			)
 			Expect(fm).To(HaveKeyWithValue("status", "draft"))
 			Expect(fm).To(HaveKeyWithValue("page_type", "log"))
@@ -59,7 +59,7 @@ var _ = Describe("FrontmatterFormatter", func() {
 			func(key, placeholder, expected string) {
 				fm := f.Format(
 					lib.TaskFrontmatter{key: placeholder},
-					"test-slug", date,
+					"test-slug", date, false,
 				)
 				Expect(fm).To(HaveKeyWithValue(key, expected))
 			},
@@ -77,7 +77,7 @@ var _ = Describe("FrontmatterFormatter", func() {
 		It("substitutes inside longer strings, not just bare placeholders", func() {
 			fm := f.Format(
 				lib.TaskFrontmatter{"note": "due by {{current_date}} (week {{current_week}})"},
-				"test-slug", date,
+				"test-slug", date, false,
 			)
 			Expect(fm).To(HaveKeyWithValue("note", "due by 2026-06-20 (week 2026W25)"))
 		})
@@ -85,7 +85,7 @@ var _ = Describe("FrontmatterFormatter", func() {
 		It("leaves strings without placeholders unchanged", func() {
 			fm := f.Format(
 				lib.TaskFrontmatter{"assignee": "alice", "category": "ops"},
-				"test-slug", date,
+				"test-slug", date, false,
 			)
 			Expect(fm).To(HaveKeyWithValue("assignee", "alice"))
 			Expect(fm).To(HaveKeyWithValue("category", "ops"))
@@ -98,7 +98,7 @@ var _ = Describe("FrontmatterFormatter", func() {
 					"goals":    []interface{}{"[[Goal A]]", "[[Goal B]]"},
 					"meta":     map[string]interface{}{"nested": "value"},
 				},
-				"test-slug", date,
+				"test-slug", date, false,
 			)
 			Expect(fm).To(HaveKeyWithValue("priority", 4))
 			Expect(fm).To(HaveKeyWithValue("goals", []interface{}{"[[Goal A]]", "[[Goal B]]"}))
@@ -113,9 +113,21 @@ var _ = Describe("FrontmatterFormatter", func() {
 				"priority":     4,
 				"assignee":     "alice",
 			}
-			fm1 := f.Format(input, "test-slug", date)
-			fm2 := f.Format(input, "test-slug", date)
+			fm1 := f.Format(input, "test-slug", date, false)
+			fm2 := f.Format(input, "test-slug", date, false)
 			Expect(fm1).To(Equal(fm2))
+		})
+	})
+
+	Describe("audit_style", func() {
+		It("stamps audit_style=true when auditStyle is true", func() {
+			fm := f.Format(lib.TaskFrontmatter{}, "test-slug", date, true)
+			Expect(fm).To(HaveKeyWithValue("audit_style", true))
+		})
+
+		It("stamps audit_style=false when auditStyle is false", func() {
+			fm := f.Format(lib.TaskFrontmatter{}, "test-slug", date, false)
+			Expect(fm).To(HaveKeyWithValue("audit_style", false))
 		})
 	})
 })

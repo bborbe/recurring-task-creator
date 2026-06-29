@@ -55,6 +55,15 @@ type ScheduleTriggerApplyConfiguration struct {
 	// scheduleSpecSchema (semantics undefined; date-anchored kinds don't
 	// have a meaningful period offset distinct from a date shift).
 	PeriodOffset *int `json:"periodOffset,omitempty"`
+	// SkipAutoCleanup, when true, fully exempts this Schedule from the
+	// cleanup cron's auto-abort of prior in-progress instances. Default
+	// (nil or false) means the Schedule is eligible for cleanup: the
+	// cleanup cron transitions a prior-period instance left
+	// `status: in_progress` to `status: aborted` once the next period's
+	// instance has materialized. Set true for audit-style schedules where
+	// each missed firing IS the signal and must be preserved. Pointer-to-bool
+	// so an unset field is distinguishable from an explicit false.
+	SkipAutoCleanup *bool `json:"skipAutoCleanup,omitempty"`
 }
 
 // ScheduleTriggerApplyConfiguration constructs a declarative configuration of the ScheduleTrigger type for use with
@@ -100,5 +109,15 @@ func (b *ScheduleTriggerApplyConfiguration) WithPeriodOffset(
 	value int,
 ) *ScheduleTriggerApplyConfiguration {
 	b.PeriodOffset = &value
+	return b
+}
+
+// WithSkipAutoCleanup sets the SkipAutoCleanup field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SkipAutoCleanup field is set to the value of the last call.
+func (b *ScheduleTriggerApplyConfiguration) WithSkipAutoCleanup(
+	value bool,
+) *ScheduleTriggerApplyConfiguration {
+	b.SkipAutoCleanup = &value
 	return b
 }

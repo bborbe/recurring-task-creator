@@ -83,5 +83,7 @@ func adaptSchedule(ctx context.Context, cr *v1.Schedule) (schedule.TaskDefinitio
 		Weekdays:      weekdays,
 		Frontmatter:   cr.Spec.Template.Frontmatter,
 		PeriodOffset:  cr.Spec.Schedule.PeriodOffset,
+		SkipAutoCleanup: cr.Spec.Schedule.SkipAutoCleanup != nil &&
+			*cr.Spec.Schedule.SkipAutoCleanup,
 	}, nil
 }

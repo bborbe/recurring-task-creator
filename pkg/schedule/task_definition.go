@@ -59,6 +59,14 @@ type TaskDefinition struct {
 	// Negative offsets name a prior period; the publisher's buildPeriodToken
 	// applies the shift to the fire date before formatting the token.
 	PeriodOffset int
+
+	// SkipAutoCleanup, when true, exempts this definition from the cleanup
+	// cron's auto-abort of prior in-progress instances. Default false
+	// (eligible). Sourced from the CR's spec.schedule.skipAutoCleanup
+	// (*bool → bool, default false on nil) by the store adapter. The
+	// publisher mirrors it onto the generated task's `audit_style`
+	// frontmatter key for operator cross-check.
+	SkipAutoCleanup bool
 }
 
 // The closed list of accepted placeholder tokens lives in

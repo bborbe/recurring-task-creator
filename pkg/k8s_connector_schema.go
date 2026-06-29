@@ -163,6 +163,12 @@ func scheduleTriggerSchema() apiextensionsv1.JSONSchemaProps {
 					"Use -1 for prior period (e.g. review-style schedules that fire on month-start but name " +
 					"the just-completed month). Only valid for Monthly/Quarterly/Yearly.",
 			},
+			"skipAutoCleanup": {
+				Type: "boolean",
+				Description: "When true, fully exempts this Schedule from the cleanup cron's auto-abort " +
+					"of prior in-progress instances. Default false (eligible for cleanup). Set true for " +
+					"audit-style schedules where each missed firing is the signal and must be preserved.",
+			},
 		},
 		XValidations: apiextensionsv1.ValidationRules{
 			{Rule: weekdayXorRule, Message: weekdayXorMessage},

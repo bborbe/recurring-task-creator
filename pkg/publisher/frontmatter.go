@@ -29,7 +29,16 @@ type FrontmatterFormatter interface {
 	// `slug` and `date` parameterize the placeholder render; `date` is
 	// the Berlin civil date the task fires for (the publisher converts
 	// wall-clock once at the tick boundary).
-	Format(operator lib.TaskFrontmatter, slug string, date schedule.Date) lib.TaskFrontmatter
+	// `auditStyle` mirrors the Schedule's SkipAutoCleanup flag and is
+	// stamped onto the frontmatter as `audit_style: <bool>` for operator
+	// cross-check (it is NOT a runtime control — the cleanup cron reads
+	// SkipAutoCleanup from the CR, not this stamped value).
+	Format(
+		operator lib.TaskFrontmatter,
+		slug string,
+		date schedule.Date,
+		auditStyle bool,
+	) lib.TaskFrontmatter
 }
 
 // NewFrontmatterFormatter returns the default FrontmatterFormatter that
@@ -48,6 +57,7 @@ func (f *frontmatterFormatter) Format(
 	operator lib.TaskFrontmatter,
 	slug string,
 	date schedule.Date,
+	auditStyle bool,
 ) lib.TaskFrontmatter {
 	out := lib.TaskFrontmatter{
 		"status":    "in_progress",
@@ -60,6 +70,7 @@ func (f *frontmatterFormatter) Format(
 		}
 		out[k] = v
 	}
+	out["audit_style"] = auditStyle
 	out["created_by"] = "recurring-task-creator"
 	return out
 }

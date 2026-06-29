@@ -313,4 +313,52 @@ var _ = Describe("adaptSchedule", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(def.PeriodOffset).To(Equal(0))
 	})
+
+	Describe("SkipAutoCleanup mapping", func() {
+		It("maps SkipAutoCleanup true when CR field points at true", func() {
+			cr := &v1.Schedule{
+				ObjectMeta: metav1.ObjectMeta{Name: "audit-style"},
+				Spec: v1.ScheduleSpec{
+					Title:    "Audit Task",
+					Schedule: v1.ScheduleTrigger{Recurrence: "Daily"},
+					Template: v1.ScheduleTemplate{Body: "B"},
+				},
+			}
+			ptrTrue := true
+			cr.Spec.Schedule.SkipAutoCleanup = &ptrTrue
+			def, err := store.AdaptScheduleForTest(ctx, cr)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(def.SkipAutoCleanup).To(BeTrue())
+		})
+
+		It("maps SkipAutoCleanup false when CR field points at false", func() {
+			cr := &v1.Schedule{
+				ObjectMeta: metav1.ObjectMeta{Name: "normal-schedule"},
+				Spec: v1.ScheduleSpec{
+					Title:    "Normal Task",
+					Schedule: v1.ScheduleTrigger{Recurrence: "Daily"},
+					Template: v1.ScheduleTemplate{Body: "B"},
+				},
+			}
+			ptrFalse := false
+			cr.Spec.Schedule.SkipAutoCleanup = &ptrFalse
+			def, err := store.AdaptScheduleForTest(ctx, cr)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(def.SkipAutoCleanup).To(BeFalse())
+		})
+
+		It("maps SkipAutoCleanup false when CR field is nil (absent)", func() {
+			cr := &v1.Schedule{
+				ObjectMeta: metav1.ObjectMeta{Name: "default-schedule"},
+				Spec: v1.ScheduleSpec{
+					Title:    "Default Task",
+					Schedule: v1.ScheduleTrigger{Recurrence: "Daily"},
+					Template: v1.ScheduleTemplate{Body: "B"},
+				},
+			}
+			def, err := store.AdaptScheduleForTest(ctx, cr)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(def.SkipAutoCleanup).To(BeFalse())
+		})
+	})
 })

@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+- feat: Add optional `skipAutoCleanup` boolean to the Schedule CRD; the publisher stamps `audit_style: <bool>` onto every generated task's frontmatter mirroring the flag.
+
 Please choose versions by [Semantic Versioning](http://semver.org/).
 
 * MAJOR version when you make incompatible API changes,

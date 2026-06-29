@@ -86,6 +86,16 @@ type ScheduleTrigger struct {
 	// scheduleSpecSchema (semantics undefined; date-anchored kinds don't
 	// have a meaningful period offset distinct from a date shift).
 	PeriodOffset int `json:"periodOffset,omitempty"`
+
+	// SkipAutoCleanup, when true, fully exempts this Schedule from the
+	// cleanup cron's auto-abort of prior in-progress instances. Default
+	// (nil or false) means the Schedule is eligible for cleanup: the
+	// cleanup cron transitions a prior-period instance left
+	// `status: in_progress` to `status: aborted` once the next period's
+	// instance has materialized. Set true for audit-style schedules where
+	// each missed firing IS the signal and must be preserved. Pointer-to-bool
+	// so an unset field is distinguishable from an explicit false.
+	SkipAutoCleanup *bool `json:"skipAutoCleanup,omitempty"`
 }
 
 // ScheduleTemplate is the body + frontmatter the generated task carries.

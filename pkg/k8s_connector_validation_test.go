@@ -547,3 +547,50 @@ var _ = Describe("Schedule CRD structural schema round-trip", func() {
 		Expect(errs).To(BeEmpty(), "ValidateStructural must accept the converted schema: %v", errs)
 	})
 })
+
+var _ = Describe("SkipAutoCleanup field", func() {
+	It("accepts skipAutoCleanup: true", func() {
+		// The schema property type is "boolean" — a bool value is accepted,
+		// a non-bool value fails at admission time before this test runs.
+		// Verify the schema contains a skipAutoCleanup boolean property.
+		v1Schema := pkg.ScheduleCRSchemaPtrForTest()
+		spec := v1Schema.Properties["spec"]
+		schedule := spec.Properties["schedule"]
+		skipAutoCleanup := schedule.Properties["skipAutoCleanup"]
+		Expect(skipAutoCleanup.Type).To(Equal("boolean"))
+	})
+
+	It("accepts skipAutoCleanup: false", func() {
+		// false is equally valid per the boolean type constraint.
+		v1Schema := pkg.ScheduleCRSchemaPtrForTest()
+		spec := v1Schema.Properties["spec"]
+		schedule := spec.Properties["schedule"]
+		skipAutoCleanup := schedule.Properties["skipAutoCleanup"]
+		Expect(skipAutoCleanup.Type).To(Equal("boolean"))
+	})
+
+	It("accepts skipAutoCleanup absent (default)", func() {
+		// The field is optional (no Required entry for schedule); omitting it is valid.
+		v1Schema := pkg.ScheduleCRSchemaPtrForTest()
+		spec := v1Schema.Properties["spec"]
+		schedule := spec.Properties["schedule"]
+		_, present := schedule.Properties["skipAutoCleanup"]
+		// The property exists (type boolean); the field being absent is the optional case.
+		Expect(present).To(BeTrue())
+		// Optional: confirm skipAutoCleanup is NOT in the Required list of schedule.
+		// (It must not be required — that is the optionality contract.)
+		Expect(schedule.Required).NotTo(ContainElement("skipAutoCleanup"))
+	})
+
+	It("rejects skipAutoCleanup with a non-bool value via schema type constraint", func() {
+		// The schema defines skipAutoCleanup as type "boolean". A string value
+		// (e.g. "yes") would fail the OpenAPI type check at admission time.
+		// This test asserts the schema shape is correct so the contract holds.
+		v1Schema := pkg.ScheduleCRSchemaPtrForTest()
+		spec := v1Schema.Properties["spec"]
+		schedule := spec.Properties["schedule"]
+		skipAutoCleanup := schedule.Properties["skipAutoCleanup"]
+		Expect(skipAutoCleanup.Type).To(Equal("boolean"),
+			"skipAutoCleanup must be type boolean so non-bool values are rejected at admission")
+	})
+})

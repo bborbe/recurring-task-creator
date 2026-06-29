@@ -844,7 +844,7 @@ var _ = Describe("Publisher", func() {
 				Expect(fm).To(HaveKeyWithValue("status", "in_progress"))
 				Expect(fm).To(HaveKeyWithValue("page_type", "task"))
 				Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
-				Expect(fm).To(HaveLen(3))
+				Expect(fm).To(HaveLen(4))
 				Expect(fm).NotTo(HaveKey("recurring"))
 			},
 		)
@@ -876,7 +876,7 @@ var _ = Describe("Publisher", func() {
 				Expect(fm).To(HaveKeyWithValue("status", "in_progress"))
 				Expect(fm).To(HaveKeyWithValue("page_type", "task"))
 				Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
-				Expect(fm).To(HaveLen(7))
+				Expect(fm).To(HaveLen(8))
 			},
 		)
 
@@ -901,7 +901,7 @@ var _ = Describe("Publisher", func() {
 				Expect(fm).To(HaveKeyWithValue("status", "draft"))
 				Expect(fm).To(HaveKeyWithValue("page_type", "log"))
 				Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
-				Expect(fm).To(HaveLen(3))
+				Expect(fm).To(HaveLen(4))
 			},
 		)
 
@@ -925,7 +925,7 @@ var _ = Describe("Publisher", func() {
 				Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
 				Expect(fm).To(HaveKeyWithValue("status", "in_progress"))
 				Expect(fm).To(HaveKeyWithValue("page_type", "task"))
-				Expect(fm).To(HaveLen(3))
+				Expect(fm).To(HaveLen(4))
 			},
 		)
 
