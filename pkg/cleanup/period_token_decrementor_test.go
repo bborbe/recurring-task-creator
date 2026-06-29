@@ -108,18 +108,30 @@ var _ = Describe("PriorPeriodToken", func() {
 		),
 
 		// Quarterly: 2026-Q2 (Apr-Jun) → Q1 (Jan-Mar)
-		Entry("RecurrenceQuarterly 2026-06 → 2026Q1",
-			schedule.TaskDefinition{Slug: "quarterly-task", Recurrence: schedule.RecurrenceQuarterly},
+		Entry(
+			"RecurrenceQuarterly 2026-06 → 2026Q1",
+			schedule.TaskDefinition{
+				Slug:       "quarterly-task",
+				Recurrence: schedule.RecurrenceQuarterly,
+			},
 			schedule.NewDate(2026, time.June, 29),
 			"2026Q1",
 		),
-		Entry("RecurrenceQuarterly 2026-04 → 2026Q1",
-			schedule.TaskDefinition{Slug: "quarterly-task", Recurrence: schedule.RecurrenceQuarterly},
+		Entry(
+			"RecurrenceQuarterly 2026-04 → 2026Q1",
+			schedule.TaskDefinition{
+				Slug:       "quarterly-task",
+				Recurrence: schedule.RecurrenceQuarterly,
+			},
 			schedule.NewDate(2026, time.April, 1),
 			"2026Q1",
 		),
-		Entry("RecurrenceQuarterly 2026-01 → 2025Q4",
-			schedule.TaskDefinition{Slug: "quarterly-task", Recurrence: schedule.RecurrenceQuarterly},
+		Entry(
+			"RecurrenceQuarterly 2026-01 → 2025Q4",
+			schedule.TaskDefinition{
+				Slug:       "quarterly-task",
+				Recurrence: schedule.RecurrenceQuarterly,
+			},
 			schedule.NewDate(2026, time.January, 15),
 			"2025Q4",
 		),

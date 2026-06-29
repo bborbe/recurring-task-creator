@@ -1,11 +1,12 @@
 ---
-status: prompted
+status: verifying
 tags:
     - dark-factory
     - spec
 approved: "2026-06-29T17:21:44Z"
 generating: "2026-06-29T17:29:46Z"
 prompted: "2026-06-29T17:41:09Z"
+verifying: "2026-06-29T20:32:58Z"
 branch: dark-factory/recurring-task-cleanup-cron
 ---
 

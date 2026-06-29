@@ -35,7 +35,12 @@ func PriorPeriodToken(
 
 // shiftPriorDate returns the civil date of the period immediately before currentDate
 // for the given recurrence kind.
-func shiftPriorDate(ctx context.Context, kind schedule.RecurrenceKind, weekdays []time.Weekday, currentDate schedule.Date) (schedule.Date, error) {
+func shiftPriorDate(
+	ctx context.Context,
+	kind schedule.RecurrenceKind,
+	weekdays []time.Weekday,
+	currentDate schedule.Date,
+) (schedule.Date, error) {
 	t := currentDate.Time()
 	switch kind {
 	case schedule.RecurrenceDaily:
@@ -49,7 +54,12 @@ func shiftPriorDate(ctx context.Context, kind schedule.RecurrenceKind, weekdays 
 				return schedule.NewDate(candidate.Year(), candidate.Month(), candidate.Day()), nil
 			}
 		}
-		return schedule.Date{}, errors.Errorf(ctx, "shiftPriorDate: weekday set %v produced no valid firing day in the 7 days before %v", weekdays, currentDate)
+		return schedule.Date{}, errors.Errorf(
+			ctx,
+			"shiftPriorDate: weekday set %v produced no valid firing day in the 7 days before %v",
+			weekdays,
+			currentDate,
+		)
 	case schedule.RecurrenceWeekly:
 		prior := t.AddDate(0, 0, -7)
 		return schedule.NewDate(prior.Year(), prior.Month(), prior.Day()), nil
@@ -63,7 +73,11 @@ func shiftPriorDate(ctx context.Context, kind schedule.RecurrenceKind, weekdays 
 		prior := t.AddDate(-1, 0, 0)
 		return schedule.NewDate(prior.Year(), prior.Month(), prior.Day()), nil
 	default:
-		return schedule.Date{}, errors.Errorf(ctx, "shiftPriorDate: unknown recurrence kind %q", kind)
+		return schedule.Date{}, errors.Errorf(
+			ctx,
+			"shiftPriorDate: unknown recurrence kind %q",
+			kind,
+		)
 	}
 }
 

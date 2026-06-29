@@ -33,12 +33,12 @@ func main() {
 }
 
 type application struct {
-	SentryDSN     string `required:"false" arg:"sentry-dsn"      env:"SENTRY_DSN"        usage:"SentryDSN"                                                        display:"length"`
-	SentryProxy   string `required:"false" arg:"sentry-proxy"    env:"SENTRY_PROXY"      usage:"Sentry Proxy"`
-	Namespace     string `required:"true"  arg:"namespace"       env:"NAMESPACE"         usage:"Pod namespace for Schedule CR watch"`
-	GitRestURL    string `required:"true"  arg:"git-rest-url"    env:"GIT_REST_URL"      usage:"Base URL of the git-rest HTTP service (e.g. http://git-rest:8080)"`
-	GatewaySecret string `required:"false" arg:"gateway-secret"  env:"GATEWAY_SECRET"    usage:"X-Gateway-Secret forwarded to git-rest"                             display:"length"`
-	CleanupCron   string `required:"false" arg:"cleanup-cron"    env:"CLEANUP_CRON"      usage:"Cron expression for the cleanup tick (default '17 * * * *')"             default:"17 * * * *"`
+	SentryDSN     string `required:"false" arg:"sentry-dsn"     env:"SENTRY_DSN"     usage:"SentryDSN"                                                         display:"length"`
+	SentryProxy   string `required:"false" arg:"sentry-proxy"   env:"SENTRY_PROXY"   usage:"Sentry Proxy"`
+	Namespace     string `required:"true"  arg:"namespace"      env:"NAMESPACE"      usage:"Pod namespace for Schedule CR watch"`
+	GitRestURL    string `required:"true"  arg:"git-rest-url"   env:"GIT_REST_URL"   usage:"Base URL of the git-rest HTTP service (e.g. http://git-rest:8080)"`
+	GatewaySecret string `required:"false" arg:"gateway-secret" env:"GATEWAY_SECRET" usage:"X-Gateway-Secret forwarded to git-rest"                            display:"length"`
+	CleanupCron   string `required:"false" arg:"cleanup-cron"   env:"CLEANUP_CRON"   usage:"Cron expression for the cleanup tick (default '17 * * * *')"                        default:"17 * * * *"`
 }
 
 func (a *application) Run(ctx context.Context, sentryClient libsentry.Client) error {

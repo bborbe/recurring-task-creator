@@ -17,7 +17,10 @@ func TestGitRestClient_GetFile(t *testing.T) {
 	t.Run("successful GET", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Header.Get("X-Gateway-Secret") != "my-secret" {
-				t.Errorf("expected X-Gateway-Secret header, got %q", r.Header.Get("X-Gateway-Secret"))
+				t.Errorf(
+					"expected X-Gateway-Secret header, got %q",
+					r.Header.Get("X-Gateway-Secret"),
+				)
 			}
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("file content"))
@@ -67,7 +70,10 @@ func TestGitRestClient_GetFile(t *testing.T) {
 	t.Run("gateway secret omitted when empty", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Header.Get("X-Gateway-Secret") != "" {
-				t.Errorf("expected no X-Gateway-Secret header, got %q", r.Header.Get("X-Gateway-Secret"))
+				t.Errorf(
+					"expected no X-Gateway-Secret header, got %q",
+					r.Header.Get("X-Gateway-Secret"),
+				)
 			}
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("content"))
@@ -89,7 +95,9 @@ func TestGitRestClient_ListFiles(t *testing.T) {
 				"files": []string{"file1.md", "file2.md"},
 			}
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(resp)
+			if err := json.NewEncoder(w).Encode(resp); err != nil {
+				t.Errorf("encode response: %v", err)
+			}
 		}))
 		defer srv.Close()
 

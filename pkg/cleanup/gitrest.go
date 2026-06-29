@@ -40,6 +40,7 @@ func NewGitRestClient(httpClient *http.Client, baseURL, gatewaySecret string) *g
 
 // Compile-time check that gitRestClient satisfies both interfaces.
 var _ VaultReader = (*gitRestClient)(nil)
+
 var _ VaultWriter = (*gitRestClient)(nil)
 
 // GetFile implements VaultReader.
@@ -62,11 +63,25 @@ func (g *gitRestClient) GetFile(ctx context.Context, path string) ([]byte, error
 	}
 	if resp.StatusCode >= 500 {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, errors.Wrapf(ctx, ErrVaultServerError, "GET %s: server error %d: %s", path, resp.StatusCode, string(body))
+		return nil, errors.Wrapf(
+			ctx,
+			ErrVaultServerError,
+			"GET %s: server error %d: %s",
+			path,
+			resp.StatusCode,
+			string(body),
+		)
 	}
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, errors.Wrapf(ctx, ErrVaultUnexpectedStatus, "GET %s: unexpected status %d: %s", path, resp.StatusCode, string(body))
+		return nil, errors.Wrapf(
+			ctx,
+			ErrVaultUnexpectedStatus,
+			"GET %s: unexpected status %d: %s",
+			path,
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	return io.ReadAll(resp.Body)
@@ -89,11 +104,25 @@ func (g *gitRestClient) ListFiles(ctx context.Context, prefix string) ([]string,
 
 	if resp.StatusCode >= 500 {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, errors.Wrapf(ctx, ErrVaultServerError, "LIST %s: server error %d: %s", prefix, resp.StatusCode, string(body))
+		return nil, errors.Wrapf(
+			ctx,
+			ErrVaultServerError,
+			"LIST %s: server error %d: %s",
+			prefix,
+			resp.StatusCode,
+			string(body),
+		)
 	}
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, errors.Wrapf(ctx, ErrVaultUnexpectedStatus, "LIST %s: unexpected status %d: %s", prefix, resp.StatusCode, string(body))
+		return nil, errors.Wrapf(
+			ctx,
+			ErrVaultUnexpectedStatus,
+			"LIST %s: unexpected status %d: %s",
+			prefix,
+			resp.StatusCode,
+			string(body),
+		)
 	}
 
 	var result listFilesResponse
@@ -106,35 +135,12 @@ func (g *gitRestClient) ListFiles(ctx context.Context, prefix string) ([]string,
 // UpdateFile implements VaultWriter. It re-reads the current file bytes, applies
 // mutator, and writes the result back. On a git-rest 409 response, returns
 // ErrVaultConflict.
-func (g *gitRestClient) UpdateFile(ctx context.Context, path string, mutator func([]byte) ([]byte, error)) error {
-	// Read current content
-	current, err := func() ([]byte, error) {
-		url := g.baseURL + "/files/" + path
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-		if err != nil {
-			return nil, errors.Wrapf(ctx, err, "UpdateFile: create GET request")
-		}
-		g.addAuthHeader(req)
-
-		resp, err := g.httpClient.Do(req)
-		if err != nil {
-			return nil, errors.Wrapf(ctx, err, "UpdateFile: GET %s: request failed", path)
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode == http.StatusNotFound {
-			return nil, errors.Wrapf(ctx, ErrVaultNotFound, "UpdateFile: file not found %s", path)
-		}
-		if resp.StatusCode >= 500 {
-			body, _ := io.ReadAll(resp.Body)
-			return nil, errors.Wrapf(ctx, ErrVaultServerError, "UpdateFile: GET %s: server error %d: %s", path, resp.StatusCode, string(body))
-		}
-		if resp.StatusCode != http.StatusOK {
-			body, _ := io.ReadAll(resp.Body)
-			return nil, errors.Wrapf(ctx, ErrVaultUnexpectedStatus, "UpdateFile: GET %s: unexpected status %d: %s", path, resp.StatusCode, string(body))
-		}
-		return io.ReadAll(resp.Body)
-	}()
+func (g *gitRestClient) UpdateFile(
+	ctx context.Context,
+	path string,
+	mutator func([]byte) ([]byte, error),
+) error {
+	current, err := g.fetchFile(ctx, path, "UpdateFile")
 	if err != nil {
 		return err
 	}
@@ -144,7 +150,6 @@ func (g *gitRestClient) UpdateFile(ctx context.Context, path string, mutator fun
 		return errors.Wrapf(ctx, err, "UpdateFile: mutator failed for %s", path)
 	}
 
-	// Write back
 	url := g.baseURL + "/files/" + path
 	req, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewReader(mutated))
 	if err != nil {
@@ -164,13 +169,74 @@ func (g *gitRestClient) UpdateFile(ctx context.Context, path string, mutator fun
 	}
 	if resp.StatusCode >= 500 {
 		body, _ := io.ReadAll(resp.Body)
-		return errors.Wrapf(ctx, ErrVaultServerError, "UpdateFile: PUT %s: server error %d: %s", path, resp.StatusCode, string(body))
+		return errors.Wrapf(
+			ctx,
+			ErrVaultServerError,
+			"UpdateFile: PUT %s: server error %d: %s",
+			path,
+			resp.StatusCode,
+			string(body),
+		)
 	}
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		body, _ := io.ReadAll(resp.Body)
-		return errors.Wrapf(ctx, ErrVaultUnexpectedStatus, "UpdateFile: PUT %s: unexpected status %d: %s", path, resp.StatusCode, string(body))
+		return errors.Wrapf(
+			ctx,
+			ErrVaultUnexpectedStatus,
+			"UpdateFile: PUT %s: unexpected status %d: %s",
+			path,
+			resp.StatusCode,
+			string(body),
+		)
 	}
 	return nil
+}
+
+// fetchFile GETs the current bytes of a file from git-rest. caller is a short
+// prefix used in error messages (e.g. "GetFile", "UpdateFile"). 404 → ErrVaultNotFound;
+// 5xx → ErrVaultServerError; anything else → ErrVaultUnexpectedStatus.
+func (g *gitRestClient) fetchFile(ctx context.Context, path, caller string) ([]byte, error) {
+	url := g.baseURL + "/files/" + path
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, errors.Wrapf(ctx, err, "%s: create GET request", caller)
+	}
+	g.addAuthHeader(req)
+
+	resp, err := g.httpClient.Do(req)
+	if err != nil {
+		return nil, errors.Wrapf(ctx, err, "%s: GET %s: request failed", caller, path)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, errors.Wrapf(ctx, ErrVaultNotFound, "%s: file not found %s", caller, path)
+	}
+	if resp.StatusCode >= 500 {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, errors.Wrapf(
+			ctx,
+			ErrVaultServerError,
+			"%s: GET %s: server error %d: %s",
+			caller,
+			path,
+			resp.StatusCode,
+			string(body),
+		)
+	}
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, errors.Wrapf(
+			ctx,
+			ErrVaultUnexpectedStatus,
+			"%s: GET %s: unexpected status %d: %s",
+			caller,
+			path,
+			resp.StatusCode,
+			string(body),
+		)
+	}
+	return io.ReadAll(resp.Body)
 }
 
 func (g *gitRestClient) addAuthHeader(req *http.Request) {

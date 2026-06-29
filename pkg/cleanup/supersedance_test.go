@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	libtime "github.com/bborbe/time"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -17,7 +18,6 @@ import (
 	"github.com/bborbe/recurring-task-creator/pkg/cleanup"
 	"github.com/bborbe/recurring-task-creator/pkg/publisher"
 	"github.com/bborbe/recurring-task-creator/pkg/schedule"
-	libtime "github.com/bborbe/time"
 )
 
 // realNoOpWriter is a concrete VaultWriter that records UpdateFile calls
@@ -28,7 +28,11 @@ type realNoOpWriter struct {
 	calls []string
 }
 
-func (w *realNoOpWriter) UpdateFile(_ context.Context, path string, _ func([]byte) ([]byte, error)) error {
+func (w *realNoOpWriter) UpdateFile(
+	_ context.Context,
+	path string,
+	_ func([]byte) ([]byte, error),
+) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.calls = append(w.calls, path)
@@ -134,7 +138,7 @@ var _ = Describe("Supersedance", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(string(result)).Should(ContainSubstring("status: aborted"))
 				Ω(string(result)).Should(ContainSubstring("phase: done"))
-				Ω(string(result)).Should(ContainSubstring("completed_date: auto-cleanup-"))
+				Ω(string(result)).Should(MatchRegexp(`completed_date: "?2026-\d{2}-\d{2}"?`))
 				Ω(string(result)).Should(ContainSubstring("superseded_by: auto-cleanup-"))
 			})
 		})
@@ -310,7 +314,10 @@ var _ = Describe("Supersedance", func() {
 				// Prior file exists (2026W25), next does not, planned within 7 days.
 				readerMock.ListFilesReturns([]string{"w-task - 2026W25.md"}, nil)
 				// Use a date string that YAML parses as string (not time.Time).
-				readerMock.GetFileReturns([]byte("---\nstatus: in_progress\nplanned_date: \"2026-06-22\"\n---\n# Task\n"), nil)
+				readerMock.GetFileReturns(
+					[]byte("---\nstatus: in_progress\nplanned_date: \"2026-06-22\"\n---\n# Task\n"),
+					nil,
+				)
 				writerMock.UpdateFileReturns(nil)
 				err := s.Run(ctx, schedule.NewDate(2026, time.June, 29))
 				Ω(err).ShouldNot(HaveOccurred())
@@ -324,9 +331,15 @@ var _ = Describe("Supersedance", func() {
 				storeMock.ListReturns([]schedule.TaskDefinition{
 					{Slug: "x-task", Recurrence: schedule.RecurrenceDaily},
 				}, nil)
-				readerMock.ListFilesReturns([]string{"x-task - 2026-06-28.md", "x-task - 2026-06-29.md"}, nil)
+				readerMock.ListFilesReturns(
+					[]string{"x-task - 2026-06-28.md", "x-task - 2026-06-29.md"},
+					nil,
+				)
 				// planned_date as integer - triggers default case in withinCadenceFM → returns false → safety gate skipped → supersede.
-				readerMock.GetFileReturns([]byte("---\nstatus: in_progress\nplanned_date: 42\n---\n# Task\n"), nil)
+				readerMock.GetFileReturns(
+					[]byte("---\nstatus: in_progress\nplanned_date: 42\n---\n# Task\n"),
+					nil,
+				)
 				writerMock.UpdateFileReturns(nil)
 				err := s.Run(ctx, schedule.NewDate(2026, time.June, 29))
 				Ω(err).ShouldNot(HaveOccurred())
@@ -355,7 +368,10 @@ var _ = Describe("Supersedance", func() {
 				storeMock.ListReturns([]schedule.TaskDefinition{
 					{Slug: "m-task", Recurrence: schedule.RecurrenceDaily},
 				}, nil)
-				readerMock.ListFilesReturns([]string{"m-task - 2026-06-28.md", "m-task - 2026-06-29.md"}, nil)
+				readerMock.ListFilesReturns(
+					[]string{"m-task - 2026-06-28.md", "m-task - 2026-06-29.md"},
+					nil,
+				)
 				// No frontmatter marker - parseFrontmatter returns empty map, status not in_progress, skipped.
 				readerMock.GetFileReturns([]byte("# Task no frontmatter\n"), nil)
 				writerMock.UpdateFileReturns(nil)
