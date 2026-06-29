@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## Unreleased
 
 - feat: Add optional `skipAutoCleanup` boolean to the Schedule CRD; the publisher stamps `audit_style: <bool>` onto every generated task's frontmatter mirroring the flag.
+- feat: Add `pkg/cleanup` package — `Supersedance` orchestrator auto-aborts prior in-progress recurring-task instances once the next period materializes; `PriorPeriodToken` decrementor; `recurring_task_cleanup_superseded_total` counter.
 
 Please choose versions by [Semantic Versioning](http://semver.org/).
 

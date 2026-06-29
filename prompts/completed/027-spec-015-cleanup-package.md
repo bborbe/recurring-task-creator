@@ -1,8 +1,12 @@
 ---
-status: approved
+status: completed
 spec: [015-recurring-task-cleanup-cron]
+execution_id: recurring-task-creator-cleanup-exec-027-spec-015-cleanup-package
+dark-factory-version: v0.188.1
 created: "2026-06-29T19:45:00Z"
 queued: "2026-06-29T19:34:17Z"
+started: "2026-06-29T19:42:35Z"
+completed: "2026-06-29T20:11:51Z"
 branch: dark-factory/recurring-task-cleanup-cron
 ---
 
