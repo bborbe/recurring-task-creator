@@ -6,7 +6,6 @@ package main
 
 import (
 	"context"
-	"net/http"
 	"os"
 	"time"
 
@@ -32,6 +31,7 @@ import (
 	pkg "github.com/bborbe/recurring-task-creator/pkg"
 	"github.com/bborbe/recurring-task-creator/pkg/factory"
 	"github.com/bborbe/recurring-task-creator/pkg/publisher"
+	"github.com/bborbe/recurring-task-creator/pkg/store"
 	"github.com/bborbe/recurring-task-creator/pkg/tick"
 )
 
@@ -53,12 +53,6 @@ type application struct {
 	BuildGitCommit  string            `required:"false" arg:"build-git-commit"  env:"BUILD_GIT_COMMIT"  usage:"Build Git commit hash"                                                              default:"none"`
 	BuildDate       *libtime.DateTime `required:"false" arg:"build-date"        env:"BUILD_DATE"        usage:"Build timestamp (RFC3339)"`
 	DryRun          bool              `required:"false" arg:"dry-run"           env:"DRY_RUN"           usage:"if true, log every would-be CreateCommand and skip the Kafka send"                  default:"false"`
-
-	// HealthzHandler + TriggerHandler are wired in Run() and consumed by
-	// runHTTPServer(). Exposing them on application matches the maintainer
-	// watcher pattern (e.g. github-build/main.go).
-	HealthzHandler http.Handler
-	TriggerHandler http.Handler
 }
 
 func (a *application) Run(ctx context.Context, _ libsentry.Client) error {
@@ -137,28 +131,30 @@ func (a *application) Run(ctx context.Context, _ libsentry.Client) error {
 	metrics := tick.NewPrometheusMetrics()
 	tickLoop := factory.CreateTick(ctx, scheduleStore, pub, clock, metrics)
 
-	a.HealthzHandler = factory.CreateHealthzHandler()
-	a.TriggerHandler = factory.CreateTriggerHandler(clock, scheduleStore, pub)
-
 	return run.CancelOnFirstFinish(
 		ctx,
-		a.runHTTPServer(),
+		a.createHTTPServer(clock, scheduleStore, pub),
 		tickLoop.Run,
 	)
 }
 
-func (a *application) runHTTPServer() run.Func {
+func (a *application) createHTTPServer(
+	clock libtime.CurrentDateTimeGetter,
+	scheduleStore store.ScheduleStore,
+	pub publisher.Publisher,
+) run.Func {
 	return func(ctx context.Context) error {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
 		router := mux.NewRouter()
-		router.Path("/healthz").Handler(a.HealthzHandler)
+		router.Path("/healthz").Handler(factory.CreateHealthzHandler())
 		router.Path("/readiness").Handler(libhttp.NewPrintHandler("OK"))
 		router.Path("/metrics").Handler(promhttp.Handler())
 		router.Path("/setloglevel/{level}").
 			Handler(liblog.NewSetLoglevelHandler(ctx, liblog.NewLogLevelSetter(2, 5*time.Minute)))
-		router.Path("/trigger").Methods("GET").Handler(a.TriggerHandler)
+		router.Path("/trigger").Methods("GET").Handler(
+			factory.CreateTriggerHandler(clock, scheduleStore, pub))
 
 		glog.V(2).Infof("starting http server listen on %s", a.Listen)
 		return libhttp.NewServer(a.Listen, router).Run(ctx)
