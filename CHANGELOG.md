@@ -8,7 +8,7 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
-## Unreleased
+## v0.7.0
 
 - feat: stamp `auto_abort_prior: <bool>` onto every published task's frontmatter, mirroring the resolved `TaskDefinition.AutoAbortPrior`. The key is set after operator-supplied frontmatter is merged (so an operator-supplied `auto_abort_prior` cannot override the spec-level value) and before `created_by` is force-set (preserving the provenance invariant). The value is a Go `bool` serialized as a YAML boolean `true`/`false`, never a string. Existing Schedules publish byte-identical task identifiers, titles, and bodies — the only payload change is the added frontmatter key.
 - feat: add optional `spec.schedule.autoAbortPrior` boolean on the `Schedule` CRD — an opt-in flag (default `false` when omitted) marking a Schedule whose prior-period instance may be auto-aborted by the downstream task-controller when the next instance materializes. Carried as a `*bool` on `ScheduleTrigger` so unset is distinguishable from explicit `false`, with nil-safe deepcopy and apply-configuration plumbing. The CRD schema declares it as `Type: "boolean"` (no enum, not required), so the API server rejects non-boolean values at `kubectl apply` time. Existing Schedules without the field are unaffected; this is the API-contract layer only — no publishing behavior change yet.
