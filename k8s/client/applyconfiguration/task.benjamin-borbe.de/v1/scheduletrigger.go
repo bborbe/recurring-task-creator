@@ -55,6 +55,10 @@ type ScheduleTriggerApplyConfiguration struct {
 	// scheduleSpecSchema (semantics undefined; date-anchored kinds don't
 	// have a meaningful period offset distinct from a date shift).
 	PeriodOffset *int `json:"periodOffset,omitempty"`
+	// AutoAbortPrior is an opt-in flag (default false when unset) marking this
+	// Schedule as one whose prior-period instance MAY be auto-aborted by the
+	// downstream task-controller. See the apis type doc on ScheduleTrigger.
+	AutoAbortPrior *bool `json:"autoAbortPrior,omitempty"`
 }
 
 // ScheduleTriggerApplyConfiguration constructs a declarative configuration of the ScheduleTrigger type for use with
@@ -100,5 +104,15 @@ func (b *ScheduleTriggerApplyConfiguration) WithPeriodOffset(
 	value int,
 ) *ScheduleTriggerApplyConfiguration {
 	b.PeriodOffset = &value
+	return b
+}
+
+// WithAutoAbortPrior sets the AutoAbortPrior field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the AutoAbortPrior field is set to the value of the last call.
+func (b *ScheduleTriggerApplyConfiguration) WithAutoAbortPrior(
+	value bool,
+) *ScheduleTriggerApplyConfiguration {
+	b.AutoAbortPrior = &value
 	return b
 }

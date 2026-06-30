@@ -163,6 +163,13 @@ func scheduleTriggerSchema() apiextensionsv1.JSONSchemaProps {
 					"Use -1 for prior period (e.g. review-style schedules that fire on month-start but name " +
 					"the just-completed month). Only valid for Monthly/Quarterly/Yearly.",
 			},
+			"autoAbortPrior": {
+				Type: "boolean",
+				Description: "Opt-in flag (default false when omitted) marking this Schedule " +
+					"as one whose prior-period instance may be auto-aborted by the task-controller " +
+					"when the next instance materializes. Mirrored onto every materialized task's " +
+					"frontmatter as auto_abort_prior. Optional; new Schedules are safe by default.",
+			},
 		},
 		XValidations: apiextensionsv1.ValidationRules{
 			{Rule: weekdayXorRule, Message: weekdayXorMessage},

@@ -547,3 +547,28 @@ var _ = Describe("Schedule CRD structural schema round-trip", func() {
 		Expect(errs).To(BeEmpty(), "ValidateStructural must accept the converted schema: %v", errs)
 	})
 })
+
+var _ = Describe("autoAbortPrior schema", func() {
+	It("declares autoAbortPrior as a boolean property, no enum, not required", func() {
+		schema := pkg.ScheduleCRSchemaPtrForTest()
+		trigger := schema.Properties["spec"].Properties["schedule"]
+		prop, ok := trigger.Properties["autoAbortPrior"]
+		Expect(ok).To(BeTrue(), "schedule schema must declare autoAbortPrior")
+		Expect(prop.Type).To(Equal("boolean"))
+		Expect(prop.Enum).To(BeEmpty(), "autoAbortPrior must not be an enum")
+		Expect(trigger.Required).NotTo(ContainElement("autoAbortPrior"),
+			"autoAbortPrior must remain optional")
+	})
+
+	It("the schema with autoAbortPrior round-trips through structural-schema validation", func() {
+		v1Schema := pkg.ScheduleCRSchemaPtrForTest()
+		var internalSchema apiextensions.JSONSchemaProps
+		err := apiextensionsv1.Convert_v1_JSONSchemaProps_To_apiextensions_JSONSchemaProps(
+			v1Schema, &internalSchema, nil,
+		)
+		Expect(err).NotTo(HaveOccurred())
+		ss, err := structuralschema.NewStructural(&internalSchema)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(structuralschema.ValidateStructural(nil, ss)).To(BeEmpty())
+	})
+})

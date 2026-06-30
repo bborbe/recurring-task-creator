@@ -8,6 +8,10 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
+## Unreleased
+
+- feat: add optional `spec.schedule.autoAbortPrior` boolean on the `Schedule` CRD — an opt-in flag (default `false` when omitted) marking a Schedule whose prior-period instance may be auto-aborted by the downstream task-controller when the next instance materializes. Carried as a `*bool` on `ScheduleTrigger` so unset is distinguishable from explicit `false`, with nil-safe deepcopy and apply-configuration plumbing. The CRD schema declares it as `Type: "boolean"` (no enum, not required), so the API server rejects non-boolean values at `kubectl apply` time. Existing Schedules without the field are unaffected; this is the API-contract layer only — no publishing behavior change yet.
+
 ## v0.6.1
 
 - chore(deps): migrate to github.com/bborbe/agent v0.70.0 (was github.com/bborbe/agent/lib v0.68.0)

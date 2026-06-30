@@ -86,6 +86,17 @@ type ScheduleTrigger struct {
 	// scheduleSpecSchema (semantics undefined; date-anchored kinds don't
 	// have a meaningful period offset distinct from a date shift).
 	PeriodOffset int `json:"periodOffset,omitempty"`
+
+	// AutoAbortPrior is an opt-in flag (default false when unset) marking
+	// this Schedule as one whose prior-period instance MAY be auto-aborted
+	// by the downstream task-controller when the next instance materializes.
+	// A pointer so an unset field (nil → effective false) is distinguishable
+	// from an explicit false. The publisher resolves the pointer to a plain
+	// bool and stamps it as the `auto_abort_prior` frontmatter key on every
+	// materialized task; the controller reads that key as its eligibility
+	// gate (controller-side gate flip ships in a separate PR). Optional —
+	// never required by the CRD schema.
+	AutoAbortPrior *bool `json:"autoAbortPrior,omitempty"`
 }
 
 // ScheduleTemplate is the body + frontmatter the generated task carries.
