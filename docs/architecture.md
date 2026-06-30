@@ -31,7 +31,7 @@ The service has no direct knowledge of Obsidian, the vault, or Jira. It speaks o
 | Package | Role | Imports allowed |
 |---------|------|-----------------|
 | `pkg/schedule` | The 45-entry recurring-task inventory + `Date` + `RecurrenceKind` + `TasksForDate(date)`. Pure data, no I/O, no clock. | stdlib only (`time` for calendar math) |
-| `pkg/publisher` | Builds `task.CreateCommand` from `(TaskDefinition, Date)`: renders templates, builds frontmatter, computes deterministic UUID5 identifier, sends via injected `task.CreateCommandSender`. Optional dry-run mode logs + skips send. | `pkg/schedule`, `agent/lib/command/task`, `bborbe/errors`, `glog` |
+| `pkg/publisher` | Builds `task.CreateCommand` from `(TaskDefinition, Date)`: renders templates, builds frontmatter, computes deterministic UUID5 identifier, sends via injected `task.CreateCommandSender`. Force-sets `auto_abort_prior: <bool>` (mirrored from the Schedule's `spec.autoAbortPrior`) after operator keys and before `created_by`. Optional dry-run mode logs + skips send. | `pkg/schedule`, `agent/lib/command/task`, `bborbe/errors`, `glog` |
 | `pkg/tick` | Hourly cron loop. Reads clock (Europe/Berlin civil date), calls `schedule.TasksForDate`, publishes via `publisher.Publisher`. Emits Prometheus counter + gauge metrics. | `pkg/schedule`, `pkg/publisher`, `bborbe/time`, `prometheus` |
 | `pkg/handler` | HTTP handlers — `/healthz` JSON, `/trigger?date=YYYY-MM-DD` manual replay. | `pkg/publisher`, `pkg/schedule` |
 | `pkg/factory` | Composition root — `Create*` constructors that wire everything together. No business logic, no error return. | every other package |
@@ -86,6 +86,7 @@ spec:
     recurrence: Weekday
     weekday: Saturday  # one of {weekday, weekdays} required iff recurrence == Weekday
 # weekdays: [Mon, Wed, Fri]  # alternative: list form (short or long names mix)
+    autoAbortPrior: false  # optional; opt-in (default false) — prior instance may be auto-aborted by the controller
 ```
 
 Go-side, the store adapter reads from either field — both converge on the same `[]time.Weekday` output that the publisher consumes. Single-string CRs (`weekday: Saturday`) produce byte-identical UUID5 / period token / title / body to pre-list behavior.

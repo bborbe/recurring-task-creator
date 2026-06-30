@@ -75,13 +75,19 @@ func adaptSchedule(ctx context.Context, cr *v1.Schedule) (schedule.TaskDefinitio
 		weekdays = append(weekdays, wd)
 	}
 
+	autoAbortPrior := false
+	if cr.Spec.Schedule.AutoAbortPrior != nil {
+		autoAbortPrior = *cr.Spec.Schedule.AutoAbortPrior
+	}
+
 	return schedule.TaskDefinition{
-		Slug:          cr.Name,
-		TitleTemplate: cr.Spec.Title,
-		BodyTemplate:  cr.Spec.Template.Body,
-		Recurrence:    kind,
-		Weekdays:      weekdays,
-		Frontmatter:   cr.Spec.Template.Frontmatter,
-		PeriodOffset:  cr.Spec.Schedule.PeriodOffset,
+		Slug:           cr.Name,
+		TitleTemplate:  cr.Spec.Title,
+		BodyTemplate:   cr.Spec.Template.Body,
+		Recurrence:     kind,
+		Weekdays:       weekdays,
+		Frontmatter:    cr.Spec.Template.Frontmatter,
+		PeriodOffset:   cr.Spec.Schedule.PeriodOffset,
+		AutoAbortPrior: autoAbortPrior,
 	}, nil
 }

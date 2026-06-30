@@ -313,4 +313,48 @@ var _ = Describe("adaptSchedule", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(def.PeriodOffset).To(Equal(0))
 	})
+
+	It("resolves a nil autoAbortPrior pointer to false", func() {
+		cr := &v1.Schedule{
+			ObjectMeta: metav1.ObjectMeta{Name: "no-flag"},
+			Spec: v1.ScheduleSpec{
+				Title:    "No Flag",
+				Schedule: v1.ScheduleTrigger{Recurrence: "Daily"},
+				Template: v1.ScheduleTemplate{Body: "B"},
+			},
+		}
+		def, err := store.AdaptScheduleForTest(ctx, cr)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(def.AutoAbortPrior).To(BeFalse())
+	})
+
+	It("resolves an explicit false autoAbortPrior to false", func() {
+		f := false
+		cr := &v1.Schedule{
+			ObjectMeta: metav1.ObjectMeta{Name: "explicit-false"},
+			Spec: v1.ScheduleSpec{
+				Title:    "Explicit False",
+				Schedule: v1.ScheduleTrigger{Recurrence: "Daily", AutoAbortPrior: &f},
+				Template: v1.ScheduleTemplate{Body: "B"},
+			},
+		}
+		def, err := store.AdaptScheduleForTest(ctx, cr)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(def.AutoAbortPrior).To(BeFalse())
+	})
+
+	It("resolves an explicit true autoAbortPrior to true", func() {
+		t := true
+		cr := &v1.Schedule{
+			ObjectMeta: metav1.ObjectMeta{Name: "explicit-true"},
+			Spec: v1.ScheduleSpec{
+				Title:    "Explicit True",
+				Schedule: v1.ScheduleTrigger{Recurrence: "Daily", AutoAbortPrior: &t},
+				Template: v1.ScheduleTemplate{Body: "B"},
+			},
+		}
+		def, err := store.AdaptScheduleForTest(ctx, cr)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(def.AutoAbortPrior).To(BeTrue())
+	})
 })

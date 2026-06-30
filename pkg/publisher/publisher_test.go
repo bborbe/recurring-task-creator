@@ -844,7 +844,8 @@ var _ = Describe("Publisher", func() {
 				Expect(fm).To(HaveKeyWithValue("status", "in_progress"))
 				Expect(fm).To(HaveKeyWithValue("page_type", "task"))
 				Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
-				Expect(fm).To(HaveLen(3))
+				Expect(fm).To(HaveKeyWithValue("auto_abort_prior", false))
+				Expect(fm).To(HaveLen(4))
 				Expect(fm).NotTo(HaveKey("recurring"))
 			},
 		)
@@ -876,7 +877,7 @@ var _ = Describe("Publisher", func() {
 				Expect(fm).To(HaveKeyWithValue("status", "in_progress"))
 				Expect(fm).To(HaveKeyWithValue("page_type", "task"))
 				Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
-				Expect(fm).To(HaveLen(7))
+				Expect(fm).To(HaveLen(8))
 			},
 		)
 
@@ -901,7 +902,8 @@ var _ = Describe("Publisher", func() {
 				Expect(fm).To(HaveKeyWithValue("status", "draft"))
 				Expect(fm).To(HaveKeyWithValue("page_type", "log"))
 				Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
-				Expect(fm).To(HaveLen(3))
+				Expect(fm).To(HaveKeyWithValue("auto_abort_prior", false))
+				Expect(fm).To(HaveLen(4))
 			},
 		)
 
@@ -925,7 +927,42 @@ var _ = Describe("Publisher", func() {
 				Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
 				Expect(fm).To(HaveKeyWithValue("status", "in_progress"))
 				Expect(fm).To(HaveKeyWithValue("page_type", "task"))
-				Expect(fm).To(HaveLen(3))
+				Expect(fm).To(HaveKeyWithValue("auto_abort_prior", false))
+				Expect(fm).To(HaveLen(4))
+			},
+		)
+
+		It(
+			"publishes auto_abort_prior=false for a Schedule without the flag, payload otherwise unchanged",
+			func() {
+				// A TaskDefinition with AutoAbortPrior unset (false) must
+				// still stamp auto_abort_prior: false, while the
+				// deterministic TaskIdentifier / Title / Body remain the
+				// pre-change baseline (the flag does NOT participate in the
+				// UUID5 input).
+				def := schedule.TaskDefinition{
+					Slug:          "weekly-review",
+					TitleTemplate: "Weekly Review {{current_week}}",
+					Recurrence:    schedule.RecurrenceWeekday,
+					Weekdays:      []time.Weekday{time.Saturday},
+				}
+				Expect(pub.Publish(
+					context.Background(),
+					def,
+					schedule.NewDate(2025, time.January, 4),
+				)).To(Succeed())
+				cmd := capture()
+				Expect(cmd.Frontmatter).To(HaveKeyWithValue("auto_abort_prior", false))
+				Expect(cmd.Frontmatter).To(HaveKeyWithValue(
+					"created_by", "recurring-task-creator",
+				))
+				expected := uuid.NewSHA1(
+					publisher.UuidNamespaceForTest(),
+					[]byte("recurring-weekly-review-2025W01-sat"),
+				).String()
+				Expect(string(cmd.TaskIdentifier)).To(Equal(expected))
+				Expect(cmd.Title).To(Equal("Weekly Review 2025W01 - 2025W01-sat"))
+				Expect(cmd.Body).To(Equal(""))
 			},
 		)
 

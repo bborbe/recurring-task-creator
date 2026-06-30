@@ -29,7 +29,19 @@ type FrontmatterFormatter interface {
 	// `slug` and `date` parameterize the placeholder render; `date` is
 	// the Berlin civil date the task fires for (the publisher converts
 	// wall-clock once at the tick boundary).
-	Format(operator lib.TaskFrontmatter, slug string, date schedule.Date) lib.TaskFrontmatter
+	//
+	// `autoAbortPrior` is stamped onto the result as the
+	// `auto_abort_prior` key, AFTER operator keys are merged (so an
+	// operator-supplied `auto_abort_prior` cannot override the spec-level
+	// value) and BEFORE `created_by` is force-set (so `created_by` stays
+	// the last provenance key). The value is a Go bool serialized as a
+	// YAML boolean true/false.
+	Format(
+		operator lib.TaskFrontmatter,
+		slug string,
+		date schedule.Date,
+		autoAbortPrior bool,
+	) lib.TaskFrontmatter
 }
 
 // NewFrontmatterFormatter returns the default FrontmatterFormatter that
@@ -48,6 +60,7 @@ func (f *frontmatterFormatter) Format(
 	operator lib.TaskFrontmatter,
 	slug string,
 	date schedule.Date,
+	autoAbortPrior bool,
 ) lib.TaskFrontmatter {
 	out := lib.TaskFrontmatter{
 		"status":    "in_progress",
@@ -60,6 +73,7 @@ func (f *frontmatterFormatter) Format(
 		}
 		out[k] = v
 	}
+	out["auto_abort_prior"] = autoAbortPrior
 	out["created_by"] = "recurring-task-creator"
 	return out
 }
