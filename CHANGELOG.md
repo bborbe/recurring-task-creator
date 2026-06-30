@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 - feat: Add optional `skipAutoCleanup` boolean to the Schedule CRD; the publisher stamps `audit_style: <bool>` onto every generated task's frontmatter mirroring the flag.
 - feat: Add `pkg/cleanup` package — `Supersedance` orchestrator auto-aborts prior in-progress recurring-task instances once the next period materializes; `PriorPeriodToken` decrementor; `recurring_task_cleanup_superseded_total` counter.
-- feat: Add `recurring-task-creator-cleanup` sibling binary — hourly cron (default `17 * * * *`) that auto-aborts prior in-progress recurring-task instances via git-rest; new `GIT_REST_URL` / `GATEWAY_SECRET` / `CLEANUP_CRON` env vars and `k8s/recurring-task-creator-cleanup-sts.yaml` StatefulSet manifest.
+- feat: Wire the cleanup cron into the existing publisher binary as a third `run.Func` in `run.CancelOnFirstFinish` (alongside the HTTP server and the publisher tick); new `GIT_REST_URL` / `GATEWAY_SECRET` / `CLEANUP_CRON` env vars on `k8s/recurring-task-creator-sts.yaml`; no separate binary, STS, or image.
 
 Please choose versions by [Semantic Versioning](http://semver.org/).
 

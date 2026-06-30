@@ -7,6 +7,9 @@ package main
 import (
 	"context"
 	"os"
+	"regexp"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/bborbe/agent/command/task"
@@ -29,8 +32,10 @@ import (
 
 	versioned "github.com/bborbe/recurring-task-creator/k8s/client/clientset/versioned"
 	pkg "github.com/bborbe/recurring-task-creator/pkg"
+	"github.com/bborbe/recurring-task-creator/pkg/cleanup"
 	"github.com/bborbe/recurring-task-creator/pkg/factory"
 	"github.com/bborbe/recurring-task-creator/pkg/publisher"
+	"github.com/bborbe/recurring-task-creator/pkg/schedule"
 	"github.com/bborbe/recurring-task-creator/pkg/store"
 	"github.com/bborbe/recurring-task-creator/pkg/tick"
 )
@@ -53,9 +58,16 @@ type application struct {
 	BuildGitCommit  string            `required:"false" arg:"build-git-commit"  env:"BUILD_GIT_COMMIT"  usage:"Build Git commit hash"                                                              default:"none"`
 	BuildDate       *libtime.DateTime `required:"false" arg:"build-date"        env:"BUILD_DATE"        usage:"Build timestamp (RFC3339)"`
 	DryRun          bool              `required:"false" arg:"dry-run"           env:"DRY_RUN"           usage:"if true, log every would-be CreateCommand and skip the Kafka send"                  default:"false"`
+
+	// Cleanup cron: runs inside the same pod as the publisher. Auto-aborts
+	// prior in_progress recurring-task instances whose next period has
+	// already materialized, per Schedule.spec.skipAutoCleanup.
+	CleanupCron   string `required:"false" arg:"cleanup-cron"   env:"CLEANUP_CRON"   usage:"Cron expression for the cleanup tick (default '17 * * * *')"       default:"17 * * * *"`
+	GitRestURL    string `required:"false" arg:"git-rest-url"   env:"GIT_REST_URL"   usage:"Base URL of the git-rest HTTP service (e.g. http://git-rest:8080)"`
+	GatewaySecret string `required:"false" arg:"gateway-secret" env:"GATEWAY_SECRET" usage:"X-Gateway-Secret forwarded to git-rest"                                                 display:"length"`
 }
 
-func (a *application) Run(ctx context.Context, _ libsentry.Client) error {
+func (a *application) Run(ctx context.Context, sentryClient libsentry.Client) error {
 	libmetrics.NewBuildInfoMetrics().SetBuildInfo(a.BuildGitVersion, a.BuildGitCommit, a.BuildDate)
 
 	connector := pkg.NewK8sConnector(
@@ -128,14 +140,147 @@ func (a *application) Run(ctx context.Context, _ libsentry.Client) error {
 	pub := factory.CreatePublisher(sender, a.DryRun)
 
 	clock := libtime.NewCurrentDateTime()
-	metrics := tick.NewPrometheusMetrics()
-	tickLoop := factory.CreateTick(ctx, scheduleStore, pub, clock, metrics)
+	tickLoop := factory.CreateTick(ctx, scheduleStore, pub, clock, tick.NewPrometheusMetrics())
+	cleanupTick, err := a.createCleanupTick(ctx, sentryClient, scheduleStore, clock)
+	if err != nil {
+		return errors.Wrap(ctx, err, "create cleanup tick failed")
+	}
 
 	return run.CancelOnFirstFinish(
 		ctx,
 		a.createHTTPServer(clock, scheduleStore, pub),
 		tickLoop.Run,
+		cleanupTick,
 	)
+}
+
+func (a *application) createCleanupTick(
+	ctx context.Context,
+	sentryClient libsentry.Client,
+	scheduleStore store.ScheduleStore,
+	clock libtime.CurrentDateTimeGetter,
+) (run.Func, error) {
+	if a.GitRestURL == "" {
+		// Cleanup cron disabled: no git-rest endpoint configured.
+		// Skip wiring entirely so the existing publisher keeps running.
+		glog.V(2).Infof("cleanup cron disabled: GIT_REST_URL not set")
+		return func(context.Context) error { return nil }, nil
+	}
+	vaultClient := cleanup.NewGitRestClient(nil, a.GitRestURL, a.GatewaySecret)
+	supersedance := &cleanup.Supersedance{
+		Store:        scheduleStore,
+		TokenBuilder: publisher.NewPeriodTokenBuilder(),
+		Reader:       vaultClient,
+		Writer:       vaultClient,
+		Metrics:      cleanup.NewPrometheusMetrics(),
+		Clock:        clock,
+	}
+	interval, err := cronToInterval(a.CleanupCron)
+	if err != nil {
+		return nil, errors.Wrap(ctx, err, "parse CLEANUP_CRON")
+	}
+	glog.V(2).Infof("cleanup cron enabled: every %s (CLEANUP_CRON=%q)", interval, a.CleanupCron)
+	return run.Func(func(ctx context.Context) error {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-ticker.C:
+				date, err := berlinDate(clock)
+				if err != nil {
+					sentryClient.CaptureException(err, nil, nil)
+					continue
+				}
+				glog.V(2).Infof("cleanup: tick started for %s", date)
+				if err := supersedance.Run(ctx, date); err != nil {
+					glog.Errorf("cleanup: tick failed: %v", err)
+					sentryClient.CaptureException(err, nil, nil)
+				}
+			}
+		}
+	}), nil
+}
+
+// cronToInterval converts a standard 5-field cron expression to the matching
+// Go time.Duration between fires. Supports the subset the cleanup cron
+// needs: `M H DoM Mo DoW` with `*` or explicit single values. Returns the
+// duration until the NEXT fire from now, so the ticker fires at the right
+// minute boundary rather than waiting a full period from process start.
+// Returns an error on unsupported forms.
+func cronToInterval(expr string) (time.Duration, error) {
+	parts := splitFields(expr)
+	if len(parts) != 5 {
+		return 0, errors.Errorf(
+			context.Background(),
+			"cron: expected 5 fields, got %d in %q",
+			len(parts),
+			expr,
+		)
+	}
+	minute, err := parseField(parts[0], 0, 59)
+	if err != nil {
+		return 0, errors.Wrap(context.Background(), err, "cron: minute field")
+	}
+	hour, err := parseField(parts[1], 0, 23)
+	if err != nil {
+		return 0, errors.Wrap(context.Background(), err, "cron: hour field")
+	}
+	if parts[2] != "*" {
+		return 0, errors.Errorf(
+			context.Background(),
+			"cron: day-of-month not supported, got %q",
+			parts[2],
+		)
+	}
+	if parts[3] != "*" {
+		return 0, errors.Errorf(context.Background(), "cron: month not supported, got %q", parts[3])
+	}
+	if parts[4] != "*" {
+		return 0, errors.Errorf(
+			context.Background(),
+			"cron: day-of-week not supported, got %q",
+			parts[4],
+		)
+	}
+	now := time.Now()
+	next := time.Date(now.Year(), now.Month(), now.Day(), hour, minute, 0, 0, now.Location())
+	if !next.After(now) {
+		next = next.Add(24 * time.Hour)
+	}
+	return next.Sub(now), nil
+}
+
+// parseField accepts "*" or a single integer in [min, max].
+func parseField(s string, min, max int) (int, error) {
+	if s == "*" {
+		return -1, nil
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, errors.Wrap(context.Background(), err, "not an integer")
+	}
+	if n < min || n > max {
+		return 0, errors.Errorf(context.Background(), "out of range [%d, %d]: %d", min, max, n)
+	}
+	return n, nil
+}
+
+var fieldSep = regexp.MustCompile(`\s+`)
+
+func splitFields(expr string) []string {
+	return fieldSep.Split(strings.TrimSpace(expr), -1)
+}
+
+func berlinDate(clock libtime.CurrentDateTimeGetter) (schedule.Date, error) {
+	now := clock.Now().Time()
+	loc, err := time.LoadLocation("Europe/Berlin")
+	if err != nil {
+		return schedule.Date{}, errors.Wrap(context.Background(), err, "load Europe/Berlin")
+	}
+	berlin := now.In(loc)
+	return schedule.NewDate(berlin.Year(), berlin.Month(), berlin.Day()), nil
 }
 
 func (a *application) createHTTPServer(

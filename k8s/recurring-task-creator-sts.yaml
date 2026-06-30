@@ -64,6 +64,17 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            # Cleanup cron — runs in-process alongside the publisher. Default
+            # CLEANUP_CRON (17 * * * *) avoids colliding with the publisher
+            # tick on the hour boundary. GIT_REST_URL must point at the
+            # personal-vault git-rest service; GATEWAY_SECRET is forwarded
+            # as X-Gateway-Secret when set.
+            - name: CLEANUP_CRON
+              value: '{{ "CLEANUP_CRON" | env }}'
+            - name: GIT_REST_URL
+              value: '{{ "GIT_REST_URL" | env }}'
+            - name: GATEWAY_SECRET
+              value: '{{ "GATEWAY_SECRET" | env }}'
           image: '{{"DOCKER_REGISTRY" | env}}/recurring-task-creator:{{"BRANCH" | env}}'
           imagePullPolicy: Always
           livenessProbe:
