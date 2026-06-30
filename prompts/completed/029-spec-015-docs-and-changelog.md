@@ -1,8 +1,13 @@
 ---
-status: approved
+status: completed
 spec: [015-auto-abort-prior-field]
+summary: 'Docs closeout for spec 015 — added CHANGELOG ## Unreleased entry and architecture.md note for spec.autoAbortPrior/auto_abort_prior; license-header/GoDoc sweep passes; make precommit exits 0.'
+execution_id: recurring-task-controller-auto-abort-exec-029-spec-015-docs-and-changelog
+dark-factory-version: dev
 created: "2026-06-30T18:00:00Z"
 queued: "2026-06-30T17:48:54Z"
+started: "2026-06-30T19:40:58Z"
+completed: "2026-06-30T19:45:34Z"
 branch: dark-factory/auto-abort-prior-field
 ---
 
