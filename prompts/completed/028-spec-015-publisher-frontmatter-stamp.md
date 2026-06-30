@@ -1,14 +1,14 @@
 ---
-status: approved
+status: completed
 spec: [015-auto-abort-prior-field]
+summary: Stamped auto_abort_prior bool onto every published task's frontmatter (after operator keys, before created_by) by extending FrontmatterFormatter.Format, wiring def.AutoAbortPrior at the publisher call site, regenerating the counterfeiter mock, and adding frontmatter + publisher regression specs.
 execution_id: recurring-task-controller-auto-abort-exec-028-spec-015-publisher-frontmatter-stamp
 dark-factory-version: dev
 created: "2026-06-30T18:00:00Z"
 queued: "2026-06-30T17:48:54Z"
-started: "2026-06-30T19:30:25Z"
-completed: "2026-06-30T19:30:42Z"
+started: "2026-06-30T19:35:07Z"
+completed: "2026-06-30T19:40:57Z"
 branch: dark-factory/auto-abort-prior-field
-lastFailReason: 'validate completion report: completion report status: failed'
 ---
 
 <summary>
