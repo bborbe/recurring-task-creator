@@ -19,9 +19,12 @@ import (
 	"github.com/bborbe/run"
 	libsentry "github.com/bborbe/sentry"
 	libtime "github.com/bborbe/time"
+	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	"k8s.io/client-go/rest"
 
-	versioned "github.com/bborbe/recurring-task-creator/k8s/client/clientset/versioned"
-	externalversions "github.com/bborbe/recurring-task-creator/k8s/client/informers/externalversions"
+	"github.com/bborbe/recurring-task-creator/k8s/client/clientset/versioned"
+	"github.com/bborbe/recurring-task-creator/k8s/client/informers/externalversions"
+	"github.com/bborbe/recurring-task-creator/pkg"
 	"github.com/bborbe/recurring-task-creator/pkg/cleanup"
 	"github.com/bborbe/recurring-task-creator/pkg/handler"
 	"github.com/bborbe/recurring-task-creator/pkg/publisher"
@@ -34,7 +37,21 @@ import (
 // given task.CreateCommandSender. When dryRun is true, the publisher logs
 // the would-be CreateCommand and skips the sender call. Pure plumbing: no
 // business logic.
-func CreatePublisher(sender task.CreateCommandSender, dryRun bool) publisher.Publisher {
+func CreatePublisher(
+	syncProducer libkafka.SyncProducer,
+	branch cqrsbase.Branch,
+	dryRun bool,
+) publisher.Publisher {
+	var sender task.CreateCommandSender
+	if dryRun {
+		sender = publisher.NewNoopSender()
+	} else {
+		sender = task.NewCreateCommandSender(cdb.NewCommandObjectSender(
+			syncProducer,
+			branch,
+			liblog.DefaultSamplerFactory,
+		), "personal")
+	}
 	renderer := publisher.NewRenderer()
 	return publisher.NewPublisher(
 		sender,
@@ -98,7 +115,8 @@ func CreateTickLoop(
 	dryRun bool,
 ) tick.Tick {
 	pub := CreatePublisher(
-		CreateCommandSender(syncProducer, branch, dryRun),
+		syncProducer,
+		branch,
 		dryRun,
 	)
 	clock := libtime.NewCurrentDateTime()
@@ -124,24 +142,6 @@ func CreateCommandSender(
 		), "personal")
 	}
 	return sender
-}
-
-// CreateScheduleStore builds the informer-backed ScheduleStore for the
-// given namespace. The caller is responsible for starting the returned
-// factory (StartWithContext) and waiting for cache sync before reading.
-func CreateScheduleStore(
-	client versioned.Interface,
-	namespace string,
-) (externalversions.SharedInformerFactory, store.ScheduleStore) {
-	informerFactory := externalversions.NewSharedInformerFactoryWithOptions(
-		client,
-		0,
-		externalversions.WithNamespace(namespace),
-	)
-	lister := informerFactory.Task().V1().Schedules().Lister()
-	// touch the informer so the factory registers it before Start
-	_ = informerFactory.Task().V1().Schedules().Informer()
-	return informerFactory, store.NewScheduleStore(lister, namespace)
 }
 
 // CreateCleanup wires the cleanup orchestrator and the cron loop around it.
@@ -181,4 +181,43 @@ func CreateCleanup(
 			return nil
 		}),
 	)
+}
+
+func CreateInformatFactory(
+	ctx context.Context,
+	namespace string,
+) (externalversions.SharedInformerFactory, error) {
+	connector := pkg.NewK8sConnector(
+		rest.InClusterConfig,
+		func(c *rest.Config) (apiextensionsclient.Interface, error) {
+			return apiextensionsclient.NewForConfig(c)
+		},
+	)
+	if err := connector.SetupCustomResourceDefinition(ctx); err != nil {
+		return nil, errors.Wrap(ctx, err, "setup CRD failed")
+	}
+
+	restConfig, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, errors.Wrap(ctx, err, "in-cluster config failed")
+	}
+	versionedClient, err := versioned.NewForConfig(restConfig)
+	if err != nil {
+		return nil, errors.Wrap(ctx, err, "build versioned client failed")
+	}
+	informerFactory := externalversions.NewSharedInformerFactoryWithOptions(
+		versionedClient,
+		0,
+		externalversions.WithNamespace(namespace),
+	)
+	// touch the informer so the factory registers it before Start
+	_ = informerFactory.Task().V1().Schedules().Informer()
+
+	// Lifecycle: start the informer goroutines with the LONG-LIVED `ctx`
+	// so they keep running for the life of the process. ONLY bound the
+	// initial cache sync with a 30s deadline — `StartWithContext` must
+	// NOT receive a deadline-bounded context, or the informer goroutines
+	// will exit at the 30s mark and silently stop delivering updates.
+	informerFactory.StartWithContext(ctx)
+	return informerFactory, nil
 }

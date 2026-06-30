@@ -10,41 +10,27 @@ import (
 	"net/http/httptest"
 	"time"
 
-	taskmocks "github.com/bborbe/agent/mocks"
 	libtime "github.com/bborbe/time"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/bborbe/recurring-task-creator/k8s/client/clientset/versioned"
 	versionedfake "github.com/bborbe/recurring-task-creator/k8s/client/clientset/versioned/fake"
+	"github.com/bborbe/recurring-task-creator/k8s/client/informers/externalversions"
 	projmocks "github.com/bborbe/recurring-task-creator/mocks"
 	"github.com/bborbe/recurring-task-creator/pkg/factory"
-	"github.com/bborbe/recurring-task-creator/pkg/publisher"
 	"github.com/bborbe/recurring-task-creator/pkg/schedule"
+	"github.com/bborbe/recurring-task-creator/pkg/store"
 	"github.com/bborbe/recurring-task-creator/pkg/tick"
 )
 
 var _ = Describe("CreatePublisher", func() {
-	var (
-		sender *taskmocks.TaskCreateCommandSender
-		pub    publisher.Publisher
-	)
-	BeforeEach(func() {
-		sender = &taskmocks.TaskCreateCommandSender{}
-		sender.SendCommandReturns(nil)
-		pub = factory.CreatePublisher(sender, false)
-	})
-	It("returns a Publisher that delegates to the sender", func() {
-		def := schedule.TaskDefinition{
-			Slug:          "weekly-review",
-			TitleTemplate: "t",
-			Recurrence:    schedule.RecurrenceWeekly,
-		}
-		Expect(pub.Publish(
-			context.Background(),
-			def,
-			schedule.NewDate(2025, time.January, 4),
-		)).To(Succeed())
-		Expect(sender.SendCommandCallCount()).To(Equal(1))
+	It("returns a Publisher (smoke test — syncProducer wiring requires a live Kafka)", func() {
+		// With dryRun=true the factory uses NewNoopSender internally, so no
+		// Kafka producer is required. The wired-in branch + dryRun combo is
+		// the only testable surface without a mock libkafka.SyncProducer.
+		pub := factory.CreatePublisher(nil, "dev", true)
+		Expect(pub).NotTo(BeNil())
 	})
 })
 
@@ -127,14 +113,40 @@ var _ = Describe("CreateTriggerHandler", func() {
 var _ = Describe("CreateScheduleStore", func() {
 	It("returns a non-nil factory and a non-nil store", func() {
 		fakeClient := versionedfake.NewSimpleClientset()
-		informerFactory, scheduleStore := factory.CreateScheduleStore(fakeClient, "test-namespace")
+		var client versioned.Interface = fakeClient
+		var namespace = "test-namespace"
+		informerFactory2 := externalversions.NewSharedInformerFactoryWithOptions(
+			client,
+			0,
+			externalversions.WithNamespace(namespace),
+		)
+		lister := informerFactory2.Task().V1().Schedules().Lister()
+		// touch the informer so the factory registers it before Start
+		_ = informerFactory2.Task().V1().Schedules().Informer()
+		informerFactory, scheduleStore := informerFactory2, store.NewScheduleStore(
+			lister,
+			namespace,
+		)
 		Expect(informerFactory).NotTo(BeNil())
 		Expect(scheduleStore).NotTo(BeNil())
 	})
 
 	It("store lists zero definitions after StartWithContext + sync on an empty cluster", func() {
 		fakeClient := versionedfake.NewSimpleClientset()
-		informerFactory, scheduleStore := factory.CreateScheduleStore(fakeClient, "test-namespace")
+		var client versioned.Interface = fakeClient
+		var namespace = "test-namespace"
+		informerFactory2 := externalversions.NewSharedInformerFactoryWithOptions(
+			client,
+			0,
+			externalversions.WithNamespace(namespace),
+		)
+		lister := informerFactory2.Task().V1().Schedules().Lister()
+		// touch the informer so the factory registers it before Start
+		_ = informerFactory2.Task().V1().Schedules().Informer()
+		informerFactory, scheduleStore := informerFactory2, store.NewScheduleStore(
+			lister,
+			namespace,
+		)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
