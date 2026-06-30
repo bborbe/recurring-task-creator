@@ -11,6 +11,7 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 ## Unreleased
 
 - feat: add optional `spec.schedule.autoAbortPrior` boolean on the `Schedule` CRD — an opt-in flag (default `false` when omitted) marking a Schedule whose prior-period instance may be auto-aborted by the downstream task-controller when the next instance materializes. Carried as a `*bool` on `ScheduleTrigger` so unset is distinguishable from explicit `false`, with nil-safe deepcopy and apply-configuration plumbing. The CRD schema declares it as `Type: "boolean"` (no enum, not required), so the API server rejects non-boolean values at `kubectl apply` time. Existing Schedules without the field are unaffected; this is the API-contract layer only — no publishing behavior change yet.
+- feat: carry `autoAbortPrior` from the CRD into the domain layer — add a plain `AutoAbortPrior bool` field to `schedule.TaskDefinition`, and have the store adapter (`adaptSchedule`) resolve the CR's `spec.schedule.autoAbortPrior` `*bool` onto it nil-safely (nil → `false`, explicit `false` → `false`, explicit `true` → `true`). Bridges the API contract (prompt 1) to the pure-data `TaskDefinition` the publisher consumes (prompt 3); the schedule layer stays free of Kafka/HTTP/agent imports. No publishing behavior change yet.
 
 ## v0.6.1
 

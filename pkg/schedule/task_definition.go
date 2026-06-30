@@ -59,6 +59,16 @@ type TaskDefinition struct {
 	// Negative offsets name a prior period; the publisher's buildPeriodToken
 	// applies the shift to the fire date before formatting the token.
 	PeriodOffset int
+
+	// AutoAbortPrior is the opt-in flag resolved from the CR's
+	// spec.autoAbortPrior pointer by the store adapter (nil → false). A plain
+	// bool, consistent with PeriodOffset's plain-int style — the schedule
+	// layer stays pure data. The publisher mirrors this value onto every
+	// materialized task's frontmatter as the `auto_abort_prior` key; the
+	// downstream task-controller reads that key as its auto-abort eligibility
+	// gate. Default false means a Schedule never opts into auto-abort unless
+	// the operator explicitly sets spec.autoAbortPrior: true.
+	AutoAbortPrior bool
 }
 
 // The closed list of accepted placeholder tokens lives in

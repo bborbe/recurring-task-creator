@@ -1,14 +1,14 @@
 ---
-status: cancelled
+status: completed
 spec: [015-auto-abort-prior-field]
+summary: Added AutoAbortPrior bool to schedule.TaskDefinition and nil-safely resolved the CR *bool in the store adapter (nil→false, explicit false→false, true→true) with three adapter specs; make precommit exits 0.
 execution_id: recurring-task-controller-auto-abort-exec-026-spec-015-task-definition-and-adapter
 dark-factory-version: dev
 created: "2026-06-30T18:00:00Z"
 queued: "2026-06-30T17:47:55Z"
-started: "2026-06-30T19:24:02Z"
-completed: "2026-06-30T17:48:44Z"
+started: "2026-06-30T19:30:44Z"
+completed: "2026-06-30T19:35:06Z"
 branch: dark-factory/auto-abort-prior-field
-lastFailReason: 'validate completion report: completion report status: failed'
 cancelled: "2026-06-30T19:24:11Z"
 ---
 
