@@ -1,5 +1,5 @@
 ---
-status: verifying
+status: completed
 tags:
     - dark-factory
     - spec
@@ -7,6 +7,7 @@ approved: "2026-06-30T17:34:14Z"
 generating: "2026-06-30T17:35:59Z"
 prompted: "2026-06-30T17:44:00Z"
 verifying: "2026-07-01T10:09:26Z"
+completed: "2026-07-01T10:15:35Z"
 branch: dark-factory/auto-abort-prior-field
 ---
 
