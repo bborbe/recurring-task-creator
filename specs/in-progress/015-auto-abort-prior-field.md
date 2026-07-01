@@ -1,11 +1,12 @@
 ---
-status: prompted
+status: verifying
 tags:
     - dark-factory
     - spec
 approved: "2026-06-30T17:34:14Z"
 generating: "2026-06-30T17:35:59Z"
 prompted: "2026-06-30T17:44:00Z"
+verifying: "2026-07-01T10:09:26Z"
 branch: dark-factory/auto-abort-prior-field
 ---
 
@@ -219,3 +220,21 @@ This verify is the DoD for the cross-repo feature, not for this spec. This spec 
 ## Definition of Done formatting
 
 Per [[Closure Patterns]] and `docs/dod.md`: `make precommit` green, `CHANGELOG.md` entry present, GoDoc on new exported field, license headers on touched files, no vault writes from this service (the stamp goes through `task.CreateCommand` to Kafka, not to the vault directly).
+
+## Verification Result
+
+**Verified:** 2026-07-01T10:14:05Z (HEAD 076f86c, release v0.7.0)
+**Binary:** installed `dark-factory` (/Users/bborbe/Documents/workspaces/go/bin/dark-factory)
+**Scenario:** Structural AC walk plus live dev + prod e2e replay of publisher stamp and downstream controller supersede.
+**Evidence:**
+- CRD schema in `pkg/k8s_connector_schema.go:166` declares `autoAbortPrior` as `Type: "boolean"`; `kubectlquant get crd schedules.task.benjamin-borbe.de` on prod shows the property with `type: boolean` after the v0.7.0 boot ran `SetupCustomResourceDefinition`.
+- `ScheduleTrigger.AutoAbortPrior *bool` at `k8s/apis/task.benjamin-borbe.de/v1/types.go:99`; deepcopy pointer copy at `zz_generated.deepcopy.go:132`.
+- `schedule.TaskDefinition.AutoAbortPrior bool` at `pkg/schedule/task_definition.go:71`; adapter maps nil/false/true at `pkg/store/adapter.go:79-91` with three tests at `pkg/store/adapter_test.go:317,331,346`.
+- `FrontmatterFormatter.Format` stamps `auto_abort_prior` at `pkg/publisher/frontmatter.go:76`; Ginkgo specs at `pkg/publisher/frontmatter_test.go:58-98` cover stamp values, operator-override guard, created_by ordering, and YAML boolean round-trip. Publisher regression at `publisher_test.go:936` asserts byte-identical payload plus new `auto_abort_prior: false`.
+- CHANGELOG entries at `CHANGELOG.md:13-16` describe the new field and stamp.
+- `make precommit` exit 0 at 12:13 local (fmt + lint + gosec 0 issues + trivy 0 vulns + license headers).
+- Dev live replay: `POST /admin/recurring-task-creator/trigger?date=2026-07-01` published 3 tasks; `24 Tasks/Auto Abort E2E Enabled - 2026-07-01.md` frontmatter carries `auto_abort_prior: true`, disabled variant carries `false`.
+- Prod live: Schedules `cleanup-obsidian-inbox`, `cleanup-omnifocus-inbox`, `aquascape-pwc` opted in via quant PR #17 + #18 merge `d31c8f6`; `kubectlquant -n prod get schedule cleanup-obsidian-inbox -o jsonpath='{.spec.schedule}'` → `{"autoAbortPrior":true,"recurrence":"Daily"}`.
+- Cross-repo downstream: agent-task-controller PR #3 merged as `c481d77` observed on dev cluster at 10:05:21 executing `auto-supersede: 24 Tasks/Auto Abort E2E Enabled - 2026-07-01.md -> Enabled - 2026-07-02.md`; day-1 file transitioned to `status: aborted`, `phase: done`, `superseded_by: ...`, `completed_date: 2026-07-01T10:05:19Z` (git show `fc672245c`).
+- AC 4 caveat: local `make generatek8s` produced drift in `k8s/client/{applyconfiguration,clientset,informers,listers}` due to a code-generator version mismatch on the operator's workstation; the `zz_generated.deepcopy.go` that AC 4 is scoped to remained clean, and merged CI plus the successful v0.7.0 prod release confirm the committed generated code matches the generator version used in CI. Drift is orthogonal to spec 015.
+**Verdict:** PASS
