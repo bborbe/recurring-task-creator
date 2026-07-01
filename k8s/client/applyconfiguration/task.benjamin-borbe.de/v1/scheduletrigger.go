@@ -41,7 +41,7 @@ type ScheduleTriggerApplyConfiguration struct {
 	// schedule targets multiple days; mutually exclusive with Weekday.
 	// Normalized and deduplicated to a canonical time.Weekday set Go-side by
 	// the store adapter.
-	Weekdays *[]string `json:"weekdays,omitempty"`
+	Weekdays []string `json:"weekdays,omitempty"`
 	// PeriodOffset shifts the period-anchored token by N periods. Default 0
 	// (current period). Negative values name a prior period; positive values
 	// name a future period. The shift applies to the period token suffix
@@ -55,9 +55,15 @@ type ScheduleTriggerApplyConfiguration struct {
 	// scheduleSpecSchema (semantics undefined; date-anchored kinds don't
 	// have a meaningful period offset distinct from a date shift).
 	PeriodOffset *int `json:"periodOffset,omitempty"`
-	// AutoAbortPrior is an opt-in flag (default false when unset) marking this
-	// Schedule as one whose prior-period instance MAY be auto-aborted by the
-	// downstream task-controller. See the apis type doc on ScheduleTrigger.
+	// AutoAbortPrior is an opt-in flag (default false when unset) marking
+	// this Schedule as one whose prior-period instance MAY be auto-aborted
+	// by the downstream task-controller when the next instance materializes.
+	// A pointer so an unset field (nil → effective false) is distinguishable
+	// from an explicit false. The publisher resolves the pointer to a plain
+	// bool and stamps it as the `auto_abort_prior` frontmatter key on every
+	// materialized task; the controller reads that key as its eligibility
+	// gate (controller-side gate flip ships in a separate PR). Optional —
+	// never required by the CRD schema.
 	AutoAbortPrior *bool `json:"autoAbortPrior,omitempty"`
 }
 
@@ -87,13 +93,15 @@ func (b *ScheduleTriggerApplyConfiguration) WithWeekday(
 	return b
 }
 
-// WithWeekdays sets the Weekdays field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Weekdays field is set to the value of the last call.
+// WithWeekdays adds the given value to the Weekdays field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the Weekdays field.
 func (b *ScheduleTriggerApplyConfiguration) WithWeekdays(
-	value []string,
+	values ...string,
 ) *ScheduleTriggerApplyConfiguration {
-	b.Weekdays = &value
+	for i := range values {
+		b.Weekdays = append(b.Weekdays, values[i])
+	}
 	return b
 }
 

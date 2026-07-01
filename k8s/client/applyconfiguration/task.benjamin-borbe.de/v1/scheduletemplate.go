@@ -19,7 +19,7 @@ limitations under the License.
 package v1
 
 import (
-	lib "github.com/bborbe/agent"
+	agent "github.com/bborbe/agent"
 )
 
 // ScheduleTemplateApplyConfiguration represents a declarative configuration of the ScheduleTemplate type for use
@@ -31,7 +31,7 @@ type ScheduleTemplateApplyConfiguration struct {
 	Body *string `json:"body,omitempty"`
 	// Frontmatter is the YAML frontmatter of the generated vault file.
 	// Reuses lib.TaskFrontmatter from github.com/bborbe/agent.
-	Frontmatter *lib.TaskFrontmatter `json:"frontmatter,omitempty"`
+	Frontmatter *agent.TaskFrontmatter `json:"frontmatter,omitempty"`
 }
 
 // ScheduleTemplateApplyConfiguration constructs a declarative configuration of the ScheduleTemplate type for use with
@@ -54,7 +54,7 @@ func (b *ScheduleTemplateApplyConfiguration) WithBody(
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Frontmatter field is set to the value of the last call.
 func (b *ScheduleTemplateApplyConfiguration) WithFrontmatter(
-	value lib.TaskFrontmatter,
+	value agent.TaskFrontmatter,
 ) *ScheduleTemplateApplyConfiguration {
 	b.Frontmatter = &value
 	return b
