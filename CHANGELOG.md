@@ -8,6 +8,13 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
+## Unreleased
+
+- feat: Bump `github.com/bborbe/agent` v0.70.0 → v0.72.0, `github.com/bborbe/cqrs` v0.5.3 → v0.6.0
+- feat: Add explicit `TopicPrefix base.TopicPrefix` config field (`arg:"topic-prefix"`, `env:"TOPIC_PREFIX"`, optional) to both `main.go` and `cmd/run-once/main.go`; Kafka command topics are now built from `TopicPrefix` only (empty means unprefixed, no leading dash) — the existing `Stage`/`STAGE` field is retained unchanged for its other (non-topic) uses
+- test: Add golden test proving published command topic literals — `develop-agent-task-v1-request` (dev), `master-agent-task-v1-request` (prod), and `agent-task-v1-request` (empty prefix) — via `factory.CreateCommandSender` wired to the real `github.com/bborbe/kafka/mocks.KafkaSyncProducer` fake
+- chore: k8s manifest (`k8s/recurring-task-creator-sts.yaml`) now also sets `TOPIC_PREFIX`; `dev.env`/`prod.env` pin it to `develop`/`master` respectively to keep existing deployments' topic names byte-identical to the previous implicit `STAGE`-derived mapping
+
 ## v0.7.0
 
 - feat: stamp `auto_abort_prior: <bool>` onto every published task's frontmatter, mirroring the resolved `TaskDefinition.AutoAbortPrior`. The key is set after operator-supplied frontmatter is merged (so an operator-supplied `auto_abort_prior` cannot override the spec-level value) and before `created_by` is force-set (preserving the provenance invariant). The value is a Go `bool` serialized as a YAML boolean `true`/`false`, never a string. Existing Schedules publish byte-identical task identifiers, titles, and bodies — the only payload change is the added frontmatter key.

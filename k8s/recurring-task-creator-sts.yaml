@@ -49,6 +49,8 @@ spec:
               value: '{{ "KAFKA_BROKERS" | env }}'
             - name: STAGE
               value: '{{ "STAGE" | env }}'
+            - name: TOPIC_PREFIX
+              value: '{{ "TOPIC_PREFIX" | env }}'
             - name: DRY_RUN
               value: '{{ "DRY_RUN" | env }}'
             - name: SENTRY_DSN
