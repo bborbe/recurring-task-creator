@@ -36,7 +36,7 @@ type application struct {
 	SentryDSN    string               `required:"false" arg:"sentry-dsn"    env:"SENTRY_DSN"    usage:"SentryDSN"                                                         display:"length"`
 	SentryProxy  string               `required:"false" arg:"sentry-proxy"  env:"SENTRY_PROXY"  usage:"Sentry Proxy"`
 	KafkaBrokers string               `required:"false" arg:"kafka-brokers" env:"KAFKA_BROKERS" usage:"Comma separated list of Kafka brokers (ignored when DRY_RUN=true)"`
-	Stage        cqrsbase.Branch      `required:"false" arg:"stage"         env:"STAGE"         usage:"Deployment stage (dev|prod) — used as Kafka topic branch prefix"                    default:"dev"`
+	Stage        cqrsbase.Branch      `required:"false" arg:"stage"         env:"STAGE"         usage:"Deployment stage (dev|prod); Kafka topic prefix is set separately via TOPIC_PREFIX"                    default:"dev"`
 	TopicPrefix  cqrsbase.TopicPrefix `required:"false" arg:"topic-prefix"  env:"TOPIC_PREFIX"  usage:"Explicit Kafka topic prefix; empty means unprefixed topics"`
 	Namespace    string               `required:"true"  arg:"namespace"     env:"NAMESPACE"     usage:"Pod namespace for Schedule CR watch"`
 	DryRun       bool                 `required:"false" arg:"dry-run"       env:"DRY_RUN"       usage:"if true, log every would-be CreateCommand and skip the Kafka send"                  default:"false"`

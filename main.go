@@ -47,7 +47,7 @@ type application struct {
 	SentryProxy     string               `required:"false" arg:"sentry-proxy"      env:"SENTRY_PROXY"      usage:"Sentry Proxy"`
 	Listen          string               `required:"true"  arg:"listen"            env:"LISTEN"            usage:"address to listen to"`
 	KafkaBrokers    string               `required:"true"  arg:"kafka-brokers"     env:"KAFKA_BROKERS"     usage:"Comma separated list of Kafka brokers"`
-	Stage           string               `required:"true"  arg:"stage"             env:"STAGE"             usage:"Deployment stage (dev|prod) — used as Kafka topic branch prefix"`
+	Stage           string               `required:"true"  arg:"stage"             env:"STAGE"             usage:"Deployment stage (dev|prod); Kafka topic prefix is set separately via TOPIC_PREFIX"`
 	TopicPrefix     cqrsbase.TopicPrefix `required:"false" arg:"topic-prefix"      env:"TOPIC_PREFIX"      usage:"Explicit Kafka topic prefix; empty means unprefixed topics"`
 	Namespace       string               `required:"true"  arg:"namespace"         env:"NAMESPACE"         usage:"Pod namespace for Schedule CR watch"`
 	BuildGitVersion string               `required:"false" arg:"build-git-version" env:"BUILD_GIT_VERSION" usage:"Build Git version"                                                                  default:"dev"`
