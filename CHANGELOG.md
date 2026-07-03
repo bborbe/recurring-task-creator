@@ -8,7 +8,7 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
-## Unreleased
+## v0.8.0
 
 - feat: Bump `github.com/bborbe/agent` v0.70.0 → v0.72.0, `github.com/bborbe/cqrs` v0.5.3 → v0.6.0
 - feat: Add explicit `TopicPrefix base.TopicPrefix` config field (`arg:"topic-prefix"`, `env:"TOPIC_PREFIX"`, optional) to both `main.go` and `cmd/run-once/main.go`; Kafka command topics are now built from `TopicPrefix` only (empty means unprefixed, no leading dash) — the existing `Stage`/`STAGE` field is retained unchanged for its other (non-topic) uses
