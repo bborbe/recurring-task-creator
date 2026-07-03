@@ -88,11 +88,11 @@ func CreateTickLoop(
 	ctx context.Context,
 	scheduleStore store.ScheduleStore,
 	syncProducer libkafka.SyncProducer,
-	branch cqrsbase.Branch,
+	topicPrefix cqrsbase.TopicPrefix,
 	dryRun bool,
 ) tick.Tick {
 	pub := CreatePublisher(
-		CreateCommandSender(syncProducer, branch, dryRun),
+		CreateCommandSender(syncProducer, topicPrefix, dryRun),
 		dryRun,
 	)
 	clock := libtime.NewCurrentDateTime()
@@ -104,7 +104,7 @@ func CreateTickLoop(
 // true, returns a no-op sender. Pure plumbing.
 func CreateCommandSender(
 	syncProducer libkafka.SyncProducer,
-	branch cqrsbase.Branch,
+	topicPrefix cqrsbase.TopicPrefix,
 	dryRun bool,
 ) task.CreateCommandSender {
 	var sender task.CreateCommandSender
@@ -113,7 +113,7 @@ func CreateCommandSender(
 	} else {
 		sender = task.NewCreateCommandSender(cdb.NewCommandObjectSender(
 			syncProducer,
-			branch,
+			topicPrefix,
 			liblog.DefaultSamplerFactory,
 		), "personal")
 	}

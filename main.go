@@ -43,16 +43,17 @@ func main() {
 }
 
 type application struct {
-	SentryDSN       string            `required:"true"  arg:"sentry-dsn"        env:"SENTRY_DSN"        usage:"SentryDSN"                                                         display:"length"`
-	SentryProxy     string            `required:"false" arg:"sentry-proxy"      env:"SENTRY_PROXY"      usage:"Sentry Proxy"`
-	Listen          string            `required:"true"  arg:"listen"            env:"LISTEN"            usage:"address to listen to"`
-	KafkaBrokers    string            `required:"true"  arg:"kafka-brokers"     env:"KAFKA_BROKERS"     usage:"Comma separated list of Kafka brokers"`
-	Stage           string            `required:"true"  arg:"stage"             env:"STAGE"             usage:"Deployment stage (dev|prod) — used as Kafka topic branch prefix"`
-	Namespace       string            `required:"true"  arg:"namespace"         env:"NAMESPACE"         usage:"Pod namespace for Schedule CR watch"`
-	BuildGitVersion string            `required:"false" arg:"build-git-version" env:"BUILD_GIT_VERSION" usage:"Build Git version"                                                                  default:"dev"`
-	BuildGitCommit  string            `required:"false" arg:"build-git-commit"  env:"BUILD_GIT_COMMIT"  usage:"Build Git commit hash"                                                              default:"none"`
-	BuildDate       *libtime.DateTime `required:"false" arg:"build-date"        env:"BUILD_DATE"        usage:"Build timestamp (RFC3339)"`
-	DryRun          bool              `required:"false" arg:"dry-run"           env:"DRY_RUN"           usage:"if true, log every would-be CreateCommand and skip the Kafka send"                  default:"false"`
+	SentryDSN       string               `required:"true"  arg:"sentry-dsn"        env:"SENTRY_DSN"        usage:"SentryDSN"                                                         display:"length"`
+	SentryProxy     string               `required:"false" arg:"sentry-proxy"      env:"SENTRY_PROXY"      usage:"Sentry Proxy"`
+	Listen          string               `required:"true"  arg:"listen"            env:"LISTEN"            usage:"address to listen to"`
+	KafkaBrokers    string               `required:"true"  arg:"kafka-brokers"     env:"KAFKA_BROKERS"     usage:"Comma separated list of Kafka brokers"`
+	Stage           string               `required:"true"  arg:"stage"             env:"STAGE"             usage:"Deployment stage (dev|prod) — used as Kafka topic branch prefix"`
+	TopicPrefix     cqrsbase.TopicPrefix `required:"false" arg:"topic-prefix"      env:"TOPIC_PREFIX"      usage:"Explicit Kafka topic prefix; empty means unprefixed topics"`
+	Namespace       string               `required:"true"  arg:"namespace"         env:"NAMESPACE"         usage:"Pod namespace for Schedule CR watch"`
+	BuildGitVersion string               `required:"false" arg:"build-git-version" env:"BUILD_GIT_VERSION" usage:"Build Git version"                                                                  default:"dev"`
+	BuildGitCommit  string               `required:"false" arg:"build-git-commit"  env:"BUILD_GIT_COMMIT"  usage:"Build Git commit hash"                                                              default:"none"`
+	BuildDate       *libtime.DateTime    `required:"false" arg:"build-date"        env:"BUILD_DATE"        usage:"Build timestamp (RFC3339)"`
+	DryRun          bool                 `required:"false" arg:"dry-run"           env:"DRY_RUN"           usage:"if true, log every would-be CreateCommand and skip the Kafka send"                  default:"false"`
 }
 
 func (a *application) Run(ctx context.Context, _ libsentry.Client) error {
@@ -121,7 +122,7 @@ func (a *application) Run(ctx context.Context, _ libsentry.Client) error {
 
 		sender = task.NewCreateCommandSender(cdb.NewCommandObjectSender(
 			syncProducer,
-			cqrsbase.Branch(a.Stage),
+			a.TopicPrefix,
 			liblog.DefaultSamplerFactory,
 		), "personal")
 	}
