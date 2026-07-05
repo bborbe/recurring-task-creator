@@ -14,6 +14,16 @@ endif
 run:
 	@go run -mod=mod main.go -v=2
 
+# Package + publish the Helm chart in helm/ to OCI. Chart version comes from
+# helm/Chart.yaml (independent of the binary VERSION). Requires a prior
+# `helm registry login registry-1.docker.io`.
+CHART_OCI ?= oci://registry-1.docker.io/bborbe
+.PHONY: helm-publish
+helm-publish:
+	@helm lint helm/
+	@helm package helm/ -d /tmp
+	@helm push /tmp/recurring-task-creator-$$(awk '/^version:/{print $$2; exit}' helm/Chart.yaml).tgz $(CHART_OCI)
+
 deps:
 	go install github.com/onsi/ginkgo/v2/ginkgo@v2.25.3
 	sudo port install trivy

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: recurring-task-creator
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: recurring-task-creator
+    {{- include "recurring-task-creator.labels" . | nindent 4 }}
+  annotations:
+    admin/port: '9090'
+    admin/path: ''
+spec:
+  ports:
+    - name: http
+      port: 9090
+  selector:
+    app: recurring-task-creator

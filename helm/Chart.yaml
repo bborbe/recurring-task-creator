@@ -1,0 +1,25 @@
+apiVersion: v2
+name: recurring-task-creator
+description: >-
+  recurring-task-creator — publishes task.CreateCommand events to Kafka on a
+  schedule (from Schedule CRs) so a downstream task-controller materializes
+  recurring tasks. Standalone deploy chart for the bborbe/recurring-task-creator
+  service; pairs with the core `agent` task pipeline (controller + Kafka).
+type: application
+# Chart version — bumped on chart changes, independent of appVersion.
+version: 0.1.0
+# Default image tag when values don't override image.tag.
+appVersion: "0.8.2"
+home: https://github.com/bborbe/recurring-task-creator
+sources:
+  - https://github.com/bborbe/recurring-task-creator
+maintainers:
+  - name: Benjamin Borbe
+annotations:
+  # The pod self-installs the `schedules.task.benjamin-borbe.de` CRD at boot, so
+  # this chart grants cluster-scoped RBAC to create/patch CRDs (see templates/
+  # rbac.yaml). It publishes task.CreateCommand to Kafka; the downstream
+  # agent-task-controller (core `agent` chart) consumes and materializes tasks.
+  artifacthub.io/prerequisites: |
+    - A reachable Kafka broker and a downstream agent-task-controller consuming
+      the same TOPIC_PREFIX. The chart itself installs the Schedule CRD at boot.

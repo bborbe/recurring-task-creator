@@ -103,12 +103,14 @@ Substituted in `title`, `body`, and any **string-valued** `frontmatter` field. N
 ## Build + deploy
 
 ```bash
-make test                          # ginkgo specs + coverage
-BRANCH=dev  make buca              # build, push image, apply STS + RBAC to dev
-BRANCH=prod make buca              # same for prod
+make test          # ginkgo specs + coverage
+make buca          # build + push docker.io/bborbe/recurring-task-creator:$(VERSION) (publish-only)
+make helm-publish  # package + push the Helm chart to oci://registry-1.docker.io/bborbe
 ```
 
-`make buca` is a small chain (`make build && make upload && make apply`). The applied tree is the **binary deployment** only — `StatefulSet`, `Service`, `KafkaUser`, `Role` + `RoleBinding` for namespace-scoped `Schedule` watch, and `ClusterRole` + `ClusterRoleBinding` for the CRD self-install.
+`make buca` is **publish-only** (build image + push); it applies nothing to a cluster. Deployment is the Helm chart in [`helm/`](helm/) — a `StatefulSet`, `Service`, `Role` + `RoleBinding` (namespace-scoped `Schedule` watch), `ClusterRole` + `ClusterRoleBinding` (boot-time CRD self-install), and optional Strimzi `KafkaUser` + Sentry `Secret`. Per-cluster config (Kafka brokers, stage, `topicPrefix`, Sentry, node affinity, pull secrets) is supplied by the consuming values — the quant deployment lives in the private `bborbe/quant` config repo.
+
+> **`topicPrefix` must match the downstream controller.** The service publishes to `<topicPrefix>-agent-task-v1-request` (empty = unprefixed). Set `topicPrefix` to whatever the agent-task-controller consuming the topic uses (e.g. `develop` / `master`), or the tasks land on a topic nobody reads.
 
 `Schedule` CRs themselves live in a separate (typically private) repository — they reference the deployed image but are operator-owned data, not part of the binary. The repo deployer applies them with `kubectl apply -k <overlay>` (kustomize) or any GitOps mechanism of choice.
 
@@ -119,7 +121,7 @@ The pod's ServiceAccount needs:
 - `apiextensions.k8s.io/customresourcedefinitions` `get / create / update / patch` at cluster scope — for the boot-time CRD install
 - `task.benjamin-borbe.de/schedules` `get / list / watch` in the pod's own namespace — for the informer
 
-Manifests: `k8s/recurring-task-creator-{sa,clusterrole,clusterrolebinding,role,rolebinding}.yaml`.
+Manifests: [`helm/templates/rbac.yaml`](helm/templates/rbac.yaml) (ServiceAccount + Role/RoleBinding + ClusterRole/ClusterRoleBinding). The ClusterRole is namespace-suffixed so dev + prod installs don't collide on the cluster-scoped object.
 
 ## Local smoke-test
 
@@ -144,7 +146,7 @@ Skips Kafka init entirely (uses a noop sender); logs every `(slug, date, identif
 | `pkg/schedule` | Internal types — `Date`, `RecurrenceKind`, `TaskDefinition`, `TasksForDate` |
 | `k8s/apis/task.benjamin-borbe.de/v1/` | CRD Go types (hand-written) + `zz_generated.deepcopy.go` |
 | `k8s/client/` | Generated typed clientset + informers + listers + applyconfiguration |
-| `k8s/recurring-task-creator-*.yaml` | Binary deployment manifests (STS + RBAC) |
+| `helm/` | Standalone Helm deploy chart (STS + RBAC + Service + optional KafkaUser/Secret) |
 | `hack/update-codegen.sh` | Wraps `kube_codegen.sh` for the client tree |
 | `mocks/` | Counterfeiter mocks |
 | `specs/`, `prompts/` | dark-factory development history (specs → prompts → daemon-executed code) |
