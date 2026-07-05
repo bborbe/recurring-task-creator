@@ -1,0 +1,98 @@
+# recurring-task-creator — standalone deploy chart values.
+#
+# The service publishes task.CreateCommand to Kafka on a schedule. It MUST use
+# the same topicPrefix as the downstream agent-task-controller consuming the
+# topic, or messages land on a topic nobody reads (empty = unprefixed).
+
+image:
+  registry: docker.io
+  repository: bborbe/recurring-task-creator
+  # Empty defaults to Chart.appVersion.
+  tag: ""
+  pullPolicy: IfNotPresent
+  # Private-registry pull secret(s), e.g. [{name: docker-quant}]. Empty for public docker.io.
+  pullSecrets: []
+
+logLevel: "2"
+
+# Stage label (STAGE env). Empty = unset.
+stage: ""
+
+# Explicit Kafka topic prefix (TOPIC_PREFIX env). Empty = UNPREFIXED topics.
+# Set to match the controllers consuming the topic (e.g. develop / master).
+topicPrefix: ""
+
+# Kafka bootstrap brokers. Required.
+kafkaBrokers: ""
+
+# Dry-run mode (string "true"/"false"). "false" = actually publish.
+dryRun: "false"
+
+sentry:
+  # Sentry proxy cluster URL. Optional.
+  proxy: ""
+  # Sentry DSN. When set (and existingSecret empty), the chart creates a Secret
+  # providing key sentry-dsn.
+  dsn: ""
+# Name of a pre-existing Secret providing key sentry-dsn. When set, no Secret is created.
+existingSecret: ""
+
+# Node affinity. Empty = no affinity (generic clusters). Set the full affinity
+# object to pin to a node pool (e.g. quant: node_type=agent).
+affinity: {}
+
+# Pod-level securityContext. fsGroup 65534 (nobody) so the emptyDir /tmp is
+# group-writable by the non-root user.
+podSecurityContext:
+  fsGroup: 65534
+
+# Container-level securityContext. Hardened, non-root nobody, read-only rootfs
+# (writes only to the /tmp emptyDir).
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 65534
+  capabilities:
+    drop: [ALL]
+  seccompProfile:
+    type: RuntimeDefault
+
+resources:
+  requests:
+    cpu: 20m
+    memory: 20Mi
+  limits:
+    cpu: 200m
+    memory: 100Mi
+
+# keel auto-redeploy annotations (registry polling). Off by default — versioned
+# deploys bump image.tag + re-apply instead.
+keel:
+  enabled: false
+  pollSchedule: "@every 1m"
+
+# Extra pod annotation to force a rollout. Empty = omit.
+rolloutNonce: ""
+
+# Strimzi KafkaUser for mTLS Kafka auth. Off by default — non-Strimzi clusters
+# manage Kafka credentials outside the chart. NOTE: the KafkaUser is created in
+# strimziNamespace (NOT the release namespace); if Strimzi runs elsewhere and
+# this is wrong, mTLS auth silently fails.
+kafkaUser:
+  enabled: false
+  # Strimzi Kafka CR name (the strimzi.io/cluster label). "my-cluster" is the
+  # Strimzi quickstart name — override to match yours.
+  cluster: my-cluster
+  # REQUIRED when enabled: the namespace your Strimzi operator runs in. NO default
+  # on purpose — the KafkaUser must be created there (not the release namespace),
+  # and a wrong value fails silently (mTLS just gets denied). Rendering fails loudly
+  # if this is unset while kafkaUser.enabled=true.
+  strimziNamespace: ""
+  # Strimzi authorization ACLs. REQUIRED on an authz-enabled cluster (authorization:
+  # simple/opa) — a KafkaUser with no ACLs is denied everything. Leave empty ONLY on
+  # an authorization: none cluster. Scope to the topic the service produces to:
+  #   acls:
+  #     - resource: {type: topic, name: master-agent-task-v1-request, patternType: literal}
+  #       operations: [Describe, Write]
+  acls: []

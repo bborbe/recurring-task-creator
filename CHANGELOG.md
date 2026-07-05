@@ -8,6 +8,10 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
+## Unreleased
+
+- feat: add standalone Helm chart in `helm/` (StatefulSet + RBAC + Service + optional Strimzi KafkaUser / Sentry Secret). Restores the in-repo deploy tooling that v0.8.1 removed, now co-located with the binary so the deploy contract (env such as `TOPIC_PREFIX`) lives with the code that defines it. Per-cluster config stays in the quant config repo. Publish with `make helm-publish` to `oci://registry-1.docker.io/bborbe/recurring-task-creator`.
+
 ## v0.8.2
 
 - Update bborbe/agent, cqrs, errors, http, kafka, log, metrics, run, sentry, service, time dependencies

@@ -1,0 +1,25 @@
+{{- if .Values.kafkaUser.enabled }}
+# Strimzi KafkaUser lives in the Strimzi operator's namespace (not the app
+# namespace) and is labelled with the target Kafka cluster. Off by default —
+# non-Strimzi clusters manage Kafka auth outside the chart.
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: {{ .Release.Namespace }}-recurring-task-creator
+  namespace: {{ required "kafkaUser.strimziNamespace is required when kafkaUser.enabled — must match your Strimzi operator's namespace, or the KafkaUser lands in the wrong place and mTLS silently fails" .Values.kafkaUser.strimziNamespace }}
+  labels:
+    strimzi.io/cluster: {{ required "kafkaUser.cluster is required when kafkaUser.enabled — the Strimzi Kafka CR name" .Values.kafkaUser.cluster }}
+    {{- include "recurring-task-creator.labels" . | nindent 4 }}
+spec:
+  authentication:
+    type: tls
+  {{- with .Values.kafkaUser.acls }}
+  # Scope the user to only the topics it produces to. Omit (empty) on clusters
+  # with authorization disabled — otherwise a KafkaUser with no ACLs on an
+  # authz-enabled cluster is denied everything.
+  authorization:
+    type: simple
+    acls:
+      {{- toYaml . | nindent 6 }}
+  {{- end }}
+{{- end }}

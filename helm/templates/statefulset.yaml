@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: recurring-task-creator
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: recurring-task-creator
+    {{- include "recurring-task-creator.labels" . | nindent 4 }}
+  annotations:
+    {{- if .Values.keel.enabled }}
+    keel.sh/policy: force
+    keel.sh/trigger: poll
+    keel.sh/match-tag: "true"
+    keel.sh/pollSchedule: {{ .Values.keel.pollSchedule | quote }}
+    {{- end }}
+    {{- with .Values.rolloutNonce }}
+    random: {{ . | quote }}
+    {{- end }}
+spec:
+  replicas: 1
+  serviceName: recurring-task-creator
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: recurring-task-creator
+  template:
+    metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "9090"
+        prometheus.io/scheme: http
+        prometheus.io/scrape: "true"
+        {{- with .Values.rolloutNonce }}
+        random: {{ . | quote }}
+        {{- end }}
+      labels:
+        app: recurring-task-creator
+    spec:
+      serviceAccountName: recurring-task-creator
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: service
+          image: {{ include "recurring-task-creator.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          args:
+            - -v={{ .Values.logLevel }}
+          env:
+            - name: LISTEN
+              value: ':9090'
+            - name: KAFKA_BROKERS
+              value: {{ required "kafkaBrokers is required" .Values.kafkaBrokers | quote }}
+            - name: STAGE
+              # required in the binary (main.go Stage required:"true") — fail the
+              # render loudly rather than start a pod that crashes on empty STAGE.
+              value: {{ required "stage is required (STAGE env) — set to dev or prod" .Values.stage | quote }}
+            - name: TOPIC_PREFIX
+              value: {{ .Values.topicPrefix | quote }}
+            - name: DRY_RUN
+              # DryRun is a Go bool parsed with proper bool semantics (strconv.ParseBool
+              # via the bborbe arg library), so the string "false" → false, "true" → true.
+              # Verified in prod: dryRun "false" publishes tasks (not a silent dry-run).
+              value: {{ .Values.dryRun | quote }}
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.existingSecret | default "recurring-task-creator" }}
+                  key: sentry-dsn
+                  # optional so the pod still starts when no Sentry secret is
+                  # configured (both existingSecret and sentry.dsn empty) —
+                  # SENTRY_DSN is simply unset and Sentry stays disabled.
+                  optional: true
+            {{- with .Values.sentry.proxy }}
+            - name: SENTRY_PROXY
+              value: {{ . | quote }}
+            {{- end }}
+            - name: TZ
+              value: Europe/Berlin
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          ports:
+            - containerPort: 9090
+              name: http
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 9090
+              scheme: HTTP
+            initialDelaySeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+            successThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: 9090
+              scheme: HTTP
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
