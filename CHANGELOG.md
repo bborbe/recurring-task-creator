@@ -8,6 +8,12 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
+## v0.8.2
+
+- Update bborbe/agent, cqrs, errors, http, kafka, log, metrics, run, sentry, service, time dependencies
+- Update google/cel-go and go-openapi/swag transitive dependencies
+- Update klauspost/compress, prometheus/procfs, k8s.io/utils indirect dependencies
+
 ## v0.8.1
 
 - refactor: converge build to the bborbe/kafka-topic-reader publish-only model — make buca now builds and pushes docker.io/bborbe/recurring-task-creator:$(VERSION); deploy machinery removed.
