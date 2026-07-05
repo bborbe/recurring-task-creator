@@ -12,6 +12,12 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 
 - feat: add standalone Helm chart in `helm/` (StatefulSet + RBAC + Service + optional Strimzi KafkaUser / Sentry Secret). Restores the in-repo deploy tooling that v0.8.1 removed, now co-located with the binary so the deploy contract (env such as `TOPIC_PREFIX`) lives with the code that defines it. Per-cluster config stays in the quant config repo. Publish with `make helm-publish` to `oci://registry-1.docker.io/bborbe/recurring-task-creator`.
 
+## v0.8.2
+
+- Update bborbe/agent, cqrs, errors, http, kafka, log, metrics, run, sentry, service, time dependencies
+- Update google/cel-go and go-openapi/swag transitive dependencies
+- Update klauspost/compress, prometheus/procfs, k8s.io/utils indirect dependencies
+
 ## v0.8.1
 
 - refactor: converge build to the bborbe/kafka-topic-reader publish-only model — make buca now builds and pushes docker.io/bborbe/recurring-task-creator:$(VERSION); deploy machinery removed.
