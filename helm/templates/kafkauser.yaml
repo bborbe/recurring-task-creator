@@ -6,9 +6,9 @@ apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaUser
 metadata:
   name: {{ .Release.Namespace }}-recurring-task-creator
-  namespace: {{ .Values.kafkaUser.strimziNamespace | default "strimzi" }}
+  namespace: {{ required "kafkaUser.strimziNamespace is required when kafkaUser.enabled — must match your Strimzi operator's namespace, or the KafkaUser lands in the wrong place and mTLS silently fails" .Values.kafkaUser.strimziNamespace }}
   labels:
-    strimzi.io/cluster: {{ .Values.kafkaUser.cluster | default "my-cluster" }}
+    strimzi.io/cluster: {{ required "kafkaUser.cluster is required when kafkaUser.enabled — the Strimzi Kafka CR name" .Values.kafkaUser.cluster }}
     {{- include "recurring-task-creator.labels" . | nindent 4 }}
 spec:
   authentication:

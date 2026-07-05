@@ -25,6 +25,7 @@ CHART_OCI ?= oci://registry-1.docker.io/bborbe
 .PHONY: helm-publish
 helm-publish:
 	@helm lint helm/
+	@helm template smoke helm/ --set kafkaBrokers=smoke:9092 >/dev/null
 	@helm package helm/ -d /tmp
 	@helm push /tmp/recurring-task-creator-$$(awk '/^version:/{print $$2; exit}' helm/Chart.yaml).tgz $(CHART_OCI)
 

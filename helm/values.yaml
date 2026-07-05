@@ -81,11 +81,17 @@ rolloutNonce: ""
 # this is wrong, mTLS auth silently fails.
 kafkaUser:
   enabled: false
+  # Strimzi Kafka CR name (the strimzi.io/cluster label). "my-cluster" is the
+  # Strimzi quickstart name — override to match yours.
   cluster: my-cluster
-  strimziNamespace: strimzi
-  # Strimzi authorization ACLs. Empty = no `authorization` block (the cluster
-  # must run authorization: none, or manage ACLs externally). On an authz-enabled
-  # cluster, scope the user to only the topic it produces to, e.g.:
+  # REQUIRED when enabled: the namespace your Strimzi operator runs in. NO default
+  # on purpose — the KafkaUser must be created there (not the release namespace),
+  # and a wrong value fails silently (mTLS just gets denied). Rendering fails loudly
+  # if this is unset while kafkaUser.enabled=true.
+  strimziNamespace: ""
+  # Strimzi authorization ACLs. REQUIRED on an authz-enabled cluster (authorization:
+  # simple/opa) — a KafkaUser with no ACLs is denied everything. Leave empty ONLY on
+  # an authorization: none cluster. Scope to the topic the service produces to:
   #   acls:
   #     - resource: {type: topic, name: master-agent-task-v1-request, patternType: literal}
   #       operations: [Describe, Write]
