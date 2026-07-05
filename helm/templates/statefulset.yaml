@@ -62,10 +62,15 @@ spec:
             - name: KAFKA_BROKERS
               value: {{ required "kafkaBrokers is required" .Values.kafkaBrokers | quote }}
             - name: STAGE
-              value: {{ .Values.stage | quote }}
+              # required in the binary (main.go Stage required:"true") — fail the
+              # render loudly rather than start a pod that crashes on empty STAGE.
+              value: {{ required "stage is required (STAGE env) — set to dev or prod" .Values.stage | quote }}
             - name: TOPIC_PREFIX
               value: {{ .Values.topicPrefix | quote }}
             - name: DRY_RUN
+              # DryRun is a Go bool parsed with proper bool semantics (strconv.ParseBool
+              # via the bborbe arg library), so the string "false" → false, "true" → true.
+              # Verified in prod: dryRun "false" publishes tasks (not a silent dry-run).
               value: {{ .Values.dryRun | quote }}
             - name: SENTRY_DSN
               valueFrom:
