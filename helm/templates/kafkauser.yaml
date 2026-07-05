@@ -13,4 +13,13 @@ metadata:
 spec:
   authentication:
     type: tls
+  {{- with .Values.kafkaUser.acls }}
+  # Scope the user to only the topics it produces to. Omit (empty) on clusters
+  # with authorization disabled — otherwise a KafkaUser with no ACLs on an
+  # authz-enabled cluster is denied everything.
+  authorization:
+    type: simple
+    acls:
+      {{- toYaml . | nindent 6 }}
+  {{- end }}
 {{- end }}

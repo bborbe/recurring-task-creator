@@ -72,6 +72,10 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.existingSecret | default "recurring-task-creator" }}
                   key: sentry-dsn
+                  # optional so the pod still starts when no Sentry secret is
+                  # configured (both existingSecret and sentry.dsn empty) —
+                  # SENTRY_DSN is simply unset and Sentry stays disabled.
+                  optional: true
             {{- with .Values.sentry.proxy }}
             - name: SENTRY_PROXY
               value: {{ . | quote }}

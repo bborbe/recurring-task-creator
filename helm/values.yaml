@@ -83,3 +83,10 @@ kafkaUser:
   enabled: false
   cluster: my-cluster
   strimziNamespace: strimzi
+  # Strimzi authorization ACLs. Empty = no `authorization` block (the cluster
+  # must run authorization: none, or manage ACLs externally). On an authz-enabled
+  # cluster, scope the user to only the topic it produces to, e.g.:
+  #   acls:
+  #     - resource: {type: topic, name: master-agent-task-v1-request, patternType: literal}
+  #       operations: [Describe, Write]
+  acls: []

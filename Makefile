@@ -17,6 +17,10 @@ run:
 # Package + publish the Helm chart in helm/ to OCI. Chart version comes from
 # helm/Chart.yaml (independent of the binary VERSION). Requires a prior
 # `helm registry login registry-1.docker.io`.
+# NOTE: `helm push` here is the NATIVE OCI push built into Helm 3.8+ (stable OCI
+# support) — NOT the chartmuseum `helm cm-push` plugin. `helm push <chart>.tgz
+# oci://<registry>/<repo>` needs no plugin; it's how the sibling bborbe/agent and
+# bborbe/maintainer charts are published.
 CHART_OCI ?= oci://registry-1.docker.io/bborbe
 .PHONY: helm-publish
 helm-publish:
