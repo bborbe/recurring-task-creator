@@ -1,6 +1,6 @@
 module github.com/bborbe/recurring-task-creator
 
-go 1.26.4
+go 1.26.5
 
 tool (
 	k8s.io/code-generator
@@ -8,19 +8,19 @@ tool (
 )
 
 require (
-	github.com/bborbe/agent v0.75.1
-	github.com/bborbe/cqrs v0.6.2
-	github.com/bborbe/errors v1.5.15
-	github.com/bborbe/http v1.26.16
-	github.com/bborbe/kafka v1.25.3
-	github.com/bborbe/log v1.6.17
-	github.com/bborbe/metrics v0.5.7
-	github.com/bborbe/run v1.9.30
-	github.com/bborbe/sentry v1.9.22
-	github.com/bborbe/service v1.10.4
-	github.com/bborbe/time v1.27.5
+	github.com/bborbe/agent v0.77.0
+	github.com/bborbe/cqrs v0.6.3
+	github.com/bborbe/errors v1.5.16
+	github.com/bborbe/http v1.26.17
+	github.com/bborbe/kafka v1.25.4
+	github.com/bborbe/log v1.6.18
+	github.com/bborbe/metrics v0.5.8
+	github.com/bborbe/run v1.9.31
+	github.com/bborbe/sentry v1.9.23
+	github.com/bborbe/service v1.10.5
+	github.com/bborbe/time v1.27.6
 	github.com/golang/glog v1.2.5
-	github.com/google/cel-go v0.29.1
+	github.com/google/cel-go v0.29.2
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/onsi/ginkgo/v2 v2.32.0
@@ -31,7 +31,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.36.2
 	k8s.io/apimachinery v0.36.2
 	k8s.io/client-go v0.36.2
-	sigs.k8s.io/structured-merge-diff/v6 v6.4.0
+	sigs.k8s.io/structured-merge-diff/v6 v6.4.2
 	sigs.k8s.io/yaml v1.6.0
 )
 
@@ -40,13 +40,13 @@ require (
 	github.com/IBM/sarama v1.50.3 // indirect
 	github.com/Masterminds/semver/v3 v3.5.0 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
-	github.com/bborbe/argument/v2 v2.12.29 // indirect
+	github.com/bborbe/argument/v2 v2.12.32 // indirect
 	github.com/bborbe/collection v1.20.17 // indirect
-	github.com/bborbe/k8s v1.14.5 // indirect
-	github.com/bborbe/kv v1.21.5 // indirect
-	github.com/bborbe/math v1.3.14 // indirect
+	github.com/bborbe/k8s v1.14.6 // indirect
+	github.com/bborbe/kv v1.21.6 // indirect
+	github.com/bborbe/math v1.3.15 // indirect
 	github.com/bborbe/parse v1.10.17 // indirect
-	github.com/bborbe/strimzi v1.8.8 // indirect
+	github.com/bborbe/strimzi v1.8.9 // indirect
 	github.com/bborbe/validation v1.4.16 // indirect
 	github.com/bborbe/vault-cli v0.96.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
