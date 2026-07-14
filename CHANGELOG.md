@@ -8,7 +8,7 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
-## Unreleased
+## v0.10.0
 
 - feat: add `RecurrenceOnDate` recurrence kind to `pkg/schedule` — fires on a fixed calendar month+day every year (e.g. birthdays). The kind is appended to `AllRecurrenceKinds`, `Month time.Month` and `Day int` fields are added to `TaskDefinition`, and `filterInventoryByDate` gains a match-fire case. Unknown recurrence kinds in the switch are now skipped with a `glog.Warning` instead of silently always-firing, hardening the always-fire kinds' invariant.
 - feat: add `RecurrenceOnDate` period token (`YYYY`) to the publisher — token is the fire date's 4-digit year via `fmtYear`, no `PeriodOffset` applied, matching `Yearly` token shape for once-per-year dedup
