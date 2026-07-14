@@ -55,6 +55,12 @@ func WeekdayNoDuplicateRuleForTest() string { return weekdayNoDuplicateRule }
 // WeekdayNoDuplicateMessageForTest returns the operator-facing duplicate-day message.
 func WeekdayNoDuplicateMessageForTest() string { return weekdayNoDuplicateMessage }
 
+// OnDateMonthDayRuleForTest returns the CEL rule requiring month+day iff OnDate.
+func OnDateMonthDayRuleForTest() string { return onDateMonthDayRule }
+
+// OnDateMonthDayMessageForTest returns the operator-facing OnDate month/day error message.
+func OnDateMonthDayMessageForTest() string { return onDateMonthDayMessage }
+
 // ScheduleCRSchemaPtrForTest returns the OpenAPI v3 schema for the whole
 // Schedule CR. Exposed for the structural-schema round-trip test in pkg_test.
 func ScheduleCRSchemaPtrForTest() *apiextensionsv1.JSONSchemaProps { return scheduleCRSchemaPtr() }

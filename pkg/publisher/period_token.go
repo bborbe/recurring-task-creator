@@ -110,6 +110,13 @@ func (b *periodTokenBuilder) Build(
 	case schedule.RecurrenceYearly:
 		shifted := base.AddDate(def.PeriodOffset, 0, 0)
 		return PeriodToken(fmtYear(shifted.Year())), nil
+	case schedule.RecurrenceOnDate:
+		// OnDate fires on one fixed month-and-day per year; its period token
+		// is that year — once-per-year dedup, matching Yearly's token shape.
+		// PeriodOffset is NOT applied to OnDate (the CRD CEL rule keeps
+		// periodOffset valid only for Monthly/Quarterly/Yearly), so the raw
+		// fire date's year is used directly.
+		return PeriodToken(fmtYear(date.Year)), nil
 	default:
 		return "", errors.Errorf(
 			ctx,

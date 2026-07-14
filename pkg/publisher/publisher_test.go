@@ -375,6 +375,20 @@ var _ = Describe("Publisher", func() {
 		Expect(identifiers[0]).NotTo(Equal(identifiers[2]))
 	})
 
+	It("builds the OnDate period token as the fire date's 4-digit year", func() {
+		def := schedule.TaskDefinition{
+			Slug:          "birthday-alice",
+			TitleTemplate: "t",
+			Recurrence:    schedule.RecurrenceOnDate,
+			Month:         time.March,
+			Day:           15,
+		}
+		tok, err := publisher.NewPeriodTokenBuilder().
+			Build(context.Background(), def, schedule.NewDate(2027, time.March, 15))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(tok)).To(Equal("2027"))
+	})
+
 	It("non-weekly kinds ignore the Weekday field (token is identical to Spec 6)", func() {
 		for _, c := range []struct {
 			rec schedule.RecurrenceKind
@@ -1160,6 +1174,7 @@ var _ = Describe("Publisher", func() {
 			Entry("monthly", schedule.RecurrenceMonthly),
 			Entry("quarterly", schedule.RecurrenceQuarterly),
 			Entry("yearly", schedule.RecurrenceYearly),
+			Entry("ondate", schedule.RecurrenceOnDate),
 		)
 	})
 

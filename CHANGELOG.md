@@ -8,6 +8,12 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
+## Unreleased
+
+- feat: add `RecurrenceOnDate` recurrence kind to `pkg/schedule` — fires on a fixed calendar month+day every year (e.g. birthdays). The kind is appended to `AllRecurrenceKinds`, `Month time.Month` and `Day int` fields are added to `TaskDefinition`, and `filterInventoryByDate` gains a match-fire case. Unknown recurrence kinds in the switch are now skipped with a `glog.Warning` instead of silently always-firing, hardening the always-fire kinds' invariant.
+- feat: add `RecurrenceOnDate` period token (`YYYY`) to the publisher — token is the fire date's 4-digit year via `fmtYear`, no `PeriodOffset` applied, matching `Yearly` token shape for once-per-year dedup
+- feat: extend Schedule CRD with `recurrence: OnDate`, `month` (1-12) and `day` (1-31) fields — both integers guarded by a CEL rule requiring both when recurrence is `OnDate` and forbidding both otherwise. `Month int` and `Day int` are added to the `ScheduleTrigger` Go type, and the store adapter maps `time.Month(cr.Spec.Schedule.Month)` and `cr.Spec.Schedule.Day` onto `TaskDefinition.Month/.Day`. CEL validation specs and adapter mapping specs added. The existing `periodOffsetOnlyForPeriodKindsRule` already rejects non-zero offset on `OnDate` without modification.
+
 ## v0.9.1
 
 - Update Go to 1.26.5 and bump bborbe/agent, cqrs, errors, http, kafka, log, metrics, run, sentry, service, time and transitive dependencies

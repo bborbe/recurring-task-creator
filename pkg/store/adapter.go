@@ -86,6 +86,8 @@ func adaptSchedule(ctx context.Context, cr *v1.Schedule) (schedule.TaskDefinitio
 		BodyTemplate:   cr.Spec.Template.Body,
 		Recurrence:     kind,
 		Weekdays:       weekdays,
+		Month:          time.Month(cr.Spec.Schedule.Month),
+		Day:            cr.Spec.Schedule.Day,
 		Frontmatter:    cr.Spec.Template.Frontmatter,
 		PeriodOffset:   cr.Spec.Schedule.PeriodOffset,
 		AutoAbortPrior: autoAbortPrior,

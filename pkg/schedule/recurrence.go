@@ -14,6 +14,12 @@ const (
 	RecurrenceMonthly   RecurrenceKind = "monthly"
 	RecurrenceQuarterly RecurrenceKind = "quarterly"
 	RecurrenceYearly    RecurrenceKind = "yearly"
+	// RecurrenceOnDate fires on one fixed calendar date (Month + Day) every
+	// year — e.g. 03-15 for a birthday. Point-shaped match-fire, mirroring
+	// how RecurrenceWeekday matches a day-of-week. Its publisher period token
+	// is the fire date's 4-digit year ("YYYY"), so replays within a year are
+	// idempotent (UUID5 dedup collapses them to one task file).
+	RecurrenceOnDate RecurrenceKind = "ondate"
 )
 
 // AllRecurrenceKinds is the canonical, closed set of RecurrenceKind values
@@ -27,4 +33,5 @@ var AllRecurrenceKinds = []RecurrenceKind{
 	RecurrenceMonthly,
 	RecurrenceQuarterly,
 	RecurrenceYearly,
+	RecurrenceOnDate,
 }

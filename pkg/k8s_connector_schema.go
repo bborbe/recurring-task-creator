@@ -17,7 +17,15 @@ import (
 // is self-contained; do NOT import pkg/schedule.RecurrenceKind (those
 // constants are lowercase Go-internal values; the CRD enum is a
 // separate API contract).
-var recurrenceEnum = []string{"Daily", "Weekly", "Weekday", "Monthly", "Quarterly", "Yearly"}
+var recurrenceEnum = []string{
+	"Daily",
+	"Weekly",
+	"Weekday",
+	"Monthly",
+	"Quarterly",
+	"Yearly",
+	"OnDate",
+}
 
 // weekdayLongEnum is the closed set of valid strings for the single
 // `weekday` field — 7 long forms only (Monday..Sunday, matching
@@ -106,6 +114,20 @@ const weekdayNoDuplicateRule = "!has(self.weekdays) || type(self.weekdays) != li
 // list contains the same logical day more than once.
 const weekdayNoDuplicateMessage = "weekday list must not contain the same day twice (including cross-form duplicates like [Mon, Monday])"
 
+// onDateMonthDayRule requires both month and day when recurrence is
+// 'OnDate', and forbids both on every other recurrence kind. Mirrors the
+// weekday XOR intent for the date-anchored OnDate kind. Kept as a flat
+// has()-only expression (no list traversal) so its estimated CEL cost stays
+// well under the API server's per-rule budget (the cost-budget regression
+// lock test asserts this).
+const onDateMonthDayRule = "self.recurrence == 'OnDate' ? " +
+	"(has(self.month) && has(self.day)) : " +
+	"(!has(self.month) && !has(self.day))"
+
+// onDateMonthDayMessage is the operator-facing error the API server emits
+// when the rule fails.
+const onDateMonthDayMessage = "month and day are both required when recurrence is 'OnDate', and both are forbidden otherwise"
+
 // scheduleCRSchemaPtr returns the OpenAPI v3 schema for the WHOLE Schedule
 // custom resource (the top-level object with apiVersion/kind/metadata/spec).
 // This is what gets registered as the CRD's OpenAPIV3Schema — registering
@@ -136,7 +158,7 @@ func scheduleTriggerSchema() apiextensionsv1.JSONSchemaProps {
 		Properties: map[string]apiextensionsv1.JSONSchemaProps{
 			"recurrence": {
 				Type:        "string",
-				Description: "One of: Daily, Weekly, Weekday, Monthly, Quarterly, Yearly.",
+				Description: "One of: Daily, Weekly, Weekday, Monthly, Quarterly, Yearly, OnDate.",
 				Enum:        jsonEnumValues(recurrenceEnum),
 			},
 			"weekday": {
@@ -163,6 +185,18 @@ func scheduleTriggerSchema() apiextensionsv1.JSONSchemaProps {
 					"Use -1 for prior period (e.g. review-style schedules that fire on month-start but name " +
 					"the just-completed month). Only valid for Monthly/Quarterly/Yearly.",
 			},
+			"month": {
+				Type:        "integer",
+				Description: "Calendar month (1-12) an OnDate schedule fires in. Required when recurrence is 'OnDate'; forbidden otherwise (CEL rule below).",
+				Minimum:     ptrFloat64(1),
+				Maximum:     ptrFloat64(12),
+			},
+			"day": {
+				Type:        "integer",
+				Description: "Day-of-month (1-31) an OnDate schedule fires on. Required when recurrence is 'OnDate'; forbidden otherwise (CEL rule below). A static 1-31 range only — e.g. 02-30 is not rejected here; such a date simply never occurs, so the entry never fires.",
+				Minimum:     ptrFloat64(1),
+				Maximum:     ptrFloat64(31),
+			},
 			"autoAbortPrior": {
 				Type: "boolean",
 				Description: "Opt-in flag (default false when omitted) marking this Schedule " +
@@ -178,6 +212,7 @@ func scheduleTriggerSchema() apiextensionsv1.JSONSchemaProps {
 				Message: periodOffsetOnlyForPeriodKindsMessage,
 			},
 			{Rule: weekdayNoDuplicateRule, Message: weekdayNoDuplicateMessage},
+			{Rule: onDateMonthDayRule, Message: onDateMonthDayMessage},
 		},
 	}
 }
@@ -238,6 +273,12 @@ func ptrTrue() *bool {
 // ptrInt64 returns a pointer to the given int64; the k8s OpenAPI schema
 // represents MinItems and similar numeric bounds as *int64.
 func ptrInt64(n int64) *int64 {
+	return &n
+}
+
+// ptrFloat64 returns a pointer to the given float64; the k8s OpenAPI schema
+// represents Minimum/Maximum numeric bounds as *float64.
+func ptrFloat64(n float64) *float64 {
 	return &n
 }
 

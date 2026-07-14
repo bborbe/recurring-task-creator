@@ -138,6 +138,41 @@ var _ = Describe("TasksForDate", func() {
 		Expect(got).To(BeEmpty())
 	})
 
+	It("fires an OnDate entry only on its exact month-and-day", func() {
+		onDate := []schedule.TaskDefinition{
+			{
+				Slug:       "birthday-alice",
+				Recurrence: schedule.RecurrenceOnDate,
+				Month:      time.March,
+				Day:        15,
+			},
+		}
+		Expect(slugsOf(schedule.TasksForDate(onDate, schedule.NewDate(2027, time.March, 15)))).
+			To(ConsistOf("birthday-alice"))
+		Expect(schedule.TasksForDate(onDate, schedule.NewDate(2027, time.March, 14))).To(BeEmpty())
+		Expect(schedule.TasksForDate(onDate, schedule.NewDate(2027, time.July, 15))).To(BeEmpty())
+	})
+
+	It("skips (does not fire) an entry with an unrecognized recurrence kind", func() {
+		bogus := []schedule.TaskDefinition{
+			{Slug: "mystery", Recurrence: schedule.RecurrenceKind("bogus")},
+		}
+		Expect(schedule.TasksForDate(bogus, schedule.NewDate(2027, time.March, 15))).To(BeEmpty())
+	})
+
+	DescribeTable("each always-fire kind fires on an arbitrary date",
+		func(kind schedule.RecurrenceKind) {
+			defs := []schedule.TaskDefinition{{Slug: "af", Recurrence: kind}}
+			Expect(slugsOf(schedule.TasksForDate(defs, schedule.NewDate(2027, time.March, 14)))).
+				To(ConsistOf("af"))
+		},
+		Entry("Daily", schedule.RecurrenceDaily),
+		Entry("Weekly", schedule.RecurrenceWeekly),
+		Entry("Monthly", schedule.RecurrenceMonthly),
+		Entry("Quarterly", schedule.RecurrenceQuarterly),
+		Entry("Yearly", schedule.RecurrenceYearly),
+	)
+
 	It("preserves the always-fire semantic for the four other kinds", func() {
 		// Daily, weekly, monthly, quarterly, and yearly all fire on every day
 		// (spec 006 always-fire). The fixture omits quarterly and yearly for

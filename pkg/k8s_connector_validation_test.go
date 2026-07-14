@@ -349,6 +349,49 @@ var _ = Describe("periodOffset CEL validation", func() {
 	)
 })
 
+var _ = Describe("OnDate month/day CEL validation", func() {
+	evalRule := func(self map[string]interface{}) string {
+		rule := pkg.OnDateMonthDayRuleForTest()
+		env, err := cel.NewEnv(
+			cel.Variable("self", cel.MapType(cel.StringType, cel.DynType)),
+		)
+		Expect(err).NotTo(HaveOccurred())
+		ast, issues := env.Compile(rule)
+		Expect(issues.Err()).NotTo(HaveOccurred(), "compile %q", rule)
+		program, err := env.Program(ast)
+		Expect(err).NotTo(HaveOccurred())
+		out, _, err := program.Eval(map[string]interface{}{"self": self})
+		Expect(err).NotTo(HaveOccurred())
+		if b, ok := out.(types.Bool); ok && bool(b) {
+			return ""
+		}
+		return pkg.OnDateMonthDayMessageForTest()
+	}
+	DescribeTable("accepts/rejects (recurrence, month?, day?)",
+		func(recurrence string, hasMonth, hasDay, expectOK bool) {
+			self := map[string]interface{}{"recurrence": recurrence}
+			if hasMonth {
+				self["month"] = 3
+			}
+			if hasDay {
+				self["day"] = 15
+			}
+			if expectOK {
+				Expect(evalRule(self)).To(Equal(""))
+			} else {
+				Expect(evalRule(self)).NotTo(Equal(""))
+			}
+		},
+		Entry("OnDate + month + day → accept", "OnDate", true, true, true),
+		Entry("OnDate + month only → reject", "OnDate", true, false, false),
+		Entry("OnDate + day only → reject", "OnDate", false, true, false),
+		Entry("OnDate + neither → reject", "OnDate", false, false, false),
+		Entry("Daily + month → reject", "Daily", true, false, false),
+		Entry("Daily + day → reject", "Daily", false, true, false),
+		Entry("Yearly + neither → accept", "Yearly", false, false, true),
+	)
+})
+
 var _ = Describe("weekday long-form enum — all 7 accepted values on single weekday field", func() {
 	DescribeTable(
 		"accepts each of the 7 long-form day strings as weekday on Weekday recurrence",
