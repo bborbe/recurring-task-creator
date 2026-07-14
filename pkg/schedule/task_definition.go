@@ -43,6 +43,22 @@ type TaskDefinition struct {
 	// task files per ISO week, one per matching day.
 	Weekdays []time.Weekday
 
+	// Month is the calendar month a RecurrenceOnDate entry fires in
+	// (time.January..time.December). Consulted only when
+	// Recurrence == RecurrenceOnDate; is the zero value (time.Month(0)) and
+	// ignored for every other kind. Produced by the store adapter from the
+	// CR's spec.schedule.month field. Paired with Day: the matcher
+	// (TasksForDate) fires the entry only when both this Month and Day equal
+	// the civil date's month and day.
+	Month time.Month
+
+	// Day is the day-of-month a RecurrenceOnDate entry fires on (1-31).
+	// Consulted only when Recurrence == RecurrenceOnDate; is the zero value (0)
+	// and ignored for every other kind. Produced by the store adapter from
+	// the CR's spec.schedule.day field. An OnDate of Month=February, Day=29
+	// fires only in leap years (documented behavior, not an error).
+	Day int
+
 	// Frontmatter is operator-defined YAML frontmatter stamped onto the
 	// generated vault file. Sourced from the `spec.template.frontmatter`
 	// field on the Schedule CR (free-form map[string]interface{}). The

@@ -8,6 +8,10 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
+## Unreleased
+
+- feat: add `RecurrenceOnDate` recurrence kind to `pkg/schedule` — fires on a fixed calendar month+day every year (e.g. birthdays). The kind is appended to `AllRecurrenceKinds`, `Month time.Month` and `Day int` fields are added to `TaskDefinition`, and `filterInventoryByDate` gains a match-fire case. Unknown recurrence kinds in the switch are now skipped with a `glog.Warning` instead of silently always-firing, hardening the always-fire kinds' invariant.
+
 ## v0.9.1
 
 - Update Go to 1.26.5 and bump bborbe/agent, cqrs, errors, http, kafka, log, metrics, run, sentry, service, time and transitive dependencies

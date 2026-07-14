@@ -4,6 +4,8 @@
 
 package schedule
 
+import "github.com/golang/glog"
+
 // TasksForDate returns the subset of defs that fires on the given civil
 // date. The caller supplies the definition slice; this function no longer
 // reads a package-level inventory. The filter rule is:
@@ -15,6 +17,10 @@ package schedule
 //   - RecurrenceWeekday: fires only when date.Time().Weekday() is a
 //     member of the entry's Weekdays set. An empty Weekdays set never
 //     fires (the CRD CEL rule rejects empty lists at apply time).
+//   - RecurrenceOnDate: fires only when both the entry's Month and the
+//     entry's Day equal the civil date's month and day. A zero Month or
+//     Day never fires (the CRD CEL rule rejects zero values at apply time).
+//   - Unknown kinds: skipped with a Warning log message — never fired.
 //
 // The result is NOT sorted; the caller may sort on Slug if a stable
 // order is required (the HTTP trigger handler does so for the response
@@ -39,6 +45,8 @@ func TasksForDate(defs []TaskDefinition, date Date) []TaskDefinition {
 // TasksForDate (which reads the canonical inventory).
 func filterInventoryByDate(defs []TaskDefinition, date Date) []TaskDefinition {
 	dateWeekday := date.Time().Weekday()
+	dateMonth := date.Time().Month()
+	dateDay := date.Time().Day()
 	out := make([]TaskDefinition, 0, len(defs))
 	for _, def := range defs {
 		switch def.Recurrence {
@@ -49,9 +57,22 @@ func filterInventoryByDate(defs []TaskDefinition, date Date) []TaskDefinition {
 					break
 				}
 			}
-		default:
-			// Daily, Weekly, Monthly, Quarterly, Yearly — always-fire.
+		case RecurrenceOnDate:
+			if def.Month == dateMonth && def.Day == dateDay {
+				out = append(out, def)
+			}
+		case RecurrenceDaily,
+			RecurrenceWeekly,
+			RecurrenceMonthly,
+			RecurrenceQuarterly,
+			RecurrenceYearly:
+			// Always-fire — the entry fires on every civil date.
 			out = append(out, def)
+		default:
+			glog.Warningf(
+				"filterInventoryByDate: unknown recurrence kind %q for slug %q — skipping",
+				def.Recurrence, def.Slug,
+			)
 		}
 	}
 	return out
