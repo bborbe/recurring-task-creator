@@ -43,6 +43,7 @@ var _ = Describe("adaptSchedule", func() {
 		Entry("monthly", "Monthly", schedule.RecurrenceMonthly),
 		Entry("quarterly", "Quarterly", schedule.RecurrenceQuarterly),
 		Entry("yearly", "Yearly", schedule.RecurrenceYearly),
+		Entry("ondate", "OnDate", schedule.RecurrenceOnDate),
 	)
 
 	DescribeTable("weekday normalization — all 14 day strings map to canonical time.Weekday",
@@ -356,5 +357,21 @@ var _ = Describe("adaptSchedule", func() {
 		def, err := store.AdaptScheduleForTest(ctx, cr)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(def.AutoAbortPrior).To(BeTrue())
+	})
+
+	It("maps month/day from an OnDate CR onto TaskDefinition.Month/.Day", func() {
+		cr := &v1.Schedule{
+			ObjectMeta: metav1.ObjectMeta{Name: "birthday-alice"},
+			Spec: v1.ScheduleSpec{
+				Title:    "Birthday",
+				Schedule: v1.ScheduleTrigger{Recurrence: "OnDate", Month: 3, Day: 15},
+				Template: v1.ScheduleTemplate{Body: "B"},
+			},
+		}
+		def, err := store.AdaptScheduleForTest(ctx, cr)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(def.Recurrence).To(Equal(schedule.RecurrenceOnDate))
+		Expect(def.Month).To(Equal(time.March))
+		Expect(def.Day).To(Equal(15))
 	})
 })

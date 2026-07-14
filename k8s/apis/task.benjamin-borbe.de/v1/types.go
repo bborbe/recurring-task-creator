@@ -87,6 +87,19 @@ type ScheduleTrigger struct {
 	// have a meaningful period offset distinct from a date shift).
 	PeriodOffset int `json:"periodOffset,omitempty"`
 
+	// Month is the calendar month (1-12) an OnDate schedule fires in. Set
+	// when Recurrence == "OnDate"; forbidden on every other kind (the CEL
+	// rule in scheduleTriggerSchema enforces month+day required-iff-OnDate).
+	// Mapped to schedule.TaskDefinition.Month (as time.Month) by the store
+	// adapter.
+	Month int `json:"month,omitempty"`
+
+	// Day is the day-of-month (1-31) an OnDate schedule fires on. Set when
+	// Recurrence == "OnDate"; forbidden on every other kind. A static 1-31
+	// range only — 02-30 is admitted but never fires. Mapped to
+	// schedule.TaskDefinition.Day by the store adapter.
+	Day int `json:"day,omitempty"`
+
 	// AutoAbortPrior is an opt-in flag (default false when unset) marking
 	// this Schedule as one whose prior-period instance MAY be auto-aborted
 	// by the downstream task-controller when the next instance materializes.

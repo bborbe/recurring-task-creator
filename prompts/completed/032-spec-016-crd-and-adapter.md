@@ -1,8 +1,13 @@
 ---
-status: approved
+status: completed
 spec: [016-ondate-recurrence-kind]
+summary: Extended Schedule CRD with OnDate recurrence, month/day fields, CEL rule, store adapter mapping, and tests
+execution_id: recurring-task-creator-ondate-recurrence-exec-032-spec-016-crd-and-adapter
+dark-factory-version: dev
 created: "2026-07-14T12:00:00Z"
 queued: "2026-07-14T12:27:27Z"
+started: "2026-07-14T12:56:01Z"
+completed: "2026-07-14T13:04:10Z"
 branch: dark-factory/ondate-recurrence-kind
 ---
 
