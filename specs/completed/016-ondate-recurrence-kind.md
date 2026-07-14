@@ -1,9 +1,10 @@
 ---
-status: verifying
+status: completed
 approved: "2026-07-14T11:46:51Z"
 generating: "2026-07-14T11:46:52Z"
 prompted: "2026-07-14T11:57:25Z"
 verifying: "2026-07-14T12:12:06Z"
+completed: "2026-07-14T14:55:00Z"
 branch: dark-factory/ondate-recurrence-kind
 ---
 
@@ -128,3 +129,20 @@ Rationale: prompt 1 establishes the kind + firing semantics the other two build 
 ## Do-Nothing Option
 
 If we don't do this: there is no way to fire a Schedule on a fixed annual calendar date, so [[Never Miss a Friend's Birthday]] cannot use `recurring-task-creator` at all — it would have to fall back to a Google-Calendar-plus-daily-check mechanism outside the vault-task pipeline, splitting where reminders live. The latent `default: always-fire` risk also remains: the next new kind, or any data/code deploy skew, can silently fire an entry every day (the 2026-06-19 class of incident) with no warning. The cost of the change is one spec + three prompts; the cost of not doing it is a permanently date-blind scheduler and a standing always-fire footgun.
+
+## Verification Result
+
+**Verified:** 2026-07-14 (merged PR #28, released v0.10.0, deployed dev+prod).
+
+**Build-time ACs (container-executable):** `make precommit` exit 0 (9 pkgs, 0 lint/0 vuln); `go test ./pkg/schedule/ ./pkg/publisher/` green including the OnDate match-fire spec (fires on 2027-03-15, not on 2027-03-14/2027-07-15), the unknown-kind-skip spec, the all-five-always-fire regression, the OnDate period-token=`"YYYY"` spec, the CEL accept/reject table, and the adapter month/day mapping. `RecurrenceOnDate` in `AllRecurrenceKinds`; `Month`/`Day` on `TaskDefinition`; `filterInventoryByDate` default is skip-with-`glog.Warning`. `make generatek8s` idempotent.
+
+**Post-Deploy Rung-2 (dev):** deployed `docker.quant.…/bborbe/recurring-task-creator:v0.10.0`; pod Running, 0 restarts; CRD self-installed with the OnDate enum + `month`/`day` + CEL rule. Live evidence:
+- CEL **rejects** an invalid OnDate CR (month, no day): `The Schedule … is invalid: … month and day are both required when recurrence is 'OnDate', and both are forbidden otherwise`.
+- CEL **accepts** a valid OnDate CR (month+day).
+- `/trigger?date=2026-07-14` published `ondate-selftest` (month=7 day=14) — log `publisher: sent CreateCommand slug="ondate-selftest" date=2026-07-14`; downstream materialized `OnDate Selftest - 2026.md` (period token = year, as designed). Throwaway CR + task file cleaned up.
+
+**Post-Deploy Rung-3 (prod):** deployed v0.10.0; pod Running, 0 restarts; CRD carries the OnDate schema. Prod firing accepted on byte-identical image (digest `049df9b8…`) + identical CRD to the dev run that proved the pipeline end-to-end; server-side dry-run of the 6 birthday CRs validated against the live prod OnDate CEL rule.
+
+**Downstream:** 6 birthday `OnDate` Schedule CRs (`birthday-{jana,kristin,walter,karl,brigitte,tilda}`) authored + applied to prod (quant `e72e1bb`).
+
+**Verdict:** PASS
