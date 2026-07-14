@@ -1,8 +1,9 @@
 ---
-status: prompted
+status: verifying
 approved: "2026-07-14T11:46:51Z"
 generating: "2026-07-14T11:46:52Z"
 prompted: "2026-07-14T11:57:25Z"
+verifying: "2026-07-14T12:12:06Z"
 branch: dark-factory/ondate-recurrence-kind
 ---
 

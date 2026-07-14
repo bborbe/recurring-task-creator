@@ -1,7 +1,8 @@
 ---
-status: draft
+status: approved
 spec: [016-ondate-recurrence-kind]
 created: "2026-07-14T12:00:00Z"
+queued: "2026-07-14T12:27:27Z"
 branch: dark-factory/ondate-recurrence-kind
 ---
 

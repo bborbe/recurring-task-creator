@@ -1,7 +1,13 @@
 ---
-status: draft
+status: completed
 spec: [016-ondate-recurrence-kind]
+summary: Added RecurrenceOnDate period token case (YYYY via fmtYear, no PeriodOffset) to publisher's periodTokenBuilder.Build and added Ginkgo specs covering the token value and boundary contract Validate path
+execution_id: recurring-task-creator-ondate-recurrence-exec-031-spec-016-publisher-token
+dark-factory-version: dev
 created: "2026-07-14T12:00:00Z"
+queued: "2026-07-14T12:27:27Z"
+started: "2026-07-14T12:50:39Z"
+completed: "2026-07-14T12:56:00Z"
 branch: dark-factory/ondate-recurrence-kind
 ---
 
