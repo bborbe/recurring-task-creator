@@ -8,6 +8,10 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
+## Unreleased
+
+- Bump `golang.org/x/text` to v0.39.0 (CVE-2026-56852)
+
 ## v0.10.0
 
 - feat: add `RecurrenceOnDate` recurrence kind to `pkg/schedule` — fires on a fixed calendar month+day every year (e.g. birthdays). The kind is appended to `AllRecurrenceKinds`, `Month time.Month` and `Day int` fields are added to `TaskDefinition`, and `filterInventoryByDate` gains a match-fire case. Unknown recurrence kinds in the switch are now skipped with a `glog.Warning` instead of silently always-firing, hardening the always-fire kinds' invariant.
