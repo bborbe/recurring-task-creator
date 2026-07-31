@@ -102,13 +102,16 @@ func (b *periodTokenBuilder) Build(
 		isoYear, isoWeek := base.ISOWeek()
 		return PeriodToken(fmtIsoWeek(isoYear, isoWeek) + "-" + weekdayAbbrev(dateWeekday)), nil
 	case schedule.RecurrenceMonthly:
-		shifted := base.AddDate(0, def.PeriodOffset, 0)
+		firstOfMonth := time.Date(base.Year(), base.Month(), 1, 0, 0, 0, 0, base.Location())
+		shifted := firstOfMonth.AddDate(0, def.PeriodOffset, 0)
 		return PeriodToken(fmtMonthYear(shifted.Year(), int(shifted.Month()))), nil
 	case schedule.RecurrenceQuarterly:
-		shifted := base.AddDate(0, def.PeriodOffset*3, 0)
+		firstOfMonth := time.Date(base.Year(), base.Month(), 1, 0, 0, 0, 0, base.Location())
+		shifted := firstOfMonth.AddDate(0, def.PeriodOffset*3, 0)
 		return PeriodToken(fmtQuarter(shifted.Year(), quarterOf(shifted.Month()))), nil
 	case schedule.RecurrenceYearly:
-		shifted := base.AddDate(def.PeriodOffset, 0, 0)
+		firstOfMonth := time.Date(base.Year(), base.Month(), 1, 0, 0, 0, 0, base.Location())
+		shifted := firstOfMonth.AddDate(def.PeriodOffset, 0, 0)
 		return PeriodToken(fmtYear(shifted.Year())), nil
 	case schedule.RecurrenceOnDate:
 		// OnDate fires on one fixed month-and-day per year; its period token

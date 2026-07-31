@@ -8,6 +8,11 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
+## Unreleased
+
+- fix: anchor `PeriodOffset` month/quarter/year shifting in `periodTokenBuilder.Build` to the first of the fire date's month before applying the offset — previously a day-29/30/31 fire date (e.g. `2026-07-31` with `periodOffset: -1`) could normalize past the intended prior period (Go's `AddDate` rolls a nonexistent "June 31" forward into July), producing the wrong period token, a duplicate task, and a suppressed subsequent task via the shared UUID5 identifier.
+- fix(deps): bump `google.golang.org/grpc` to v1.82.1 (GHSA-hrxh-6v49-42gf, HIGH — xDS RBAC and HTTP/2 vulnerabilities)
+
 ## v0.10.1
 
 - Bump `golang.org/x/text` to v0.39.0 (CVE-2026-56852)
