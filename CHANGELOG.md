@@ -8,6 +8,10 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
+## Unreleased
+
+- chore(security): update Go to 1.26.6 and update dependencies, fixing GO-2026-6179, GO-2026-6180, GO-2026-5026, GO-2026-5972, GO-2026-6089, GO-2026-6090, GO-2026-6218, CVE-2026-56864, CVE-2026-56865
+
 ## v0.10.2
 
 - fix: anchor `PeriodOffset` month/quarter/year shifting in `periodTokenBuilder.Build` to the first of the fire date's month before applying the offset — previously a day-29/30/31 fire date (e.g. `2026-07-31` with `periodOffset: -1`) could normalize past the intended prior period (Go's `AddDate` rolls a nonexistent "June 31" forward into July), producing the wrong period token, a duplicate task, and a suppressed subsequent task via the shared UUID5 identifier.
