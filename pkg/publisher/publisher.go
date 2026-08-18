@@ -86,6 +86,7 @@ func (p *publisher) Publish(
 		) + " - " + string(periodToken),
 		Frontmatter: p.formatter.Format(def.Frontmatter, def.Slug, date, def.AutoAbortPrior),
 		Body:        p.renderer.Render(def.BodyTemplate, def.Slug, date),
+		TargetVault: def.Vault,
 	}
 	if p.dryRun {
 		glog.V(0).Infof("publisher: DRY_RUN — would send slug=%q date=%04d-%02d-%02d identifier=%s",

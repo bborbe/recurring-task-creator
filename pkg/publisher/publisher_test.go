@@ -65,6 +65,37 @@ var _ = Describe("Publisher", func() {
 		})
 	})
 
+	Describe("target vault", func() {
+		It("stamps def.Vault as TargetVault on the CreateCommand", func() {
+			def := schedule.TaskDefinition{
+				Slug:          "vault-task",
+				TitleTemplate: "Vault Task",
+				Recurrence:    schedule.RecurrenceDaily,
+				Vault:         "my-vault",
+			}
+			Expect(pub.Publish(
+				context.Background(),
+				def,
+				schedule.NewDate(2025, time.January, 4),
+			)).To(Succeed())
+			Expect(capture().TargetVault).To(Equal("my-vault"))
+		})
+
+		It("leaves TargetVault empty when def.Vault is unset", func() {
+			def := schedule.TaskDefinition{
+				Slug:          "no-vault-task",
+				TitleTemplate: "No Vault Task",
+				Recurrence:    schedule.RecurrenceDaily,
+			}
+			Expect(pub.Publish(
+				context.Background(),
+				def,
+				schedule.NewDate(2025, time.January, 4),
+			)).To(Succeed())
+			Expect(capture().TargetVault).To(Equal(""))
+		})
+	})
+
 	Describe("period anchoring", func() {
 		captureIdentifier := func(
 			slug string,
