@@ -247,6 +247,35 @@ var _ = Describe("adaptSchedule", func() {
 		Expect(def.BodyTemplate).To(Equal("My Body"))
 	})
 
+	It("maps spec.vault into TaskDefinition.Vault", func() {
+		cr := &v1.Schedule{
+			ObjectMeta: metav1.ObjectMeta{Name: "vault-slug"},
+			Spec: v1.ScheduleSpec{
+				Title:    "T",
+				Vault:    "my-vault",
+				Schedule: v1.ScheduleTrigger{Recurrence: "Daily"},
+				Template: v1.ScheduleTemplate{Body: "B"},
+			},
+		}
+		def, err := store.AdaptScheduleForTest(ctx, cr)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(def.Vault).To(Equal("my-vault"))
+	})
+
+	It("leaves TaskDefinition.Vault empty when spec.vault is unset", func() {
+		cr := &v1.Schedule{
+			ObjectMeta: metav1.ObjectMeta{Name: "no-vault-slug"},
+			Spec: v1.ScheduleSpec{
+				Title:    "T",
+				Schedule: v1.ScheduleTrigger{Recurrence: "Daily"},
+				Template: v1.ScheduleTemplate{Body: "B"},
+			},
+		}
+		def, err := store.AdaptScheduleForTest(ctx, cr)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(def.Vault).To(Equal(""))
+	})
+
 	It("copies frontmatter verbatim from CRD into TaskDefinition.Frontmatter", func() {
 		cr := &v1.Schedule{
 			ObjectMeta: metav1.ObjectMeta{Name: "slug-with-fm"},
