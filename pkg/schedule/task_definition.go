@@ -85,6 +85,14 @@ type TaskDefinition struct {
 	// gate. Default false means a Schedule never opts into auto-abort unless
 	// the operator explicitly sets spec.autoAbortPrior: true.
 	AutoAbortPrior bool
+
+	// Vault is the Obsidian vault slug the publisher stamps as TargetVault on
+	// each CreateCommand — the controller's vaultName must equal this string
+	// else the create is silently skipped as a vault mismatch. Sourced from
+	// the CR's spec.vault by the store adapter; empty means "fall back to the
+	// controller's legacy default (openclaw)" — wire-compatible with
+	// pre-vault-aware producers.
+	Vault string
 }
 
 // The closed list of accepted placeholder tokens lives in
