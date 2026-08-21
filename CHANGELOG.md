@@ -8,7 +8,7 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
-## Unreleased
+## v0.11.1
 
 - chore: Bump golangci-lint to v2.13.1 and errcheck to v1.20.0, and run gofmt last in the `format` target so golines wrapping is normalized before the gofmt lint check — fixes Go 1.27 toolchain compatibility
 
