@@ -1,6 +1,6 @@
 module github.com/bborbe/recurring-task-creator
 
-go 1.27.0
+go 1.27.1
 
 tool (
 	k8s.io/code-generator
@@ -8,19 +8,19 @@ tool (
 )
 
 require (
-	github.com/bborbe/agent v0.85.1
+	cel.dev/cel-go v0.32.0
+	github.com/bborbe/agent v0.87.1
 	github.com/bborbe/cqrs v0.6.10
-	github.com/bborbe/errors v1.6.0
-	github.com/bborbe/http v1.26.25
-	github.com/bborbe/kafka v1.25.11
+	github.com/bborbe/errors v1.6.1
+	github.com/bborbe/http v1.26.26
+	github.com/bborbe/kafka v1.25.15
 	github.com/bborbe/log v1.6.25
-	github.com/bborbe/metrics v0.6.1
+	github.com/bborbe/metrics v0.6.2
 	github.com/bborbe/run v1.10.2
-	github.com/bborbe/sentry v1.10.0
-	github.com/bborbe/service v1.10.10
-	github.com/bborbe/time v1.27.11
+	github.com/bborbe/sentry v1.10.1
+	github.com/bborbe/service v1.10.13
+	github.com/bborbe/time v1.27.14
 	github.com/golang/glog v1.2.5
-	github.com/google/cel-go v0.29.2
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/onsi/ginkgo/v2 v2.32.1
@@ -41,14 +41,16 @@ require (
 	github.com/Masterminds/semver/v3 v3.5.0 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	github.com/bborbe/argument/v2 v2.13.2 // indirect
-	github.com/bborbe/collection v1.20.25 // indirect
+	github.com/bborbe/boltkv v1.15.3 // indirect
+	github.com/bborbe/collection v1.20.26 // indirect
 	github.com/bborbe/k8s v1.14.17 // indirect
-	github.com/bborbe/kv v1.21.12 // indirect
+	github.com/bborbe/kv v1.21.13 // indirect
 	github.com/bborbe/math v1.4.8 // indirect
-	github.com/bborbe/parse v1.11.0 // indirect
+	github.com/bborbe/memorykv v1.6.12 // indirect
+	github.com/bborbe/parse v1.11.3 // indirect
 	github.com/bborbe/strimzi v1.8.16 // indirect
-	github.com/bborbe/validation v1.4.23 // indirect
-	github.com/bborbe/vault-cli v0.121.0 // indirect
+	github.com/bborbe/validation v1.5.0 // indirect
+	github.com/bborbe/vault-cli v0.121.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
@@ -78,9 +80,10 @@ require (
 	github.com/go-openapi/swag/yamlutils v0.29.1 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/gobuffalo/flect v1.0.3 // indirect
+	github.com/google/cel-go v0.29.2 // indirect
 	github.com/google/gnostic-models v0.7.1 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/pprof v0.0.0-20260902005441-ca85771921e4 // indirect
+	github.com/google/pprof v0.0.0-20260903180319-d6c3cb2f37ec // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
@@ -109,17 +112,17 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.69.0 // indirect
-	go.opentelemetry.io/otel v1.44.0 // indirect
+	go.opentelemetry.io/otel v1.46.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.44.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.44.0 // indirect
-	go.opentelemetry.io/otel/metric v1.44.0 // indirect
+	go.opentelemetry.io/otel/metric v1.46.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.44.0 // indirect
-	go.opentelemetry.io/otel/trace v1.44.0 // indirect
+	go.opentelemetry.io/otel/trace v1.46.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.10.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/crypto v0.56.0 // indirect
-	golang.org/x/exp v0.0.0-20260611194520-c48552f49976 // indirect
+	golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa // indirect
 	golang.org/x/mod v0.40.0 // indirect
 	golang.org/x/net v0.58.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
