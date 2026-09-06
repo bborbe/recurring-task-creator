@@ -28,18 +28,25 @@ var _ = Describe("FrontmatterFormatter", func() {
 
 	Describe("defaults + provenance", func() {
 		It("seeds status=in_progress and page_type=task when operator supplies nothing", func() {
-			fm := f.Format(lib.TaskFrontmatter{}, "test-slug", date, false)
+			fm := f.Format(
+				lib.TaskFrontmatter{},
+				"test-slug",
+				date,
+				false,
+				schedule.RecurrenceDaily,
+			)
 			Expect(fm).To(HaveKeyWithValue("status", "in_progress"))
 			Expect(fm).To(HaveKeyWithValue("page_type", "task"))
 			Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
 			Expect(fm).To(HaveKeyWithValue("auto_abort_prior", false))
-			Expect(fm).To(HaveLen(4))
+			Expect(fm).To(HaveKeyWithValue("defer_date", "2026-06-20"))
+			Expect(fm).To(HaveLen(5))
 		})
 
 		It("force-sets created_by even when operator tries to override it", func() {
 			fm := f.Format(
 				lib.TaskFrontmatter{"created_by": "impersonator"},
-				"test-slug", date, false,
+				"test-slug", date, false, schedule.RecurrenceDaily,
 			)
 			Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
 		})
@@ -47,7 +54,7 @@ var _ = Describe("FrontmatterFormatter", func() {
 		It("lets operator override status + page_type defaults", func() {
 			fm := f.Format(
 				lib.TaskFrontmatter{"status": "draft", "page_type": "log"},
-				"test-slug", date, false,
+				"test-slug", date, false, schedule.RecurrenceDaily,
 			)
 			Expect(fm).To(HaveKeyWithValue("status", "draft"))
 			Expect(fm).To(HaveKeyWithValue("page_type", "log"))
@@ -57,19 +64,19 @@ var _ = Describe("FrontmatterFormatter", func() {
 
 	Describe("auto_abort_prior stamp", func() {
 		It("stamps auto_abort_prior=false when the flag is false", func() {
-			fm := f.Format(lib.TaskFrontmatter{}, "slug", date, false)
+			fm := f.Format(lib.TaskFrontmatter{}, "slug", date, false, schedule.RecurrenceDaily)
 			Expect(fm).To(HaveKeyWithValue("auto_abort_prior", false))
 		})
 
 		It("stamps auto_abort_prior=true when the flag is true", func() {
-			fm := f.Format(lib.TaskFrontmatter{}, "slug", date, true)
+			fm := f.Format(lib.TaskFrontmatter{}, "slug", date, true, schedule.RecurrenceDaily)
 			Expect(fm).To(HaveKeyWithValue("auto_abort_prior", true))
 		})
 
 		It("ignores an operator-supplied auto_abort_prior; spec-level value wins", func() {
 			fm := f.Format(
 				lib.TaskFrontmatter{"auto_abort_prior": true},
-				"slug", date, false,
+				"slug", date, false, schedule.RecurrenceDaily,
 			)
 			Expect(fm).To(HaveKeyWithValue("auto_abort_prior", false))
 		})
@@ -80,14 +87,14 @@ var _ = Describe("FrontmatterFormatter", func() {
 					"auto_abort_prior": true,
 					"created_by":       "impersonator",
 				},
-				"slug", date, true,
+				"slug", date, true, schedule.RecurrenceDaily,
 			)
 			Expect(fm).To(HaveKeyWithValue("auto_abort_prior", true))
 			Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
 		})
 
 		It("auto_abort_prior round-trips through YAML as a boolean, not a string", func() {
-			fm := f.Format(lib.TaskFrontmatter{}, "slug", date, true)
+			fm := f.Format(lib.TaskFrontmatter{}, "slug", date, true, schedule.RecurrenceDaily)
 			raw, err := yaml.Marshal(map[string]interface{}(fm))
 			Expect(err).NotTo(HaveOccurred())
 			var back map[string]interface{}
@@ -100,13 +107,62 @@ var _ = Describe("FrontmatterFormatter", func() {
 		})
 	})
 
+	Describe("defer_date stamp", func() {
+		DescribeTable(
+			"stamps the period-start date per recurrence kind",
+			func(kind schedule.RecurrenceKind, want string) {
+				fm := f.Format(lib.TaskFrontmatter{}, "slug", date, false, kind)
+				Expect(fm).To(HaveKeyWithValue("defer_date", want))
+			},
+			Entry("daily → fire date", schedule.RecurrenceDaily, "2026-06-20"),
+			Entry("weekday → fire date", schedule.RecurrenceWeekday, "2026-06-20"),
+			Entry("ondate → fire date", schedule.RecurrenceOnDate, "2026-06-20"),
+			Entry(
+				"weekly → Monday of the firing ISO week",
+				schedule.RecurrenceWeekly,
+				"2026-06-15",
+			),
+			Entry("monthly → 1st of firing month", schedule.RecurrenceMonthly, "2026-06-01"),
+			Entry("quarterly → 1st of firing quarter", schedule.RecurrenceQuarterly, "2026-04-01"),
+			Entry("yearly → 1st of firing year", schedule.RecurrenceYearly, "2026-01-01"),
+		)
+
+		It("ignores an operator-supplied defer_date; computed value wins", func() {
+			fm := f.Format(
+				lib.TaskFrontmatter{"defer_date": "1999-01-01"},
+				"slug", date, false, schedule.RecurrenceMonthly,
+			)
+			Expect(fm).To(HaveKeyWithValue("defer_date", "2026-06-01"))
+		})
+
+		It("defer_date round-trips through YAML as a date string, not a bool", func() {
+			fm := f.Format(lib.TaskFrontmatter{}, "slug", date, false, schedule.RecurrenceMonthly)
+			raw, err := yaml.Marshal(map[string]interface{}(fm))
+			Expect(err).NotTo(HaveOccurred())
+			var back map[string]interface{}
+			Expect(yaml.Unmarshal(raw, &back)).To(Succeed())
+			v, ok := back["defer_date"]
+			Expect(ok).To(BeTrue())
+			_, isString := v.(string)
+			Expect(isString).To(BeTrue(), "defer_date must round-trip as a string")
+			Expect(v).To(Equal("2026-06-01"))
+		})
+
+		It("weekly fires on a Sunday and defers to the Monday of the same ISO week", func() {
+			// 2026-06-21 (Sun) is in ISO week 2026W25, whose Monday is 2026-06-15.
+			sun := schedule.NewDate(2026, time.June, 21)
+			fm := f.Format(lib.TaskFrontmatter{}, "slug", sun, false, schedule.RecurrenceWeekly)
+			Expect(fm).To(HaveKeyWithValue("defer_date", "2026-06-15"))
+		})
+	})
+
 	Describe("placeholder rendering in string values", func() {
 		DescribeTable(
 			"every supported placeholder renders",
 			func(key, placeholder, expected string) {
 				fm := f.Format(
 					lib.TaskFrontmatter{key: placeholder},
-					"test-slug", date, false,
+					"test-slug", date, false, schedule.RecurrenceDaily,
 				)
 				Expect(fm).To(HaveKeyWithValue(key, expected))
 			},
@@ -124,7 +180,7 @@ var _ = Describe("FrontmatterFormatter", func() {
 		It("substitutes inside longer strings, not just bare placeholders", func() {
 			fm := f.Format(
 				lib.TaskFrontmatter{"note": "due by {{current_date}} (week {{current_week}})"},
-				"test-slug", date, false,
+				"test-slug", date, false, schedule.RecurrenceDaily,
 			)
 			Expect(fm).To(HaveKeyWithValue("note", "due by 2026-06-20 (week 2026W25)"))
 		})
@@ -132,7 +188,7 @@ var _ = Describe("FrontmatterFormatter", func() {
 		It("leaves strings without placeholders unchanged", func() {
 			fm := f.Format(
 				lib.TaskFrontmatter{"assignee": "alice", "category": "ops"},
-				"test-slug", date, false,
+				"test-slug", date, false, schedule.RecurrenceDaily,
 			)
 			Expect(fm).To(HaveKeyWithValue("assignee", "alice"))
 			Expect(fm).To(HaveKeyWithValue("category", "ops"))
@@ -145,7 +201,7 @@ var _ = Describe("FrontmatterFormatter", func() {
 					"goals":    []interface{}{"[[Goal A]]", "[[Goal B]]"},
 					"meta":     map[string]interface{}{"nested": "value"},
 				},
-				"test-slug", date, false,
+				"test-slug", date, false, schedule.RecurrenceDaily,
 			)
 			Expect(fm).To(HaveKeyWithValue("priority", 4))
 			Expect(fm).To(HaveKeyWithValue("goals", []interface{}{"[[Goal A]]", "[[Goal B]]"}))
@@ -160,8 +216,8 @@ var _ = Describe("FrontmatterFormatter", func() {
 				"priority":     4,
 				"assignee":     "alice",
 			}
-			fm1 := f.Format(input, "test-slug", date, false)
-			fm2 := f.Format(input, "test-slug", date, false)
+			fm1 := f.Format(input, "test-slug", date, false, schedule.RecurrenceDaily)
+			fm2 := f.Format(input, "test-slug", date, false, schedule.RecurrenceDaily)
 			Expect(fm1).To(Equal(fm2))
 		})
 	})

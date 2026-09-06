@@ -8,6 +8,10 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
+## Unreleased
+
+- fix: stamp `defer_date` on every published task, computed as the period-start date from the recurrence kind + fire date (Daily/Weekday/OnDate → fire date; Weekly → Monday of the firing ISO week; Monthly/Quarterly/Yearly → 1st of the firing period). Future-dated recurring tasks previously leaked into the dashboard's In Progress/Next views on materialization because the frontmatter carried a future `planned_date` but no `defer_date`; now they surface only on their scheduled day. `defer_date` is force-set after operator keys (not operator-overridable) and does not participate in the UUID5 identifier input.
+
 ## v0.11.4
 
 - fix: `make build` refuses to stamp a version onto a tree that is not that version's tag (`check-version-tag`, escape hatch `ALLOW_UNTAGGED_BUILD=1`). `VERSION` defaults to the newest tag repo-wide, so an operator-run build from an untagged or older tree silently republishes under the newest tag. The guard compares `git describe --exact-match HEAD` against `$(VERSION)` and exits non-zero on mismatch.

@@ -5,6 +5,8 @@
 package publisher
 
 import (
+	"time"
+
 	lib "github.com/bborbe/agent"
 
 	"github.com/bborbe/recurring-task-creator/pkg/schedule"
@@ -30,6 +32,18 @@ type FrontmatterFormatter interface {
 	// the Berlin civil date the task fires for (the publisher converts
 	// wall-clock once at the tick boundary).
 	//
+	// `recurrence` drives the computed `defer_date` stamp: the earliest
+	// date the task should surface. Point-shaped kinds (Daily, Weekday,
+	// OnDate) defer to the fire date itself; span-shaped kinds defer to the
+	// start of their period — Monday of the firing ISO week for Weekly, 1st
+	// of the firing month/quarter/year for the period-anchored kinds.
+	// PeriodOffset is NOT applied (the offset=-1 review schedules fire
+	// throughout the period they review, so the firing period's start is
+	// the correct surface date). `defer_date` is stamped AFTER operator
+	// keys are merged (an operator-supplied `defer_date` cannot override
+	// the computed value) and BEFORE `auto_abort_prior`/`created_by` are
+	// force-set. The value is an ISO "YYYY-MM-DD" string.
+	//
 	// `autoAbortPrior` is stamped onto the result as the
 	// `auto_abort_prior` key, AFTER operator keys are merged (so an
 	// operator-supplied `auto_abort_prior` cannot override the spec-level
@@ -41,6 +55,7 @@ type FrontmatterFormatter interface {
 		slug string,
 		date schedule.Date,
 		autoAbortPrior bool,
+		recurrence schedule.RecurrenceKind,
 	) lib.TaskFrontmatter
 }
 
@@ -61,6 +76,7 @@ func (f *frontmatterFormatter) Format(
 	slug string,
 	date schedule.Date,
 	autoAbortPrior bool,
+	recurrence schedule.RecurrenceKind,
 ) lib.TaskFrontmatter {
 	out := lib.TaskFrontmatter{
 		"status":    "in_progress",
@@ -73,7 +89,45 @@ func (f *frontmatterFormatter) Format(
 		}
 		out[k] = v
 	}
+	out["defer_date"] = deferDateFor(recurrence, date)
 	out["auto_abort_prior"] = autoAbortPrior
 	out["created_by"] = "recurring-task-creator"
 	return out
+}
+
+// deferDateFor returns the period-start date for a (recurrence, date) pair,
+// as an ISO "YYYY-MM-DD" string. Point-shaped kinds (Daily, Weekday,
+// OnDate) defer to the fire date itself; span-shaped kinds defer to the
+// start of their period — Monday of the firing ISO week for Weekly, 1st of
+// the firing month/quarter/year for the period-anchored kinds. PeriodOffset
+// is intentionally NOT applied: the offset=-1 review schedules fire
+// throughout the period they review, so the firing period's start is the
+// correct surface date. Pure function of its inputs — no clock access, so
+// the publisher's byte-identical payload invariant holds.
+func deferDateFor(recurrence schedule.RecurrenceKind, date schedule.Date) string {
+	t := date.Time()
+	switch recurrence {
+	case schedule.RecurrenceDaily, schedule.RecurrenceWeekday, schedule.RecurrenceOnDate:
+		return fmtDate(date.Year, int(date.Month), date.Day)
+	case schedule.RecurrenceWeekly:
+		return fmtDateT(mondayOfISOWeek(t))
+	case schedule.RecurrenceMonthly:
+		return fmtDate(t.Year(), int(t.Month()), 1)
+	case schedule.RecurrenceQuarterly:
+		q := quarterOf(t.Month())
+		firstMonth := time.Month((q-1)*3 + 1)
+		return fmtDate(t.Year(), int(firstMonth), 1)
+	case schedule.RecurrenceYearly:
+		return fmtDate(t.Year(), 1, 1)
+	default:
+		return fmtDate(date.Year, int(date.Month), date.Day)
+	}
+}
+
+// mondayOfISOWeek returns the Monday of the ISO week containing t.
+func mondayOfISOWeek(t time.Time) time.Time {
+	// Go's Weekday: Sunday=0 .. Saturday=6. ISO weeks start Monday.
+	// Days since Monday = (weekday - Monday + 7) % 7.
+	daysSinceMonday := (int(t.Weekday()) - int(time.Monday) + 7) % 7
+	return t.AddDate(0, 0, -daysSinceMonday)
 }
