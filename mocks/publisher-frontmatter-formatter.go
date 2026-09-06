@@ -10,13 +10,14 @@ import (
 )
 
 type PublisherFrontmatterFormatter struct {
-	FormatStub        func(lib.TaskFrontmatter, string, schedule.Date, bool) lib.TaskFrontmatter
+	FormatStub        func(lib.TaskFrontmatter, string, schedule.Date, bool, schedule.RecurrenceKind) lib.TaskFrontmatter
 	formatMutex       sync.RWMutex
 	formatArgsForCall []struct {
 		arg1 lib.TaskFrontmatter
 		arg2 string
 		arg3 schedule.Date
 		arg4 bool
+		arg5 schedule.RecurrenceKind
 	}
 	formatReturns struct {
 		result1 lib.TaskFrontmatter
@@ -28,7 +29,7 @@ type PublisherFrontmatterFormatter struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *PublisherFrontmatterFormatter) Format(arg1 lib.TaskFrontmatter, arg2 string, arg3 schedule.Date, arg4 bool) lib.TaskFrontmatter {
+func (fake *PublisherFrontmatterFormatter) Format(arg1 lib.TaskFrontmatter, arg2 string, arg3 schedule.Date, arg4 bool, arg5 schedule.RecurrenceKind) lib.TaskFrontmatter {
 	fake.formatMutex.Lock()
 	ret, specificReturn := fake.formatReturnsOnCall[len(fake.formatArgsForCall)]
 	fake.formatArgsForCall = append(fake.formatArgsForCall, struct {
@@ -36,13 +37,14 @@ func (fake *PublisherFrontmatterFormatter) Format(arg1 lib.TaskFrontmatter, arg2
 		arg2 string
 		arg3 schedule.Date
 		arg4 bool
-	}{arg1, arg2, arg3, arg4})
+		arg5 schedule.RecurrenceKind
+	}{arg1, arg2, arg3, arg4, arg5})
 	stub := fake.FormatStub
 	fakeReturns := fake.formatReturns
-	fake.recordInvocation("Format", []interface{}{arg1, arg2, arg3, arg4})
+	fake.recordInvocation("Format", []interface{}{arg1, arg2, arg3, arg4, arg5})
 	fake.formatMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2, arg3, arg4)
+		return stub(arg1, arg2, arg3, arg4, arg5)
 	}
 	if specificReturn {
 		return ret.result1
@@ -56,17 +58,17 @@ func (fake *PublisherFrontmatterFormatter) FormatCallCount() int {
 	return len(fake.formatArgsForCall)
 }
 
-func (fake *PublisherFrontmatterFormatter) FormatCalls(stub func(lib.TaskFrontmatter, string, schedule.Date, bool) lib.TaskFrontmatter) {
+func (fake *PublisherFrontmatterFormatter) FormatCalls(stub func(lib.TaskFrontmatter, string, schedule.Date, bool, schedule.RecurrenceKind) lib.TaskFrontmatter) {
 	fake.formatMutex.Lock()
 	defer fake.formatMutex.Unlock()
 	fake.FormatStub = stub
 }
 
-func (fake *PublisherFrontmatterFormatter) FormatArgsForCall(i int) (lib.TaskFrontmatter, string, schedule.Date, bool) {
+func (fake *PublisherFrontmatterFormatter) FormatArgsForCall(i int) (lib.TaskFrontmatter, string, schedule.Date, bool, schedule.RecurrenceKind) {
 	fake.formatMutex.RLock()
 	defer fake.formatMutex.RUnlock()
 	argsForCall := fake.formatArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
 }
 
 func (fake *PublisherFrontmatterFormatter) FormatReturns(result1 lib.TaskFrontmatter) {

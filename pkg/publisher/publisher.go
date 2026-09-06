@@ -84,7 +84,13 @@ func (p *publisher) Publish(
 		Title: strings.TrimSpace(
 			p.renderer.Render(def.TitleTemplate, def.Slug, date),
 		) + " - " + string(periodToken),
-		Frontmatter: p.formatter.Format(def.Frontmatter, def.Slug, date, def.AutoAbortPrior),
+		Frontmatter: p.formatter.Format(
+			def.Frontmatter,
+			def.Slug,
+			date,
+			def.AutoAbortPrior,
+			def.Recurrence,
+		),
 		Body:        p.renderer.Render(def.BodyTemplate, def.Slug, date),
 		TargetVault: def.Vault,
 	}

@@ -890,7 +890,8 @@ var _ = Describe("Publisher", func() {
 				Expect(fm).To(HaveKeyWithValue("page_type", "task"))
 				Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
 				Expect(fm).To(HaveKeyWithValue("auto_abort_prior", false))
-				Expect(fm).To(HaveLen(4))
+				Expect(fm).To(HaveKeyWithValue("defer_date", "2024-12-30"))
+				Expect(fm).To(HaveLen(5))
 				Expect(fm).NotTo(HaveKey("recurring"))
 			},
 		)
@@ -922,7 +923,8 @@ var _ = Describe("Publisher", func() {
 				Expect(fm).To(HaveKeyWithValue("status", "in_progress"))
 				Expect(fm).To(HaveKeyWithValue("page_type", "task"))
 				Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
-				Expect(fm).To(HaveLen(8))
+				Expect(fm).To(HaveKeyWithValue("defer_date", "2024-12-30"))
+				Expect(fm).To(HaveLen(9))
 			},
 		)
 
@@ -948,7 +950,8 @@ var _ = Describe("Publisher", func() {
 				Expect(fm).To(HaveKeyWithValue("page_type", "log"))
 				Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
 				Expect(fm).To(HaveKeyWithValue("auto_abort_prior", false))
-				Expect(fm).To(HaveLen(4))
+				Expect(fm).To(HaveKeyWithValue("defer_date", "2024-12-30"))
+				Expect(fm).To(HaveLen(5))
 			},
 		)
 
@@ -973,7 +976,8 @@ var _ = Describe("Publisher", func() {
 				Expect(fm).To(HaveKeyWithValue("status", "in_progress"))
 				Expect(fm).To(HaveKeyWithValue("page_type", "task"))
 				Expect(fm).To(HaveKeyWithValue("auto_abort_prior", false))
-				Expect(fm).To(HaveLen(4))
+				Expect(fm).To(HaveKeyWithValue("defer_date", "2024-12-30"))
+				Expect(fm).To(HaveLen(5))
 			},
 		)
 
@@ -1067,11 +1071,31 @@ var _ = Describe("Publisher", func() {
 			},
 		)
 
-		It("does not depend on the entry's RecurrenceKind (no kind-specific keys)", func() {
-			// After spec 008 the frontmatter shape is identical for every
-			// RecurrenceKind — there is no kind-encoded field anymore. Two
-			// entries with different kinds and otherwise identical definitions
-			// produce the same Frontmatter.
+		It("depends on the entry's RecurrenceKind only through defer_date", func() {
+			// Since spec 015 defer_date is the single kind-encoded field: it
+			// holds the period-start date, so Daily and Yearly differ on the
+			// same fire date. Every other key is kind-independent — remove
+			// defer_date and the two frontmatters are identical. A fresh
+			// sender per publish is required because the suite's capture()
+			// reads SendCommandArgsForCall(0).
+			publish := func(def schedule.TaskDefinition) lib.TaskFrontmatter {
+				localSender := &taskmocks.TaskCreateCommandSender{}
+				localSender.SendCommandReturns(nil)
+				localPub := publisher.NewPublisher(
+					localSender,
+					publisher.NewRenderer(),
+					publisher.NewFrontmatterFormatter(publisher.NewRenderer()),
+					publisher.NewTaskIdentifierCreator(publisher.NewPeriodTokenBuilder()),
+					false,
+				)
+				Expect(localPub.Publish(
+					context.Background(),
+					def,
+					schedule.NewDate(2025, time.January, 4),
+				)).To(Succeed())
+				_, cmd := localSender.SendCommandArgsForCall(0)
+				return cmd.Frontmatter
+			}
 			def1 := schedule.TaskDefinition{
 				Slug:          "kind-a",
 				TitleTemplate: "t",
@@ -1082,18 +1106,12 @@ var _ = Describe("Publisher", func() {
 				TitleTemplate: "t",
 				Recurrence:    schedule.RecurrenceYearly,
 			}
-			Expect(pub.Publish(
-				context.Background(),
-				def1,
-				schedule.NewDate(2025, time.January, 4),
-			)).To(Succeed())
-			fm1 := capture().Frontmatter
-			Expect(pub.Publish(
-				context.Background(),
-				def2,
-				schedule.NewDate(2025, time.January, 4),
-			)).To(Succeed())
-			fm2 := capture().Frontmatter
+			fm1 := publish(def1)
+			fm2 := publish(def2)
+			Expect(fm1).To(HaveKeyWithValue("defer_date", "2025-01-04"))
+			Expect(fm2).To(HaveKeyWithValue("defer_date", "2025-01-01"))
+			delete(fm1, "defer_date")
+			delete(fm2, "defer_date")
 			Expect(fm1).To(Equal(fm2))
 		})
 	})
