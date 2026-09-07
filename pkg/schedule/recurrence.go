@@ -20,6 +20,12 @@ const (
 	// is the fire date's 4-digit year ("YYYY"), so replays within a year are
 	// idempotent (UUID5 dedup collapses them to one task file).
 	RecurrenceOnDate RecurrenceKind = "ondate"
+	// RecurrenceHourly fires once per civil hour — a distinct task file for
+	// each civil hour of the Europe/Berlin clock, materialized on every tick
+	// (always-fire, like Daily). Its publisher period token is the compact
+	// civil hour "YYYYMMDDHH", so each civil hour produces a distinct UUID5
+	// identifier and thus a distinct task file.
+	RecurrenceHourly RecurrenceKind = "hourly"
 )
 
 // AllRecurrenceKinds is the canonical, closed set of RecurrenceKind values
@@ -34,4 +40,5 @@ var AllRecurrenceKinds = []RecurrenceKind{
 	RecurrenceQuarterly,
 	RecurrenceYearly,
 	RecurrenceOnDate,
+	RecurrenceHourly,
 }

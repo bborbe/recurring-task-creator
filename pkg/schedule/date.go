@@ -13,6 +13,12 @@ type Date struct {
 	Year  int
 	Month time.Month
 	Day   int
+	// Hour is the civil hour of day (0-23) in Europe/Berlin. It is the zero
+	// value (0) for every date-only construction site — the /trigger handler,
+	// existing tests, and any caller that knows only a civil date. It is
+	// consulted only by the publisher's hourly period token; every other
+	// recurrence kind ignores it.
+	Hour int
 }
 
 // NewDate constructs a Date from year/month/day.

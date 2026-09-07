@@ -11,9 +11,9 @@ import "github.com/golang/glog"
 // reads a package-level inventory. The filter rule is:
 //
 //   - RecurrenceDaily, RecurrenceWeekly, RecurrenceMonthly,
-//     RecurrenceQuarterly, RecurrenceYearly: always-fire (the entry
-//     fires on every day; this is the spec 006 always-fire semantic,
-//     preserved by spec 009).
+//     RecurrenceQuarterly, RecurrenceYearly, RecurrenceHourly:
+//     always-fire (the entry fires on every day; this is the spec 006
+//     always-fire semantic, preserved by spec 009).
 //   - RecurrenceWeekday: fires only when date.Time().Weekday() is a
 //     member of the entry's Weekdays set. An empty Weekdays set never
 //     fires (the CRD CEL rule rejects empty lists at apply time).
@@ -65,7 +65,8 @@ func filterInventoryByDate(defs []TaskDefinition, date Date) []TaskDefinition {
 			RecurrenceWeekly,
 			RecurrenceMonthly,
 			RecurrenceQuarterly,
-			RecurrenceYearly:
+			RecurrenceYearly,
+			RecurrenceHourly:
 			// Always-fire — the entry fires on every civil date.
 			out = append(out, def)
 		default:

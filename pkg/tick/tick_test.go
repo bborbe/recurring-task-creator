@@ -481,7 +481,7 @@ var _ = Describe("Tick", func() {
 })
 
 var _ = Describe("Prometheus pre-initialization", func() {
-	It("registers the counter with 14 zero-valued series", func() {
+	It("registers the counter with 16 zero-valued series", func() {
 		families, err := prometheus.DefaultGatherer.Gather()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -494,7 +494,7 @@ var _ = Describe("Prometheus pre-initialization", func() {
 		}
 		Expect(published).NotTo(BeNil())
 		metrics := published.GetMetric()
-		Expect(metrics).To(HaveLen(14))
+		Expect(metrics).To(HaveLen(16))
 
 		seen := map[string]bool{}
 		for _, m := range metrics {
@@ -511,11 +511,11 @@ var _ = Describe("Prometheus pre-initialization", func() {
 			Expect(r).To(BeElementOf("success", "error"))
 			Expect(
 				k,
-			).To(BeElementOf("daily", "weekly", "weekday", "monthly", "quarterly", "yearly", "ondate"))
+			).To(BeElementOf("daily", "weekly", "weekday", "monthly", "quarterly", "yearly", "ondate", "hourly"))
 			seen[r+"/"+k] = true
 			Expect(m.GetCounter().GetValue()).To(Equal(0.0))
 		}
-		Expect(seen).To(HaveLen(14))
+		Expect(seen).To(HaveLen(16))
 	})
 
 	It("registers the gauge with zero value", func() {
