@@ -1,8 +1,13 @@
 ---
-status: approved
+status: completed
 spec: [017-hourly-recurrence-kind]
+summary: Threaded the Europe/Berlin civil hour through the hourly tick (pkg/tick stamps schedule.Date.Hour), updated the two Berlin conversion specs with explicit hours, added the hour-threading spec, and appended the CHANGELOG entry; make test and make precommit both pass
+execution_id: recurring-task-creator-hourly-exec-036-spec-017-tick-hour
+dark-factory-version: dev
 created: "2026-09-07T21:06:00Z"
 queued: "2026-09-07T21:31:23Z"
+started: "2026-09-07T21:37:10Z"
+completed: "2026-09-07T21:41:57Z"
 branch: dark-factory/hourly-recurrence-kind
 ---
 

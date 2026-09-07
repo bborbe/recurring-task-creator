@@ -98,6 +98,7 @@ func (t *tick) tick(ctx context.Context) {
 	t.metrics.SetLastTickTimestamp(float64(now.Unix()))
 	year, month, day := now.Date()
 	date := schedule.NewDate(year, month, day)
+	date.Hour = now.Hour()
 
 	all, err := t.store.List(ctx)
 	if err != nil {
