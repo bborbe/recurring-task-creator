@@ -5,7 +5,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/bborbe/recurring-task-creator)](https://goreportcard.com/report/github.com/bborbe/recurring-task-creator)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/bborbe/recurring-task-creator)
 
-Publishes `task.CreateCommand` events to Kafka on a fixed schedule so a downstream task-controller materializes recurring tasks (daily / weekly / weekday / monthly / quarterly / yearly) as Obsidian vault `.md` files.
+Publishes `task.CreateCommand` events to Kafka on a fixed schedule so a downstream task-controller materializes recurring tasks (daily / hourly / weekly / weekday / monthly / quarterly / yearly / ondate) as Obsidian vault `.md` files.
 
 Task definitions live as Kubernetes `Schedule` Custom Resources — adding / editing / removing a recurring task is `kubectl apply`, not a code release.
 
@@ -34,7 +34,7 @@ kubectl apply -f schedule.yaml          ← operator
    Obsidian vault git remote  ← committed by the controller
 ```
 
-Identifiers are deterministic: `UUID5("recurring-<slug>-<period-token>")`, where the period token is `YYYY-MM-DD` (daily), `YYYYWww` (weekly), `YYYYWww-<3-letter-weekday>` (weekday), `YYYY-MM` (monthly), `YYYYQN` (quarterly), `YYYY` (yearly). The downstream controller dedups on identifier → safe to re-publish every tick, safe to manual `/trigger?date=YYYY-MM-DD` replay, safe to crash-restart.
+Identifiers are deterministic: `UUID5("recurring-<slug>-<period-token>")`, where the period token is `YYYY-MM-DD` (daily), `YYYYMMDDHH` (hourly), `YYYYWww` (weekly), `YYYYWww-<3-letter-weekday>` (weekday), `YYYY-MM` (monthly), `YYYYQN` (quarterly), `YYYY` (yearly / ondate). The downstream controller dedups on identifier → safe to re-publish every tick, safe to manual `/trigger?date=YYYY-MM-DD` replay, safe to crash-restart.
 
 ## Define a schedule
 
@@ -50,7 +50,7 @@ spec:
   vault: default                   # routes to agent-task-controller-<vault>
   title: Weekly Review {{current_week}}   # placeholder-rendered; period token also suffixed
   schedule:
-    recurrence: Weekday            # Daily | Weekly | Weekday | Monthly | Quarterly | Yearly
+    recurrence: Weekday            # Daily | Weekly | Weekday | Monthly | Quarterly | Yearly | OnDate | Hourly
     weekday: Saturday              # required iff recurrence == Weekday (Monday..Sunday)
     periodOffset: 0                # optional, default 0; shifts period-anchored token by N periods (Monthly/Quarterly/Yearly only). Use -1 for "review the just-completed period" schedules.
   template:

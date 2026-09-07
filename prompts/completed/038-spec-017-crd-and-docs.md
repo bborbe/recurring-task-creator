@@ -1,8 +1,13 @@
 ---
-status: approved
+status: completed
 spec: [017-hourly-recurrence-kind]
+summary: 'Schedule CRD schema now admits recurrence: "Hourly" — enum and field description extended (periodOffset CEL rule string unchanged, comment clarified), ScheduleTrigger GoDoc and docs enumerate the new kind + YYYYMMDDHH period token, validation specs cover Hourly accept/reject paths, README/CHANGELOG refreshed'
+execution_id: recurring-task-creator-hourly-exec-038-spec-017-crd-and-docs
+dark-factory-version: dev
 created: "2026-09-07T21:08:00Z"
 queued: "2026-09-07T21:31:23Z"
+started: "2026-09-07T21:47:57Z"
+completed: "2026-09-07T21:54:50Z"
 branch: dark-factory/hourly-recurrence-kind
 ---
 

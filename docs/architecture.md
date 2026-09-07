@@ -54,6 +54,8 @@ TaskIdentifier = UUID5(namespace, "recurring-<slug>-<YYYY-MM-DD>")
 
 **Property**: same `(slug, date)` always produces the same identifier. The task-controller dedups by identifier — a retry on the next hourly tick is a no-op; a manual `/trigger?date=...` replay is safe; a pod restart that re-publishes today's set is safe.
 
+An `hourly` entry's period token is the compact civil hour `YYYYMMDDHH` (e.g. `2026090713`), so each civil hour produces a distinct identifier and task file.
+
 **Trade-off**: identifiers shift daily. A monthly task published on Jun 1 and Jun 14 yield DIFFERENT identifiers. If Jun 1's tick is missed, that month's task never lands. → see Spec 6 (period-anchored UUID5) for the planned fix.
 
 ## Schedule Inventory
@@ -74,7 +76,7 @@ Frozen invariants (any change requires a separate spec):
 
 - **Slugs are frozen.** Renaming a slug changes its UUID5, orphaning any in-flight vault tasks.
 - **Inventory shape is frozen** for `pkg/schedule` tests — fidelity asserted against the Jira-source for migration safety.
-- **Recurrence-kind enum is closed** — `daily`, `weekly`, `monthly`, `quarterly`, `yearly`. New kinds = new spec.
+- **Recurrence-kind enum is closed** — `daily`, `hourly`, `weekly`, `weekday`, `monthly`, `quarterly`, `yearly`, `ondate`. New kinds = new spec.
 
 ## Schedule CR Weekday Field
 
