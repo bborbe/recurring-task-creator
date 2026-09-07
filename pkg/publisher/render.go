@@ -22,6 +22,13 @@ func fmtDate(year, month, day int) string {
 	return fmt.Sprintf("%04d-%02d-%02d", year, month, day)
 }
 
+// fmtHourToken renders YYYYMMDDHH (compact, no separators) — the hourly
+// period token. Each civil hour yields a distinct token, hence a distinct
+// UUID5 identifier and task file.
+func fmtHourToken(year, month, day, hour int) string {
+	return fmt.Sprintf("%04d%02d%02d%02d", year, month, day, hour)
+}
+
 // fmtIsoWeek renders YYYYWNN (uppercase W, two-digit week with leading zero).
 // Matches the source provider's dateToWeek format ("%04dW%02d").
 func fmtIsoWeek(year, week int) string {

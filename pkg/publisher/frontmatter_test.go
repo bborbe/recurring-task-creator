@@ -117,6 +117,7 @@ var _ = Describe("FrontmatterFormatter", func() {
 			Entry("daily → fire date", schedule.RecurrenceDaily, "2026-06-20"),
 			Entry("weekday → fire date", schedule.RecurrenceWeekday, "2026-06-20"),
 			Entry("ondate → fire date", schedule.RecurrenceOnDate, "2026-06-20"),
+			Entry("hourly → fire date", schedule.RecurrenceHourly, "2026-06-20"),
 			Entry(
 				"weekly → Monday of the firing ISO week",
 				schedule.RecurrenceWeekly,

@@ -1,8 +1,13 @@
 ---
-status: approved
+status: completed
 spec: [017-hourly-recurrence-kind]
+summary: 'Added RecurrenceHourly to the publisher: fmtHourToken builds the compact civil-hour token YYYYMMDDHH (no PeriodOffset), deferDateFor names Hourly among point-shaped kinds, and six new specs cover token format, hour distinctness, identifier distinctness, the wire-validate contract, and defer_date'
+execution_id: recurring-task-creator-hourly-exec-037-spec-017-publisher-token
+dark-factory-version: dev
 created: "2026-09-07T21:07:00Z"
 queued: "2026-09-07T21:31:23Z"
+started: "2026-09-07T21:41:58Z"
+completed: "2026-09-07T21:47:56Z"
 branch: dark-factory/hourly-recurrence-kind
 ---
 
