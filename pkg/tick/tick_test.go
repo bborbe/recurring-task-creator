@@ -169,7 +169,10 @@ var _ = Describe("Tick", func() {
 				Should(Equal(want))
 
 			_, _, gotDate := pub.PublishArgsForCall(0)
-			Expect(gotDate).To(Equal(schedule.NewDate(2025, time.January, 5)))
+			// 2025-01-05 00:30 Berlin → Hour=0, explicit for clarity.
+			Expect(
+				gotDate,
+			).To(Equal(schedule.Date{Year: 2025, Month: time.January, Day: 5, Hour: 0}))
 
 			cancel()
 			Eventually(done, "200ms", "5ms").Should(BeClosed())
@@ -196,7 +199,36 @@ var _ = Describe("Tick", func() {
 				Should(Equal(want))
 
 			_, _, gotDate := pub.PublishArgsForCall(0)
-			Expect(gotDate).To(Equal(schedule.NewDate(2025, time.July, 16)))
+			// 2025-07-16 01:30 Berlin → Hour=1.
+			Expect(gotDate).To(Equal(schedule.Date{Year: 2025, Month: time.July, Day: 16, Hour: 1}))
+
+			cancel()
+			Eventually(done, "200ms", "5ms").Should(BeClosed())
+		})
+
+		It("threads the Europe/Berlin civil hour onto the date handed to the publisher", func() {
+			// 2025-01-04T13:30:00Z is 2025-01-04 14:30 in Berlin (CET = UTC+1), Hour=14.
+			clock.SetNow(libtimetest.ParseDateTime("2025-01-04T13:30:00Z"))
+			var err error
+			tk, err = tick.NewTick(context.Background(), fakeStore, pub, clock, metrics)
+			Expect(err).NotTo(HaveOccurred())
+
+			want := expectedCount(schedule.Date{Year: 2025, Month: time.January, Day: 4, Hour: 14})
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			done := make(chan struct{})
+			go func() {
+				_ = tk.Run(ctx)
+				close(done)
+			}()
+
+			Eventually(func() int { return pub.PublishCallCount() }, "200ms", "5ms").
+				Should(Equal(want))
+
+			_, _, gotDate := pub.PublishArgsForCall(0)
+			Expect(
+				gotDate,
+			).To(Equal(schedule.Date{Year: 2025, Month: time.January, Day: 4, Hour: 14}))
 
 			cancel()
 			Eventually(done, "200ms", "5ms").Should(BeClosed())
@@ -481,7 +513,7 @@ var _ = Describe("Tick", func() {
 })
 
 var _ = Describe("Prometheus pre-initialization", func() {
-	It("registers the counter with 14 zero-valued series", func() {
+	It("registers the counter with 16 zero-valued series", func() {
 		families, err := prometheus.DefaultGatherer.Gather()
 		Expect(err).NotTo(HaveOccurred())
 
@@ -494,7 +526,7 @@ var _ = Describe("Prometheus pre-initialization", func() {
 		}
 		Expect(published).NotTo(BeNil())
 		metrics := published.GetMetric()
-		Expect(metrics).To(HaveLen(14))
+		Expect(metrics).To(HaveLen(16))
 
 		seen := map[string]bool{}
 		for _, m := range metrics {
@@ -511,11 +543,11 @@ var _ = Describe("Prometheus pre-initialization", func() {
 			Expect(r).To(BeElementOf("success", "error"))
 			Expect(
 				k,
-			).To(BeElementOf("daily", "weekly", "weekday", "monthly", "quarterly", "yearly", "ondate"))
+			).To(BeElementOf("daily", "weekly", "weekday", "monthly", "quarterly", "yearly", "ondate", "hourly"))
 			seen[r+"/"+k] = true
 			Expect(m.GetCounter().GetValue()).To(Equal(0.0))
 		}
-		Expect(seen).To(HaveLen(14))
+		Expect(seen).To(HaveLen(16))
 	})
 
 	It("registers the gauge with zero value", func() {

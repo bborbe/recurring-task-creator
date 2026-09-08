@@ -175,6 +175,18 @@ var _ = Describe("scheduleSpecSchema CEL validation", func() {
 		Expect(validateSpec(spec)).To(Succeed())
 	})
 
+	It("accepts Hourly with neither weekday/weekdays nor month/day", func() {
+		spec := map[string]interface{}{
+			"vault": "personal",
+			"title": "Hourly Build Check",
+			"schedule": map[string]interface{}{
+				"recurrence": "Hourly",
+			},
+			"template": map[string]interface{}{"body": "."},
+		}
+		Expect(validateSpec(spec)).To(Succeed())
+	})
+
 	It("rejects Weekday with neither weekday nor weekdays set (XOR)", func() {
 		spec := map[string]interface{}{
 			"vault": "personal",
@@ -346,6 +358,9 @@ var _ = Describe("periodOffset CEL validation", func() {
 		Entry("Daily + offset=-1 → reject", "Daily", true, -1, false),
 		Entry("Weekly + offset=1 → reject", "Weekly", true, 1, false),
 		Entry("Weekday + offset=-1 → reject", "Weekday", true, -1, false),
+		Entry("Hourly + offset=0 → accept", "Hourly", true, 0, true),
+		Entry("Hourly + offset=-1 → reject", "Hourly", true, -1, false),
+		Entry("Hourly + offset=1 → reject", "Hourly", true, 1, false),
 	)
 })
 

@@ -10,13 +10,14 @@ import (
 
 // recurrenceEnum is the closed set of valid recurrence strings on the
 // CRD wire. Capitalized to match Go's time.Weekday.String() casing and
-// Spec 6/Spec 9's period-token output. Mirrors the post-Spec-9 6-kind
-// Go-level RecurrenceKind set (pkg/schedule/recurrence.go): Weekly is
+// Spec 6/Spec 9's period-token output. Mirrors the 8-value Go-level
+// RecurrenceKind set (pkg/schedule/recurrence.go): Weekly is
 // always-fire ("YYYYWww") while Weekday targets a specific weekday
-// ("YYYYWww-<3-letter-abbrev>"). Lives in this package so the schema
-// is self-contained; do NOT import pkg/schedule.RecurrenceKind (those
-// constants are lowercase Go-internal values; the CRD enum is a
-// separate API contract).
+// ("YYYYWww-<3-letter-abbrev>"), OnDate fires on a fixed month-and-day,
+// and Hourly fires every civil hour ("YYYYMMDDHH"). Lives in this
+// package so the schema is self-contained; do NOT import
+// pkg/schedule.RecurrenceKind (those constants are lowercase Go-internal
+// values; the CRD enum is a separate API contract).
 var recurrenceEnum = []string{
 	"Daily",
 	"Weekly",
@@ -25,6 +26,7 @@ var recurrenceEnum = []string{
 	"Quarterly",
 	"Yearly",
 	"OnDate",
+	"Hourly",
 }
 
 // weekdayLongEnum is the closed set of valid strings for the single
@@ -73,8 +75,8 @@ const weekdayXorRule = "self.recurrence == 'Weekday' ? " +
 const weekdayXorMessage = "exactly one of weekday or weekdays is required when recurrence is 'Weekday', and both are forbidden otherwise"
 
 // periodOffsetOnlyForPeriodKindsRule rejects non-zero periodOffset on
-// date-anchored recurrence kinds (Daily/Weekly/Weekday). Those kinds
-// don't carry a period concept distinct from the fire date; a date
+// date-anchored recurrence kinds (Daily/Weekly/Weekday/Hourly). Those
+// kinds don't carry a period concept distinct from the fire date; a date
 // shift is the user-visible knob there, not an offset. Only Monthly,
 // Quarterly, Yearly accept a non-zero offset.
 const periodOffsetOnlyForPeriodKindsRule = "!has(self.periodOffset) || self.periodOffset == 0 || self.recurrence in ['Monthly', 'Quarterly', 'Yearly']"
@@ -158,7 +160,7 @@ func scheduleTriggerSchema() apiextensionsv1.JSONSchemaProps {
 		Properties: map[string]apiextensionsv1.JSONSchemaProps{
 			"recurrence": {
 				Type:        "string",
-				Description: "One of: Daily, Weekly, Weekday, Monthly, Quarterly, Yearly, OnDate.",
+				Description: "One of: Daily, Weekly, Weekday, Monthly, Quarterly, Yearly, OnDate, Hourly.",
 				Enum:        jsonEnumValues(recurrenceEnum),
 			},
 			"weekday": {

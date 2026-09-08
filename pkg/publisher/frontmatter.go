@@ -34,7 +34,7 @@ type FrontmatterFormatter interface {
 	//
 	// `recurrence` drives the computed `defer_date` stamp: the earliest
 	// date the task should surface. Point-shaped kinds (Daily, Weekday,
-	// OnDate) defer to the fire date itself; span-shaped kinds defer to the
+	// OnDate, Hourly) defer to the fire date itself; span-shaped kinds defer to the
 	// start of their period — Monday of the firing ISO week for Weekly, 1st
 	// of the firing month/quarter/year for the period-anchored kinds.
 	// PeriodOffset is NOT applied (the offset=-1 review schedules fire
@@ -96,8 +96,8 @@ func (f *frontmatterFormatter) Format(
 }
 
 // deferDateFor returns the period-start date for a (recurrence, date) pair,
-// as an ISO "YYYY-MM-DD" string. Point-shaped kinds (Daily, Weekday,
-// OnDate) defer to the fire date itself; span-shaped kinds defer to the
+// as an ISO "YYYY-MM-DD" string. Point-shaped kinds (Daily, Weekday, OnDate,
+// Hourly) defer to the fire date itself; span-shaped kinds defer to the
 // start of their period — Monday of the firing ISO week for Weekly, 1st of
 // the firing month/quarter/year for the period-anchored kinds. PeriodOffset
 // is intentionally NOT applied: the offset=-1 review schedules fire
@@ -107,7 +107,10 @@ func (f *frontmatterFormatter) Format(
 func deferDateFor(recurrence schedule.RecurrenceKind, date schedule.Date) string {
 	t := date.Time()
 	switch recurrence {
-	case schedule.RecurrenceDaily, schedule.RecurrenceWeekday, schedule.RecurrenceOnDate:
+	case schedule.RecurrenceDaily,
+		schedule.RecurrenceWeekday,
+		schedule.RecurrenceOnDate,
+		schedule.RecurrenceHourly:
 		return fmtDate(date.Year, int(date.Month), date.Day)
 	case schedule.RecurrenceWeekly:
 		return fmtDateT(mondayOfISOWeek(t))

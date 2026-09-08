@@ -50,7 +50,8 @@ func weekdayAbbrev(w time.Weekday) string {
 // PeriodToken is the period-anchored token string appended to a recurring
 // task's title and fed into the UUID5 identifier — "YYYY-MM-DD" for daily,
 // "YYYYWNN" for weekly, "YYYYWNN-<3-letter-weekday>" for weekday, "YYYY-MM"
-// for monthly, "YYYYQN" for quarterly, "YYYY" for yearly. Wrapped in a
+// for monthly, "YYYYQN" for quarterly, "YYYY" for yearly, and "YYYYMMDDHH"
+// for the hourly kind (one distinct token per civil hour). Wrapped in a
 // named string type so calls that take both a slug and a token can't accept
 // them in the wrong order without a compile error.
 type PeriodToken string
@@ -87,6 +88,15 @@ func (b *periodTokenBuilder) Build(
 	switch def.Recurrence {
 	case schedule.RecurrenceDaily:
 		return PeriodToken(fmtDate(date.Year, int(date.Month), date.Day)), nil
+	case schedule.RecurrenceHourly:
+		// Hourly fires every civil hour; its period token is the compact
+		// civil hour "YYYYMMDDHH", so each civil hour produces a distinct
+		// UUID5 identifier and task file. PeriodOffset is NOT applied
+		// (the CRD CEL rule keeps periodOffset valid only for
+		// Monthly/Quarterly/Yearly). date.Hour is 0 for date-only
+		// construction sites (e.g. the /trigger handler), which yields
+		// the hour-00 token of that day.
+		return PeriodToken(fmtHourToken(date.Year, int(date.Month), date.Day, date.Hour)), nil
 	case schedule.RecurrenceWeekly:
 		isoYear, isoWeek := base.ISOWeek()
 		return PeriodToken(fmtIsoWeek(isoYear, isoWeek)), nil

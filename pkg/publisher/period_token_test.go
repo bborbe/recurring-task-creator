@@ -156,4 +156,37 @@ var _ = Describe("PeriodTokenBuilder.Build", func() {
 			Expect(string(build(def, schedule.NewDate(2026, time.July, 31)))).To(Equal("2026W31"))
 		})
 	})
+
+	Describe("RecurrenceHourly", func() {
+		It("produces the compact hour-granular token YYYYMMDDHH", func() {
+			def := schedule.TaskDefinition{
+				Slug:       "hourly-build-check",
+				Recurrence: schedule.RecurrenceHourly,
+			}
+			tok := build(def, schedule.Date{Year: 2026, Month: time.September, Day: 7, Hour: 13})
+			Expect(string(tok)).To(Equal("2026090713"))
+		})
+
+		It("yields different tokens for hour 12 and hour 13 on the same day", func() {
+			def := schedule.TaskDefinition{
+				Slug:       "hourly-build-check",
+				Recurrence: schedule.RecurrenceHourly,
+			}
+			tok12 := build(def, schedule.Date{Year: 2026, Month: time.September, Day: 7, Hour: 12})
+			tok13 := build(def, schedule.Date{Year: 2026, Month: time.September, Day: 7, Hour: 13})
+			Expect(string(tok12)).To(Equal("2026090712"))
+			Expect(string(tok13)).To(Equal("2026090713"))
+			Expect(tok12).NotTo(Equal(tok13))
+		})
+
+		It("produces the hour-00 token for a date-only construction site", func() {
+			def := schedule.TaskDefinition{
+				Slug:       "hourly-build-check",
+				Recurrence: schedule.RecurrenceHourly,
+			}
+			// NewDate leaves Hour=0 (the /trigger handler's shape) → hour-00 token.
+			tok := build(def, schedule.NewDate(2026, time.September, 7))
+			Expect(string(tok)).To(Equal("2026090700"))
+		})
+	})
 })

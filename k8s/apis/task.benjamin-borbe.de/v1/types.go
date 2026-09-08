@@ -51,11 +51,12 @@ type ScheduleSpec struct {
 
 // ScheduleTrigger is the recurrence subnode.
 type ScheduleTrigger struct {
-	// Recurrence is one of: "Daily", "Weekly", "Weekday", "Monthly", "Quarterly", "Yearly"
-	// (capitalized, matching Go's time.Weekday.String() style and Spec 6/9's
-	// period-token output). "Weekly" is always-fire (no weekday); "Weekday"
-	// fires only on its target weekday. Constrained by the OpenAPI enum in
-	// scheduleSpecSchema.
+	// Recurrence is one of: "Daily", "Weekly", "Weekday", "Monthly", "Quarterly", "Yearly",
+	// "OnDate", "Hourly" (capitalized, matching Go's time.Weekday.String() style and Spec
+	// 6/9's period-token output). "Weekly" is always-fire (no weekday); "Weekday" fires
+	// only on its target weekday; "OnDate" fires on a fixed month-and-day each year;
+	// "Hourly" fires every civil hour in Europe/Berlin. Constrained by the OpenAPI enum
+	// in scheduleSpecSchema.
 	Recurrence string `json:"recurrence"`
 
 	// Weekday is a single weekday (long form Monday..Sunday). Set when

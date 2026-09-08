@@ -160,6 +160,19 @@ var _ = Describe("TasksForDate", func() {
 		Expect(schedule.TasksForDate(bogus, schedule.NewDate(2027, time.March, 15))).To(BeEmpty())
 	})
 
+	It("fires an hourly entry on any civil date, regardless of the hour", func() {
+		hourly := []schedule.TaskDefinition{
+			{Slug: "hourly-build-check", Recurrence: schedule.RecurrenceHourly},
+		}
+		// TasksForDate ignores the Hour field: an hourly entry always fires,
+		// on any civil date at any hour (always-fire, like Daily).
+		Expect(slugsOf(schedule.TasksForDate(hourly, schedule.NewDate(2027, time.March, 14)))).
+			To(ConsistOf("hourly-build-check"))
+		Expect(slugsOf(schedule.TasksForDate(hourly, schedule.Date{
+			Year: 2027, Month: time.March, Day: 14, Hour: 13,
+		}))).To(ConsistOf("hourly-build-check"))
+	})
+
 	DescribeTable("each always-fire kind fires on an arbitrary date",
 		func(kind schedule.RecurrenceKind) {
 			defs := []schedule.TaskDefinition{{Slug: "af", Recurrence: kind}}
@@ -171,13 +184,14 @@ var _ = Describe("TasksForDate", func() {
 		Entry("Monthly", schedule.RecurrenceMonthly),
 		Entry("Quarterly", schedule.RecurrenceQuarterly),
 		Entry("Yearly", schedule.RecurrenceYearly),
+		Entry("Hourly", schedule.RecurrenceHourly),
 	)
 
-	It("preserves the always-fire semantic for the four other kinds", func() {
-		// Daily, weekly, monthly, quarterly, and yearly all fire on every day
-		// (spec 006 always-fire). The fixture omits quarterly and yearly for
-		// brevity; the always-fire guarantee for those kinds is exercised by
-		// tick_test.go and the trigger-handler test.
+	It("preserves the always-fire semantic for the five other kinds", func() {
+		// Daily, weekly, monthly, quarterly, yearly, and hourly all fire on
+		// every day (spec 006 always-fire). The fixture omits quarterly and
+		// yearly for brevity; the always-fire guarantee for those kinds is
+		// exercised by tick_test.go and the trigger-handler test.
 		for _, date := range []schedule.Date{
 			schedule.NewDate(2025, time.January, 6),  // Monday
 			schedule.NewDate(2025, time.January, 7),  // Tuesday
@@ -197,6 +211,7 @@ var _ = Describe("TasksForDate", func() {
 					schedule.RecurrenceMonthly,
 					schedule.RecurrenceQuarterly,
 					schedule.RecurrenceYearly,
+					schedule.RecurrenceHourly,
 				))
 			}
 		}

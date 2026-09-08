@@ -420,6 +420,26 @@ var _ = Describe("Publisher", func() {
 		Expect(string(tok)).To(Equal("2027"))
 	})
 
+	It("produces distinct UUID5 identifiers for hour 12 and hour 13 on the same day", func() {
+		def := schedule.TaskDefinition{
+			Slug:          "hourly-build-check",
+			TitleTemplate: "Build Check",
+			Recurrence:    schedule.RecurrenceHourly,
+		}
+		creator := publisher.NewTaskIdentifierCreator(publisher.NewPeriodTokenBuilder())
+		id12, tok12, err := creator.Create(context.Background(), def,
+			schedule.Date{Year: 2026, Month: time.September, Day: 7, Hour: 12})
+		Expect(err).NotTo(HaveOccurred())
+		id13, tok13, err := creator.Create(context.Background(), def,
+			schedule.Date{Year: 2026, Month: time.September, Day: 7, Hour: 13})
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(string(tok12)).To(Equal("2026090712"))
+		Expect(string(tok13)).To(Equal("2026090713"))
+		Expect(id12).NotTo(Equal(id13),
+			"different hours must produce different identifiers → different task files")
+	})
+
 	It("non-weekly kinds ignore the Weekday field (token is identical to Spec 6)", func() {
 		for _, c := range []struct {
 			rec schedule.RecurrenceKind
@@ -1224,6 +1244,7 @@ var _ = Describe("Publisher", func() {
 			Entry("quarterly", schedule.RecurrenceQuarterly),
 			Entry("yearly", schedule.RecurrenceYearly),
 			Entry("ondate", schedule.RecurrenceOnDate),
+			Entry("hourly", schedule.RecurrenceHourly),
 		)
 	})
 

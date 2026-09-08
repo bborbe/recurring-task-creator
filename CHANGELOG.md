@@ -8,6 +8,13 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
+## Unreleased
+
+- feat: add `hourly` recurrence kind to `pkg/schedule` — appended to `AllRecurrenceKinds` (metrics label pre-initialization and the store adapter pick it up automatically); `schedule.Date` gains an `Hour int` field (0-23, zero for date-only construction, consulted only by the hourly period token); `filterInventoryByDate` treats `hourly` as always-fire alongside Daily/Weekly/Monthly/Quarterly/Yearly
+- feat: thread the Europe/Berlin civil hour through the hourly tick — `pkg/tick` stamps `schedule.Date.Hour` from the same Berlin-adjusted clock read it already takes, so the publisher can build hour-granular period tokens
+- feat: add `hourly` period token to the publisher — `RecurrenceHourly` builds the compact civil-hour token `YYYYMMDDHH` via the new `fmtHourToken` helper (no `PeriodOffset`, matching the CRD rule that keeps offset valid only for Monthly/Quarterly/Yearly), so each civil hour yields a distinct UUID5 identifier and task file; `deferDateFor` names Hourly among the point-shaped kinds (defer_date = fire date)
+- feat: Schedule CRD accepts `recurrence: "Hourly"` — enum and field description extended; `periodOffset` stays rejected for Hourly (existing CEL rule unchanged, comment clarified); k8s Go type GoDoc and `docs/architecture.md` enumerate the new kind and its `YYYYMMDDHH` period token
+
 ## v0.11.6
 
 - fix: stamp `defer_date` on every published task, computed as the period-start date from the recurrence kind + fire date (Daily/Weekday/OnDate → fire date; Weekly → Monday of the firing ISO week; Monthly/Quarterly/Yearly → 1st of the firing period). Future-dated recurring tasks previously leaked into the dashboard's In Progress/Next views on materialization because the frontmatter carried a future `planned_date` but no `defer_date`; now they surface only on their scheduled day. `defer_date` is force-set after operator keys (not operator-overridable) and does not participate in the UUID5 identifier input.

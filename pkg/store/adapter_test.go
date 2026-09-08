@@ -24,6 +24,8 @@ var _ = Describe("adaptSchedule", func() {
 		ctx = context.Background()
 	})
 
+	// One entry per RecurrenceKind — keep in sync with
+	// schedule.AllRecurrenceKinds when kinds are added or removed.
 	DescribeTable("recurrence mapping",
 		func(input string, expected schedule.RecurrenceKind) {
 			cr := &v1.Schedule{
@@ -44,6 +46,7 @@ var _ = Describe("adaptSchedule", func() {
 		Entry("quarterly", "Quarterly", schedule.RecurrenceQuarterly),
 		Entry("yearly", "Yearly", schedule.RecurrenceYearly),
 		Entry("ondate", "OnDate", schedule.RecurrenceOnDate),
+		Entry("hourly", "Hourly", schedule.RecurrenceHourly),
 	)
 
 	DescribeTable("weekday normalization — all 14 day strings map to canonical time.Weekday",
