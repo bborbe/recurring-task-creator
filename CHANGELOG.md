@@ -8,7 +8,7 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
-## Unreleased
+## v0.12.0
 
 - feat: add `hourly` recurrence kind to `pkg/schedule` — appended to `AllRecurrenceKinds` (metrics label pre-initialization and the store adapter pick it up automatically); `schedule.Date` gains an `Hour int` field (0-23, zero for date-only construction, consulted only by the hourly period token); `filterInventoryByDate` treats `hourly` as always-fire alongside Daily/Weekly/Monthly/Quarterly/Yearly
 - feat: thread the Europe/Berlin civil hour through the hourly tick — `pkg/tick` stamps `schedule.Date.Hour` from the same Berlin-adjusted clock read it already takes, so the publisher can build hour-granular period tokens
