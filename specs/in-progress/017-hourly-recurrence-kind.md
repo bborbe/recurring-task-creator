@@ -4,7 +4,7 @@ approved: "2026-09-07T20:57:01Z"
 generating: "2026-09-07T21:00:33Z"
 prompted: "2026-09-07T21:20:15Z"
 verifying: "2026-09-07T21:54:50Z"
-branch: dark-factory/hourly-recurrence-kind
+branch: feature/hourly-recurrence
 ---
 
 ## Summary
@@ -49,7 +49,7 @@ After this work:
 - [ ] A Ginkgo spec in `pkg/tick` proves the hour is threaded: with the injected clock fixed at an instant whose Europe/Berlin civil hour is H (e.g. `2025-01-04T13:30:00Z` → Berlin `2025-01-04 14:30`, Hour=14), the `schedule.Date` captured by the fake publisher carries `Hour=H` — evidence: passing spec name printed by `go test -v ./pkg/tick/`.
 - [ ] Ginkgo specs in `pkg/publisher` prove the period token for `(RecurrenceHourly, Date{2026, September, 7, Hour=13})` equals `"2026090713"`, and that hour 12 vs hour 13 on the same day yield different tokens (thus different UUID5 identifiers and different task files) — evidence: passing spec names printed by `go test -v ./pkg/publisher/`.
 - [ ] The Go-built CRD schema declares `"Hourly"` in the recurrence enum and the CEL rule still rejects non-zero `periodOffset` on Hourly — evidence: (a) `grep -nE '"Hourly"' pkg/k8s_connector_schema.go` returns ≥1; (b) a Ginkgo spec in the k8s_connector validation suite accepts `recurrence: "Hourly"` and rejects `recurrence: "Hourly"` with `periodOffset: 1` — passing spec names printed by `go test -v ./pkg/`.
-- [ ] **Negative:** no existing kind's period-token code path changed — evidence: `git diff pkg/publisher/period_token.go | grep -c '^-[^-]'` returns 0 (no removed lines), and every pre-existing publisher token spec still passes (`go test -v ./pkg/publisher/` prints the existing daily/weekly/weekday/monthly/quarterly/yearly/ondate token specs green).
+- [ ] **Negative:** no existing kind's period-token code path changed — evidence: `git diff pkg/publisher/period_token.go | grep '^-[^-]' | grep -cv '^-\s*//'` returns 0 (no removed non-comment lines — the doc-comment edit enumerating the new hourly token is required by Constraints), and every pre-existing publisher token spec still passes (`go test -v ./pkg/publisher/` prints the existing daily/weekly/weekday/monthly/quarterly/yearly/ondate token specs green).
 - [ ] `make precommit` exits 0 from the repo root — evidence: exit code 0.
 - [ ] **Post-Deploy (Rung-2):** an Hourly Schedule CR fires a distinct task file per civil hour in dev — evidence: apply a throwaway `recurrence: Hourly` CR in `erpnext` on dev; the CRD accepts it (no admission error); `kubectldev -n erpnext logs <recurring-task-creator-pod> --since=2h | grep 'sent CreateCommand'` shows ≥2 distinct hour-granular tokens for the slug across two consecutive hourly ticks; and ≥2 distinct materialized task files (distinct hour tokens in the title) exist in the CR's target vault. The two fires span up to ~60 minutes (the ticker is hourly; a StatefulSet restart triggers an immediate initial tick).
   - `deploy_check:` `kubectldev -n erpnext get statefulset/recurring-task-creator -o jsonpath='{.spec.template.spec.containers[0].image}' | awk -F: '{print $NF}'`
