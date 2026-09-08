@@ -50,9 +50,8 @@ func weekdayAbbrev(w time.Weekday) string {
 // PeriodToken is the period-anchored token string appended to a recurring
 // task's title and fed into the UUID5 identifier — "YYYY-MM-DD" for daily,
 // "YYYYWNN" for weekly, "YYYYWNN-<3-letter-weekday>" for weekday, "YYYY-MM"
-// for monthly, "YYYYQN" for quarterly, "YYYY" for yearly. Wrapped in a
-// "YYYYQN" for quarterly, "YYYY" for yearly, and "YYYYMMDDHH" for the
-// hourly kind (one distinct token per civil hour).
+// for monthly, "YYYYQN" for quarterly, "YYYY" for yearly, and "YYYYMMDDHH"
+// for the hourly kind (one distinct token per civil hour). Wrapped in a
 // named string type so calls that take both a slug and a token can't accept
 // them in the wrong order without a compile error.
 type PeriodToken string
