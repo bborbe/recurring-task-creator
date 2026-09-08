@@ -1,8 +1,9 @@
 ---
-status: prompted
+status: verifying
 approved: "2026-09-07T20:57:01Z"
 generating: "2026-09-07T21:00:33Z"
 prompted: "2026-09-07T21:20:15Z"
+verifying: "2026-09-07T21:54:50Z"
 branch: dark-factory/hourly-recurrence-kind
 ---
 
