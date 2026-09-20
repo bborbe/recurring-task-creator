@@ -19,8 +19,9 @@ type placeholder struct {
 }
 
 // placeholders is the closed, ordered table of every placeholder
-// accepted in title, body, and string-valued frontmatter entries.
-// Adding a placeholder = adding one row; renderTemplate and
+// accepted in title, body, string-valued frontmatter entries, and the
+// string entries of list-valued frontmatter. Adding a placeholder =
+// adding one row; Renderer.Render (see renderer.go) and
 // SupportedPlaceholders both derive from this slice — single source
 // of truth.
 //
@@ -56,7 +57,8 @@ var placeholders = []placeholder{
 }
 
 // SupportedPlaceholders is the ordered list of every placeholder name
-// accepted in title, body, and string-valued frontmatter. Derived from
+// accepted in title, body, string-valued frontmatter entries, and the
+// string entries of list-valued frontmatter. Derived from
 // the placeholders table. Exposed for callers (inventory validators,
 // docs generators) that need the closed-enum list.
 var SupportedPlaceholders = func() []string {

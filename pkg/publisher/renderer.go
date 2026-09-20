@@ -15,8 +15,9 @@ import (
 // Renderer substitutes the closed set of `{{...}}` placeholder tokens
 // (see placeholders.go) inside an operator-authored template string.
 // Same seam used by the publisher for title and body rendering and by
-// FrontmatterFormatter for string-valued frontmatter entries — single
-// definition of "what a placeholder is" across every render site.
+// FrontmatterFormatter for string-valued frontmatter entries and the
+// string entries of list-valued frontmatter — single definition of
+// "what a placeholder is" across every render site.
 type Renderer interface {
 	// Render returns template with every placeholder substituted by
 	// its rendered value for date. The slug parameter is reserved for
