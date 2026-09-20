@@ -19,16 +19,19 @@ import (
 // supplied frontmatter (from `Schedule.spec.template.frontmatter`) and
 // the wire-level `task.CreateCommand.Frontmatter` payload: it seeds
 // published-author defaults, renders placeholder tokens in string
-// values via the publisher's closed placeholder set, merges operator
-// keys (which may override the defaults), and force-sets the provenance
+// values and in the string entries of list values via the publisher's
+// closed placeholder set, merges operator keys (which may override the
+// defaults), and force-sets the provenance
 // key `created_by: recurring-task-creator` last so a Schedule CR cannot
 // impersonate a different author.
 type FrontmatterFormatter interface {
 	// Format returns the frontmatter for one published task. String
 	// values in `operator` are rendered through the same placeholder
-	// substitution as title/body (`{{date}}`, `{{iso-week}}`, etc.);
-	// non-string values (ints, slices, maps) pass through unchanged.
-	// `slug` and `date` parameterize the placeholder render; `date` is
+	// substitution as title/body (`{{date}}`, `{{iso-week}}`, etc.), and
+	// the string entries of list values (`[]interface{}`, the shape a
+	// CR/YAML list arrives as) are rendered the same way. Other
+	// non-string values — ints, maps, and non-string list entries — pass
+	// through unchanged. `slug` and `date` parameterize the placeholder render; `date` is
 	// the Berlin civil date the task fires for (the publisher converts
 	// wall-clock once at the tick boundary).
 	//
@@ -60,9 +63,10 @@ type FrontmatterFormatter interface {
 }
 
 // NewFrontmatterFormatter returns the default FrontmatterFormatter that
-// renders string-valued frontmatter via the injected Renderer (same
-// placeholder semantics as title/body). Stateless: safe to construct
-// once and share across goroutines.
+// renders string-valued frontmatter and the string entries of
+// list-valued frontmatter via the injected Renderer (same placeholder
+// semantics as title/body). Stateless: safe to construct once and share
+// across goroutines.
 func NewFrontmatterFormatter(renderer Renderer) FrontmatterFormatter {
 	return &frontmatterFormatter{renderer: renderer}
 }
@@ -83,6 +87,10 @@ func (f *frontmatterFormatter) Format(
 		"page_type": "task",
 	}
 	for k, v := range operator {
+		if list, ok := v.([]interface{}); ok {
+			out[k] = f.renderList(list, slug, date)
+			continue
+		}
 		if s, ok := v.(string); ok {
 			out[k] = f.renderer.Render(s, slug, date)
 			continue
@@ -92,6 +100,29 @@ func (f *frontmatterFormatter) Format(
 	out["defer_date"] = deferDateFor(recurrence, date)
 	out["auto_abort_prior"] = autoAbortPrior
 	out["created_by"] = "recurring-task-creator"
+	return out
+}
+
+// renderList renders the string entries of a flat list frontmatter value
+// through the same placeholder substitution as scalar string values,
+// preserving every non-string entry (and its type) unchanged. The result
+// is always a []interface{} — the shape a CR/YAML list arrives as and the
+// shape callers assert against. Nested maps and lists-of-lists are
+// deliberately NOT recursed into: operator frontmatter lists in use are
+// flat lists of scalars. Pure function of its inputs plus the renderer.
+func (f *frontmatterFormatter) renderList(
+	list []interface{},
+	slug string,
+	date schedule.Date,
+) []interface{} {
+	out := make([]interface{}, len(list))
+	for i, entry := range list {
+		if s, ok := entry.(string); ok {
+			out[i] = f.renderer.Render(s, slug, date)
+			continue
+		}
+		out[i] = entry
+	}
 	return out
 }
 

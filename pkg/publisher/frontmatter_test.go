@@ -210,6 +210,88 @@ var _ = Describe("FrontmatterFormatter", func() {
 		})
 	})
 
+	Describe("placeholder rendering in list entries", func() {
+		It(
+			"renders a token-bearing string entry and leaves a token-free sibling untouched",
+			func() {
+				fm := f.Format(
+					lib.TaskFrontmatter{
+						"depends_on": []interface{}{
+							"Weekly Review {{current_week}}",
+							"[[Standup]]",
+						},
+					},
+					"test-slug", date, false, schedule.RecurrenceDaily,
+				)
+				Expect(fm).To(HaveKeyWithValue(
+					"depends_on",
+					[]interface{}{"Weekly Review 2026W25", "[[Standup]]"},
+				))
+			},
+		)
+
+		It("renders only the token-bearing entry of a mixed list, preserving other types", func() {
+			fm := f.Format(
+				lib.TaskFrontmatter{
+					"goals": []interface{}{"[[Goal {{current_month}}]]", "[[Goal B]]", 7},
+				},
+				"test-slug", date, false, schedule.RecurrenceDaily,
+			)
+			v, ok := fm["goals"]
+			Expect(ok).To(BeTrue())
+			list, ok := v.([]interface{})
+			Expect(ok).To(BeTrue(), "list value must stay a []interface{}")
+			Expect(list).To(HaveLen(3))
+			Expect(list[0]).To(Equal("[[Goal 2026-06]]"))
+			Expect(list[1]).To(Equal("[[Goal B]]"))
+			Expect(list[2]).To(Equal(7))
+			_, isInt := list[2].(int)
+			Expect(isInt).To(BeTrue(), "non-string entry must keep its original type")
+		})
+
+		It("returns a token-free list equal to its input (backwards compatibility)", func() {
+			// The lock is on the Format output, not a YAML round-trip: an
+			// operator list with no placeholder must come out byte-identical.
+			input := []interface{}{"[[Goal A]]", "[[Goal B]]"}
+			fm := f.Format(
+				lib.TaskFrontmatter{"goals": input},
+				"test-slug", date, false, schedule.RecurrenceDaily,
+			)
+			Expect(fm).To(HaveKeyWithValue("goals", input))
+		})
+
+		It("renders a list entry inside a longer string, not just bare placeholders", func() {
+			fm := f.Format(
+				lib.TaskFrontmatter{
+					"related": []interface{}{"Review {{current_quarter}} planning"},
+				},
+				"test-slug", date, false, schedule.RecurrenceDaily,
+			)
+			Expect(fm).To(HaveKeyWithValue(
+				"related",
+				[]interface{}{"Review 2026Q2 planning"},
+			))
+		})
+
+		It("rendered list survives a YAML round-trip", func() {
+			fm := f.Format(
+				lib.TaskFrontmatter{
+					"depends_on": []interface{}{"Weekly Review {{current_week}}", "[[Standup]]"},
+				},
+				"test-slug", date, false, schedule.RecurrenceDaily,
+			)
+			raw, err := yaml.Marshal(map[string]interface{}(fm))
+			Expect(err).NotTo(HaveOccurred())
+			var back map[string]interface{}
+			Expect(yaml.Unmarshal(raw, &back)).To(Succeed())
+			v, ok := back["depends_on"]
+			Expect(ok).To(BeTrue())
+			list, ok := v.([]interface{})
+			Expect(ok).To(BeTrue(), "list must round-trip as a list")
+			Expect(list).To(Equal([]interface{}{"Weekly Review 2026W25", "[[Standup]]"}))
+		})
+	})
+
 	Describe("determinism", func() {
 		It("same input on a second call produces an equal map", func() {
 			input := lib.TaskFrontmatter{

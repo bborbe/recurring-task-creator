@@ -78,7 +78,7 @@ Quarterly uses `±3 months`; yearly uses `±N years`. Negative values name prior
 
 ## Template placeholders
 
-Substituted in `title`, `body`, and any **string-valued** `frontmatter` field. Non-string frontmatter values (ints, slices, maps) pass through unchanged. Closed set — unknown tokens like `{{foo}}` render verbatim. All values are computed against the Berlin civil date the task fires for.
+Substituted in `title`, `body`, any **string-valued** `frontmatter` field, and the **string entries of a list-valued** `frontmatter` field. Non-string frontmatter values (ints, maps) and non-string list entries pass through unchanged. Closed set — unknown tokens like `{{foo}}` render verbatim. All values are computed against the Berlin civil date the task fires for.
 
 | Placeholder | Renders | Example (Sat 2026-06-20) |
 |---|---|---|
