@@ -8,7 +8,7 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
-## Unreleased
+## v0.13.0
 
 - feat: render `{{...}}` placeholders inside list-valued `spec.template.frontmatter` entries — `FrontmatterFormatter` now substitutes the string entries of a `[]interface{}` value through the injected `Renderer`, so a Schedule CR can name another recurring task's materialized title (e.g. `"Weekly Review {{current_week}}"`) instead of a literal that goes stale at the next period boundary. Non-string list entries (ints, nested maps) pass through untouched, a token-free list is returned equal to its input, and no CRD or placeholder-set change is needed
 
