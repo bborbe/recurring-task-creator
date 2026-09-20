@@ -8,7 +8,7 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
-## Unreleased
+## v0.12.2
 
 - fix: bump `go.opentelemetry.io/otel/sdk`, `.../exporters/otlp/otlptrace` and `.../otlptracegrpc` to v1.46.0, clearing GHSA-8wmf-6v46-5gfg and resolving the version skew against `go.opentelemetry.io/otel` (already v1.46.0)
 - fix: bump `google.golang.org/grpc` to v1.83.2, clearing CVE-2026-84445 (DoS via malformed RPC requests)
