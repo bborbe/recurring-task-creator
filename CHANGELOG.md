@@ -8,9 +8,12 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
-## v0.12.2
+## Unreleased
 
 - feat: render `{{...}}` placeholders inside list-valued `spec.template.frontmatter` entries — `FrontmatterFormatter` now substitutes the string entries of a `[]interface{}` value through the injected `Renderer`, so a Schedule CR can name another recurring task's materialized title (e.g. `"Weekly Review {{current_week}}"`) instead of a literal that goes stale at the next period boundary. Non-string list entries (ints, nested maps) pass through untouched, a token-free list is returned equal to its input, and no CRD or placeholder-set change is needed
+
+## v0.12.2
+
 - fix: bump `go.opentelemetry.io/otel/sdk`, `.../exporters/otlp/otlptrace` and `.../otlptracegrpc` to v1.46.0, clearing GHSA-8wmf-6v46-5gfg and resolving the version skew against `go.opentelemetry.io/otel` (already v1.46.0)
 - fix: bump `google.golang.org/grpc` to v1.83.2, clearing CVE-2026-84445 (DoS via malformed RPC requests)
 
