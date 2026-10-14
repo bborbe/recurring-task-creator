@@ -12,10 +12,8 @@ import (
 type FakeScheduleStore struct {
 	ListStub        func(context.Context) ([]schedule.TaskDefinition, error)
 	listMutex       sync.RWMutex
-	listArgsForCall []struct {
-		arg1 context.Context
-	}
-	listReturns struct {
+	listArgsForCall []FakeScheduleStoreListArgs
+	listReturns     struct {
 		result1 []schedule.TaskDefinition
 		result2 error
 	}
@@ -24,15 +22,19 @@ type FakeScheduleStore struct {
 		result2 error
 	}
 	invocations      map[string][][]interface{}
+	callOrder        []string
 	invocationsMutex sync.RWMutex
+}
+
+// FakeScheduleStoreListArgs holds the arguments of one call to List.
+type FakeScheduleStoreListArgs struct {
+	Arg1 context.Context
 }
 
 func (fake *FakeScheduleStore) List(arg1 context.Context) ([]schedule.TaskDefinition, error) {
 	fake.listMutex.Lock()
 	ret, specificReturn := fake.listReturnsOnCall[len(fake.listArgsForCall)]
-	fake.listArgsForCall = append(fake.listArgsForCall, struct {
-		arg1 context.Context
-	}{arg1})
+	fake.listArgsForCall = append(fake.listArgsForCall, FakeScheduleStoreListArgs{arg1})
 	stub := fake.ListStub
 	fakeReturns := fake.listReturns
 	fake.recordInvocation("List", []interface{}{arg1})
@@ -62,7 +64,15 @@ func (fake *FakeScheduleStore) ListArgsForCall(i int) context.Context {
 	fake.listMutex.RLock()
 	defer fake.listMutex.RUnlock()
 	argsForCall := fake.listArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.Arg1
+}
+
+func (fake *FakeScheduleStore) ListArgs() []FakeScheduleStoreListArgs {
+	fake.listMutex.RLock()
+	defer fake.listMutex.RUnlock()
+	args := make([]FakeScheduleStoreListArgs, len(fake.listArgsForCall))
+	copy(args, fake.listArgsForCall)
+	return args
 }
 
 func (fake *FakeScheduleStore) ListReturns(result1 []schedule.TaskDefinition, result2 error) {
@@ -101,9 +111,18 @@ func (fake *FakeScheduleStore) Invocations() map[string][][]interface{} {
 	return copiedInvocations
 }
 
+func (fake *FakeScheduleStore) CallOrder() []string {
+	fake.invocationsMutex.RLock()
+	defer fake.invocationsMutex.RUnlock()
+	order := make([]string, len(fake.callOrder))
+	copy(order, fake.callOrder)
+	return order
+}
+
 func (fake *FakeScheduleStore) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
+	fake.callOrder = append(fake.callOrder, key)
 	if fake.invocations == nil {
 		fake.invocations = map[string][][]interface{}{}
 	}

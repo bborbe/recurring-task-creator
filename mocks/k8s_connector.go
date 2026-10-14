@@ -11,25 +11,27 @@ import (
 type FakeK8sConnector struct {
 	SetupCustomResourceDefinitionStub        func(context.Context) error
 	setupCustomResourceDefinitionMutex       sync.RWMutex
-	setupCustomResourceDefinitionArgsForCall []struct {
-		arg1 context.Context
-	}
-	setupCustomResourceDefinitionReturns struct {
+	setupCustomResourceDefinitionArgsForCall []FakeK8sConnectorSetupCustomResourceDefinitionArgs
+	setupCustomResourceDefinitionReturns     struct {
 		result1 error
 	}
 	setupCustomResourceDefinitionReturnsOnCall map[int]struct {
 		result1 error
 	}
 	invocations      map[string][][]interface{}
+	callOrder        []string
 	invocationsMutex sync.RWMutex
+}
+
+// FakeK8sConnectorSetupCustomResourceDefinitionArgs holds the arguments of one call to SetupCustomResourceDefinition.
+type FakeK8sConnectorSetupCustomResourceDefinitionArgs struct {
+	Arg1 context.Context
 }
 
 func (fake *FakeK8sConnector) SetupCustomResourceDefinition(arg1 context.Context) error {
 	fake.setupCustomResourceDefinitionMutex.Lock()
 	ret, specificReturn := fake.setupCustomResourceDefinitionReturnsOnCall[len(fake.setupCustomResourceDefinitionArgsForCall)]
-	fake.setupCustomResourceDefinitionArgsForCall = append(fake.setupCustomResourceDefinitionArgsForCall, struct {
-		arg1 context.Context
-	}{arg1})
+	fake.setupCustomResourceDefinitionArgsForCall = append(fake.setupCustomResourceDefinitionArgsForCall, FakeK8sConnectorSetupCustomResourceDefinitionArgs{arg1})
 	stub := fake.SetupCustomResourceDefinitionStub
 	fakeReturns := fake.setupCustomResourceDefinitionReturns
 	fake.recordInvocation("SetupCustomResourceDefinition", []interface{}{arg1})
@@ -59,7 +61,15 @@ func (fake *FakeK8sConnector) SetupCustomResourceDefinitionArgsForCall(i int) co
 	fake.setupCustomResourceDefinitionMutex.RLock()
 	defer fake.setupCustomResourceDefinitionMutex.RUnlock()
 	argsForCall := fake.setupCustomResourceDefinitionArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.Arg1
+}
+
+func (fake *FakeK8sConnector) SetupCustomResourceDefinitionArgs() []FakeK8sConnectorSetupCustomResourceDefinitionArgs {
+	fake.setupCustomResourceDefinitionMutex.RLock()
+	defer fake.setupCustomResourceDefinitionMutex.RUnlock()
+	args := make([]FakeK8sConnectorSetupCustomResourceDefinitionArgs, len(fake.setupCustomResourceDefinitionArgsForCall))
+	copy(args, fake.setupCustomResourceDefinitionArgsForCall)
+	return args
 }
 
 func (fake *FakeK8sConnector) SetupCustomResourceDefinitionReturns(result1 error) {
@@ -95,9 +105,18 @@ func (fake *FakeK8sConnector) Invocations() map[string][][]interface{} {
 	return copiedInvocations
 }
 
+func (fake *FakeK8sConnector) CallOrder() []string {
+	fake.invocationsMutex.RLock()
+	defer fake.invocationsMutex.RUnlock()
+	order := make([]string, len(fake.callOrder))
+	copy(order, fake.callOrder)
+	return order
+}
+
 func (fake *FakeK8sConnector) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
+	fake.callOrder = append(fake.callOrder, key)
 	if fake.invocations == nil {
 		fake.invocations = map[string][][]interface{}{}
 	}

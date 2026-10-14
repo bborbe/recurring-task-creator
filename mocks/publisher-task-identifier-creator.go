@@ -13,12 +13,8 @@ import (
 type PublisherTaskIdentifierCreator struct {
 	CreateStub        func(context.Context, schedule.TaskDefinition, schedule.Date) (lib.TaskIdentifier, publisher.PeriodToken, error)
 	createMutex       sync.RWMutex
-	createArgsForCall []struct {
-		arg1 context.Context
-		arg2 schedule.TaskDefinition
-		arg3 schedule.Date
-	}
-	createReturns struct {
+	createArgsForCall []PublisherTaskIdentifierCreatorCreateArgs
+	createReturns     struct {
 		result1 lib.TaskIdentifier
 		result2 publisher.PeriodToken
 		result3 error
@@ -29,17 +25,21 @@ type PublisherTaskIdentifierCreator struct {
 		result3 error
 	}
 	invocations      map[string][][]interface{}
+	callOrder        []string
 	invocationsMutex sync.RWMutex
+}
+
+// PublisherTaskIdentifierCreatorCreateArgs holds the arguments of one call to Create.
+type PublisherTaskIdentifierCreatorCreateArgs struct {
+	Arg1 context.Context
+	Arg2 schedule.TaskDefinition
+	Arg3 schedule.Date
 }
 
 func (fake *PublisherTaskIdentifierCreator) Create(arg1 context.Context, arg2 schedule.TaskDefinition, arg3 schedule.Date) (lib.TaskIdentifier, publisher.PeriodToken, error) {
 	fake.createMutex.Lock()
 	ret, specificReturn := fake.createReturnsOnCall[len(fake.createArgsForCall)]
-	fake.createArgsForCall = append(fake.createArgsForCall, struct {
-		arg1 context.Context
-		arg2 schedule.TaskDefinition
-		arg3 schedule.Date
-	}{arg1, arg2, arg3})
+	fake.createArgsForCall = append(fake.createArgsForCall, PublisherTaskIdentifierCreatorCreateArgs{arg1, arg2, arg3})
 	stub := fake.CreateStub
 	fakeReturns := fake.createReturns
 	fake.recordInvocation("Create", []interface{}{arg1, arg2, arg3})
@@ -69,7 +69,15 @@ func (fake *PublisherTaskIdentifierCreator) CreateArgsForCall(i int) (context.Co
 	fake.createMutex.RLock()
 	defer fake.createMutex.RUnlock()
 	argsForCall := fake.createArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+	return argsForCall.Arg1, argsForCall.Arg2, argsForCall.Arg3
+}
+
+func (fake *PublisherTaskIdentifierCreator) CreateArgs() []PublisherTaskIdentifierCreatorCreateArgs {
+	fake.createMutex.RLock()
+	defer fake.createMutex.RUnlock()
+	args := make([]PublisherTaskIdentifierCreatorCreateArgs, len(fake.createArgsForCall))
+	copy(args, fake.createArgsForCall)
+	return args
 }
 
 func (fake *PublisherTaskIdentifierCreator) CreateReturns(result1 lib.TaskIdentifier, result2 publisher.PeriodToken, result3 error) {
@@ -111,9 +119,18 @@ func (fake *PublisherTaskIdentifierCreator) Invocations() map[string][][]interfa
 	return copiedInvocations
 }
 
+func (fake *PublisherTaskIdentifierCreator) CallOrder() []string {
+	fake.invocationsMutex.RLock()
+	defer fake.invocationsMutex.RUnlock()
+	order := make([]string, len(fake.callOrder))
+	copy(order, fake.callOrder)
+	return order
+}
+
 func (fake *PublisherTaskIdentifierCreator) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
+	fake.callOrder = append(fake.callOrder, key)
 	if fake.invocations == nil {
 		fake.invocations = map[string][][]interface{}{}
 	}

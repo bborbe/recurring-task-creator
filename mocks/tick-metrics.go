@@ -8,32 +8,36 @@ import (
 )
 
 type TickMetrics struct {
-	IncPublishedStub        func(string, string)
-	incPublishedMutex       sync.RWMutex
-	incPublishedArgsForCall []struct {
-		arg1 string
-		arg2 string
-	}
+	IncPublishedStub                func(string, string)
+	incPublishedMutex               sync.RWMutex
+	incPublishedArgsForCall         []TickMetricsIncPublishedArgs
 	SetLastTickTimestampStub        func(float64)
 	setLastTickTimestampMutex       sync.RWMutex
-	setLastTickTimestampArgsForCall []struct {
-		arg1 float64
-	}
-	invocations      map[string][][]interface{}
-	invocationsMutex sync.RWMutex
+	setLastTickTimestampArgsForCall []TickMetricsSetLastTickTimestampArgs
+	invocations                     map[string][][]interface{}
+	callOrder                       []string
+	invocationsMutex                sync.RWMutex
+}
+
+// TickMetricsIncPublishedArgs holds the arguments of one call to IncPublished.
+type TickMetricsIncPublishedArgs struct {
+	Arg1 string
+	Arg2 string
+}
+
+// TickMetricsSetLastTickTimestampArgs holds the arguments of one call to SetLastTickTimestamp.
+type TickMetricsSetLastTickTimestampArgs struct {
+	Arg1 float64
 }
 
 func (fake *TickMetrics) IncPublished(arg1 string, arg2 string) {
 	fake.incPublishedMutex.Lock()
-	fake.incPublishedArgsForCall = append(fake.incPublishedArgsForCall, struct {
-		arg1 string
-		arg2 string
-	}{arg1, arg2})
+	fake.incPublishedArgsForCall = append(fake.incPublishedArgsForCall, TickMetricsIncPublishedArgs{arg1, arg2})
 	stub := fake.IncPublishedStub
 	fake.recordInvocation("IncPublished", []interface{}{arg1, arg2})
 	fake.incPublishedMutex.Unlock()
 	if stub != nil {
-		fake.IncPublishedStub(arg1, arg2)
+		stub(arg1, arg2)
 	}
 }
 
@@ -53,19 +57,25 @@ func (fake *TickMetrics) IncPublishedArgsForCall(i int) (string, string) {
 	fake.incPublishedMutex.RLock()
 	defer fake.incPublishedMutex.RUnlock()
 	argsForCall := fake.incPublishedArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.Arg1, argsForCall.Arg2
+}
+
+func (fake *TickMetrics) IncPublishedArgs() []TickMetricsIncPublishedArgs {
+	fake.incPublishedMutex.RLock()
+	defer fake.incPublishedMutex.RUnlock()
+	args := make([]TickMetricsIncPublishedArgs, len(fake.incPublishedArgsForCall))
+	copy(args, fake.incPublishedArgsForCall)
+	return args
 }
 
 func (fake *TickMetrics) SetLastTickTimestamp(arg1 float64) {
 	fake.setLastTickTimestampMutex.Lock()
-	fake.setLastTickTimestampArgsForCall = append(fake.setLastTickTimestampArgsForCall, struct {
-		arg1 float64
-	}{arg1})
+	fake.setLastTickTimestampArgsForCall = append(fake.setLastTickTimestampArgsForCall, TickMetricsSetLastTickTimestampArgs{arg1})
 	stub := fake.SetLastTickTimestampStub
 	fake.recordInvocation("SetLastTickTimestamp", []interface{}{arg1})
 	fake.setLastTickTimestampMutex.Unlock()
 	if stub != nil {
-		fake.SetLastTickTimestampStub(arg1)
+		stub(arg1)
 	}
 }
 
@@ -85,7 +95,15 @@ func (fake *TickMetrics) SetLastTickTimestampArgsForCall(i int) float64 {
 	fake.setLastTickTimestampMutex.RLock()
 	defer fake.setLastTickTimestampMutex.RUnlock()
 	argsForCall := fake.setLastTickTimestampArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.Arg1
+}
+
+func (fake *TickMetrics) SetLastTickTimestampArgs() []TickMetricsSetLastTickTimestampArgs {
+	fake.setLastTickTimestampMutex.RLock()
+	defer fake.setLastTickTimestampMutex.RUnlock()
+	args := make([]TickMetricsSetLastTickTimestampArgs, len(fake.setLastTickTimestampArgsForCall))
+	copy(args, fake.setLastTickTimestampArgsForCall)
+	return args
 }
 
 func (fake *TickMetrics) Invocations() map[string][][]interface{} {
@@ -98,9 +116,18 @@ func (fake *TickMetrics) Invocations() map[string][][]interface{} {
 	return copiedInvocations
 }
 
+func (fake *TickMetrics) CallOrder() []string {
+	fake.invocationsMutex.RLock()
+	defer fake.invocationsMutex.RUnlock()
+	order := make([]string, len(fake.callOrder))
+	copy(order, fake.callOrder)
+	return order
+}
+
 func (fake *TickMetrics) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
+	fake.callOrder = append(fake.callOrder, key)
 	if fake.invocations == nil {
 		fake.invocations = map[string][][]interface{}{}
 	}

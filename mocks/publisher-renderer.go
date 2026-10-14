@@ -11,29 +11,29 @@ import (
 type PublisherRenderer struct {
 	RenderStub        func(string, string, schedule.Date) string
 	renderMutex       sync.RWMutex
-	renderArgsForCall []struct {
-		arg1 string
-		arg2 string
-		arg3 schedule.Date
-	}
-	renderReturns struct {
+	renderArgsForCall []PublisherRendererRenderArgs
+	renderReturns     struct {
 		result1 string
 	}
 	renderReturnsOnCall map[int]struct {
 		result1 string
 	}
 	invocations      map[string][][]interface{}
+	callOrder        []string
 	invocationsMutex sync.RWMutex
+}
+
+// PublisherRendererRenderArgs holds the arguments of one call to Render.
+type PublisherRendererRenderArgs struct {
+	Arg1 string
+	Arg2 string
+	Arg3 schedule.Date
 }
 
 func (fake *PublisherRenderer) Render(arg1 string, arg2 string, arg3 schedule.Date) string {
 	fake.renderMutex.Lock()
 	ret, specificReturn := fake.renderReturnsOnCall[len(fake.renderArgsForCall)]
-	fake.renderArgsForCall = append(fake.renderArgsForCall, struct {
-		arg1 string
-		arg2 string
-		arg3 schedule.Date
-	}{arg1, arg2, arg3})
+	fake.renderArgsForCall = append(fake.renderArgsForCall, PublisherRendererRenderArgs{arg1, arg2, arg3})
 	stub := fake.RenderStub
 	fakeReturns := fake.renderReturns
 	fake.recordInvocation("Render", []interface{}{arg1, arg2, arg3})
@@ -63,7 +63,15 @@ func (fake *PublisherRenderer) RenderArgsForCall(i int) (string, string, schedul
 	fake.renderMutex.RLock()
 	defer fake.renderMutex.RUnlock()
 	argsForCall := fake.renderArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+	return argsForCall.Arg1, argsForCall.Arg2, argsForCall.Arg3
+}
+
+func (fake *PublisherRenderer) RenderArgs() []PublisherRendererRenderArgs {
+	fake.renderMutex.RLock()
+	defer fake.renderMutex.RUnlock()
+	args := make([]PublisherRendererRenderArgs, len(fake.renderArgsForCall))
+	copy(args, fake.renderArgsForCall)
+	return args
 }
 
 func (fake *PublisherRenderer) RenderReturns(result1 string) {
@@ -99,9 +107,18 @@ func (fake *PublisherRenderer) Invocations() map[string][][]interface{} {
 	return copiedInvocations
 }
 
+func (fake *PublisherRenderer) CallOrder() []string {
+	fake.invocationsMutex.RLock()
+	defer fake.invocationsMutex.RUnlock()
+	order := make([]string, len(fake.callOrder))
+	copy(order, fake.callOrder)
+	return order
+}
+
 func (fake *PublisherRenderer) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
+	fake.callOrder = append(fake.callOrder, key)
 	if fake.invocations == nil {
 		fake.invocations = map[string][][]interface{}{}
 	}
