@@ -12,12 +12,8 @@ import (
 type PublisherPeriodTokenBuilder struct {
 	BuildStub        func(context.Context, schedule.TaskDefinition, schedule.Date) (publisher.PeriodToken, error)
 	buildMutex       sync.RWMutex
-	buildArgsForCall []struct {
-		arg1 context.Context
-		arg2 schedule.TaskDefinition
-		arg3 schedule.Date
-	}
-	buildReturns struct {
+	buildArgsForCall []PublisherPeriodTokenBuilderBuildArgs
+	buildReturns     struct {
 		result1 publisher.PeriodToken
 		result2 error
 	}
@@ -26,17 +22,21 @@ type PublisherPeriodTokenBuilder struct {
 		result2 error
 	}
 	invocations      map[string][][]interface{}
+	callOrder        []string
 	invocationsMutex sync.RWMutex
+}
+
+// PublisherPeriodTokenBuilderBuildArgs holds the arguments of one call to Build.
+type PublisherPeriodTokenBuilderBuildArgs struct {
+	Arg1 context.Context
+	Arg2 schedule.TaskDefinition
+	Arg3 schedule.Date
 }
 
 func (fake *PublisherPeriodTokenBuilder) Build(arg1 context.Context, arg2 schedule.TaskDefinition, arg3 schedule.Date) (publisher.PeriodToken, error) {
 	fake.buildMutex.Lock()
 	ret, specificReturn := fake.buildReturnsOnCall[len(fake.buildArgsForCall)]
-	fake.buildArgsForCall = append(fake.buildArgsForCall, struct {
-		arg1 context.Context
-		arg2 schedule.TaskDefinition
-		arg3 schedule.Date
-	}{arg1, arg2, arg3})
+	fake.buildArgsForCall = append(fake.buildArgsForCall, PublisherPeriodTokenBuilderBuildArgs{arg1, arg2, arg3})
 	stub := fake.BuildStub
 	fakeReturns := fake.buildReturns
 	fake.recordInvocation("Build", []interface{}{arg1, arg2, arg3})
@@ -66,7 +66,15 @@ func (fake *PublisherPeriodTokenBuilder) BuildArgsForCall(i int) (context.Contex
 	fake.buildMutex.RLock()
 	defer fake.buildMutex.RUnlock()
 	argsForCall := fake.buildArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+	return argsForCall.Arg1, argsForCall.Arg2, argsForCall.Arg3
+}
+
+func (fake *PublisherPeriodTokenBuilder) BuildArgs() []PublisherPeriodTokenBuilderBuildArgs {
+	fake.buildMutex.RLock()
+	defer fake.buildMutex.RUnlock()
+	args := make([]PublisherPeriodTokenBuilderBuildArgs, len(fake.buildArgsForCall))
+	copy(args, fake.buildArgsForCall)
+	return args
 }
 
 func (fake *PublisherPeriodTokenBuilder) BuildReturns(result1 publisher.PeriodToken, result2 error) {
@@ -105,9 +113,18 @@ func (fake *PublisherPeriodTokenBuilder) Invocations() map[string][][]interface{
 	return copiedInvocations
 }
 
+func (fake *PublisherPeriodTokenBuilder) CallOrder() []string {
+	fake.invocationsMutex.RLock()
+	defer fake.invocationsMutex.RUnlock()
+	order := make([]string, len(fake.callOrder))
+	copy(order, fake.callOrder)
+	return order
+}
+
 func (fake *PublisherPeriodTokenBuilder) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
+	fake.callOrder = append(fake.callOrder, key)
 	if fake.invocations == nil {
 		fake.invocations = map[string][][]interface{}{}
 	}

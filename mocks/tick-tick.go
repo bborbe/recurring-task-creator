@@ -11,10 +11,8 @@ import (
 type TickTick struct {
 	RunStub        func(context.Context) error
 	runMutex       sync.RWMutex
-	runArgsForCall []struct {
-		arg1 context.Context
-	}
-	runReturns struct {
+	runArgsForCall []TickTickRunArgs
+	runReturns     struct {
 		result1 error
 	}
 	runReturnsOnCall map[int]struct {
@@ -22,25 +20,32 @@ type TickTick struct {
 	}
 	RunOnceStub        func(context.Context) error
 	runOnceMutex       sync.RWMutex
-	runOnceArgsForCall []struct {
-		arg1 context.Context
-	}
-	runOnceReturns struct {
+	runOnceArgsForCall []TickTickRunOnceArgs
+	runOnceReturns     struct {
 		result1 error
 	}
 	runOnceReturnsOnCall map[int]struct {
 		result1 error
 	}
 	invocations      map[string][][]interface{}
+	callOrder        []string
 	invocationsMutex sync.RWMutex
+}
+
+// TickTickRunArgs holds the arguments of one call to Run.
+type TickTickRunArgs struct {
+	Arg1 context.Context
+}
+
+// TickTickRunOnceArgs holds the arguments of one call to RunOnce.
+type TickTickRunOnceArgs struct {
+	Arg1 context.Context
 }
 
 func (fake *TickTick) Run(arg1 context.Context) error {
 	fake.runMutex.Lock()
 	ret, specificReturn := fake.runReturnsOnCall[len(fake.runArgsForCall)]
-	fake.runArgsForCall = append(fake.runArgsForCall, struct {
-		arg1 context.Context
-	}{arg1})
+	fake.runArgsForCall = append(fake.runArgsForCall, TickTickRunArgs{arg1})
 	stub := fake.RunStub
 	fakeReturns := fake.runReturns
 	fake.recordInvocation("Run", []interface{}{arg1})
@@ -70,7 +75,15 @@ func (fake *TickTick) RunArgsForCall(i int) context.Context {
 	fake.runMutex.RLock()
 	defer fake.runMutex.RUnlock()
 	argsForCall := fake.runArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.Arg1
+}
+
+func (fake *TickTick) RunArgs() []TickTickRunArgs {
+	fake.runMutex.RLock()
+	defer fake.runMutex.RUnlock()
+	args := make([]TickTickRunArgs, len(fake.runArgsForCall))
+	copy(args, fake.runArgsForCall)
+	return args
 }
 
 func (fake *TickTick) RunReturns(result1 error) {
@@ -99,9 +112,7 @@ func (fake *TickTick) RunReturnsOnCall(i int, result1 error) {
 func (fake *TickTick) RunOnce(arg1 context.Context) error {
 	fake.runOnceMutex.Lock()
 	ret, specificReturn := fake.runOnceReturnsOnCall[len(fake.runOnceArgsForCall)]
-	fake.runOnceArgsForCall = append(fake.runOnceArgsForCall, struct {
-		arg1 context.Context
-	}{arg1})
+	fake.runOnceArgsForCall = append(fake.runOnceArgsForCall, TickTickRunOnceArgs{arg1})
 	stub := fake.RunOnceStub
 	fakeReturns := fake.runOnceReturns
 	fake.recordInvocation("RunOnce", []interface{}{arg1})
@@ -131,7 +142,15 @@ func (fake *TickTick) RunOnceArgsForCall(i int) context.Context {
 	fake.runOnceMutex.RLock()
 	defer fake.runOnceMutex.RUnlock()
 	argsForCall := fake.runOnceArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.Arg1
+}
+
+func (fake *TickTick) RunOnceArgs() []TickTickRunOnceArgs {
+	fake.runOnceMutex.RLock()
+	defer fake.runOnceMutex.RUnlock()
+	args := make([]TickTickRunOnceArgs, len(fake.runOnceArgsForCall))
+	copy(args, fake.runOnceArgsForCall)
+	return args
 }
 
 func (fake *TickTick) RunOnceReturns(result1 error) {
@@ -167,9 +186,18 @@ func (fake *TickTick) Invocations() map[string][][]interface{} {
 	return copiedInvocations
 }
 
+func (fake *TickTick) CallOrder() []string {
+	fake.invocationsMutex.RLock()
+	defer fake.invocationsMutex.RUnlock()
+	order := make([]string, len(fake.callOrder))
+	copy(order, fake.callOrder)
+	return order
+}
+
 func (fake *TickTick) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
+	fake.callOrder = append(fake.callOrder, key)
 	if fake.invocations == nil {
 		fake.invocations = map[string][][]interface{}{}
 	}

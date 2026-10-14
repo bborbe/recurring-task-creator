@@ -12,29 +12,29 @@ import (
 type PublisherPublisher struct {
 	PublishStub        func(context.Context, schedule.TaskDefinition, schedule.Date) error
 	publishMutex       sync.RWMutex
-	publishArgsForCall []struct {
-		arg1 context.Context
-		arg2 schedule.TaskDefinition
-		arg3 schedule.Date
-	}
-	publishReturns struct {
+	publishArgsForCall []PublisherPublisherPublishArgs
+	publishReturns     struct {
 		result1 error
 	}
 	publishReturnsOnCall map[int]struct {
 		result1 error
 	}
 	invocations      map[string][][]interface{}
+	callOrder        []string
 	invocationsMutex sync.RWMutex
+}
+
+// PublisherPublisherPublishArgs holds the arguments of one call to Publish.
+type PublisherPublisherPublishArgs struct {
+	Arg1 context.Context
+	Arg2 schedule.TaskDefinition
+	Arg3 schedule.Date
 }
 
 func (fake *PublisherPublisher) Publish(arg1 context.Context, arg2 schedule.TaskDefinition, arg3 schedule.Date) error {
 	fake.publishMutex.Lock()
 	ret, specificReturn := fake.publishReturnsOnCall[len(fake.publishArgsForCall)]
-	fake.publishArgsForCall = append(fake.publishArgsForCall, struct {
-		arg1 context.Context
-		arg2 schedule.TaskDefinition
-		arg3 schedule.Date
-	}{arg1, arg2, arg3})
+	fake.publishArgsForCall = append(fake.publishArgsForCall, PublisherPublisherPublishArgs{arg1, arg2, arg3})
 	stub := fake.PublishStub
 	fakeReturns := fake.publishReturns
 	fake.recordInvocation("Publish", []interface{}{arg1, arg2, arg3})
@@ -64,7 +64,15 @@ func (fake *PublisherPublisher) PublishArgsForCall(i int) (context.Context, sche
 	fake.publishMutex.RLock()
 	defer fake.publishMutex.RUnlock()
 	argsForCall := fake.publishArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+	return argsForCall.Arg1, argsForCall.Arg2, argsForCall.Arg3
+}
+
+func (fake *PublisherPublisher) PublishArgs() []PublisherPublisherPublishArgs {
+	fake.publishMutex.RLock()
+	defer fake.publishMutex.RUnlock()
+	args := make([]PublisherPublisherPublishArgs, len(fake.publishArgsForCall))
+	copy(args, fake.publishArgsForCall)
+	return args
 }
 
 func (fake *PublisherPublisher) PublishReturns(result1 error) {
@@ -100,9 +108,18 @@ func (fake *PublisherPublisher) Invocations() map[string][][]interface{} {
 	return copiedInvocations
 }
 
+func (fake *PublisherPublisher) CallOrder() []string {
+	fake.invocationsMutex.RLock()
+	defer fake.invocationsMutex.RUnlock()
+	order := make([]string, len(fake.callOrder))
+	copy(order, fake.callOrder)
+	return order
+}
+
 func (fake *PublisherPublisher) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
+	fake.callOrder = append(fake.callOrder, key)
 	if fake.invocations == nil {
 		fake.invocations = map[string][][]interface{}{}
 	}

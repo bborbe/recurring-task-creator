@@ -12,33 +12,31 @@ import (
 type PublisherFrontmatterFormatter struct {
 	FormatStub        func(lib.TaskFrontmatter, string, schedule.Date, bool, schedule.RecurrenceKind) lib.TaskFrontmatter
 	formatMutex       sync.RWMutex
-	formatArgsForCall []struct {
-		arg1 lib.TaskFrontmatter
-		arg2 string
-		arg3 schedule.Date
-		arg4 bool
-		arg5 schedule.RecurrenceKind
-	}
-	formatReturns struct {
+	formatArgsForCall []PublisherFrontmatterFormatterFormatArgs
+	formatReturns     struct {
 		result1 lib.TaskFrontmatter
 	}
 	formatReturnsOnCall map[int]struct {
 		result1 lib.TaskFrontmatter
 	}
 	invocations      map[string][][]interface{}
+	callOrder        []string
 	invocationsMutex sync.RWMutex
+}
+
+// PublisherFrontmatterFormatterFormatArgs holds the arguments of one call to Format.
+type PublisherFrontmatterFormatterFormatArgs struct {
+	Arg1 lib.TaskFrontmatter
+	Arg2 string
+	Arg3 schedule.Date
+	Arg4 bool
+	Arg5 schedule.RecurrenceKind
 }
 
 func (fake *PublisherFrontmatterFormatter) Format(arg1 lib.TaskFrontmatter, arg2 string, arg3 schedule.Date, arg4 bool, arg5 schedule.RecurrenceKind) lib.TaskFrontmatter {
 	fake.formatMutex.Lock()
 	ret, specificReturn := fake.formatReturnsOnCall[len(fake.formatArgsForCall)]
-	fake.formatArgsForCall = append(fake.formatArgsForCall, struct {
-		arg1 lib.TaskFrontmatter
-		arg2 string
-		arg3 schedule.Date
-		arg4 bool
-		arg5 schedule.RecurrenceKind
-	}{arg1, arg2, arg3, arg4, arg5})
+	fake.formatArgsForCall = append(fake.formatArgsForCall, PublisherFrontmatterFormatterFormatArgs{arg1, arg2, arg3, arg4, arg5})
 	stub := fake.FormatStub
 	fakeReturns := fake.formatReturns
 	fake.recordInvocation("Format", []interface{}{arg1, arg2, arg3, arg4, arg5})
@@ -68,7 +66,15 @@ func (fake *PublisherFrontmatterFormatter) FormatArgsForCall(i int) (lib.TaskFro
 	fake.formatMutex.RLock()
 	defer fake.formatMutex.RUnlock()
 	argsForCall := fake.formatArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
+	return argsForCall.Arg1, argsForCall.Arg2, argsForCall.Arg3, argsForCall.Arg4, argsForCall.Arg5
+}
+
+func (fake *PublisherFrontmatterFormatter) FormatArgs() []PublisherFrontmatterFormatterFormatArgs {
+	fake.formatMutex.RLock()
+	defer fake.formatMutex.RUnlock()
+	args := make([]PublisherFrontmatterFormatterFormatArgs, len(fake.formatArgsForCall))
+	copy(args, fake.formatArgsForCall)
+	return args
 }
 
 func (fake *PublisherFrontmatterFormatter) FormatReturns(result1 lib.TaskFrontmatter) {
@@ -104,9 +110,18 @@ func (fake *PublisherFrontmatterFormatter) Invocations() map[string][][]interfac
 	return copiedInvocations
 }
 
+func (fake *PublisherFrontmatterFormatter) CallOrder() []string {
+	fake.invocationsMutex.RLock()
+	defer fake.invocationsMutex.RUnlock()
+	order := make([]string, len(fake.callOrder))
+	copy(order, fake.callOrder)
+	return order
+}
+
 func (fake *PublisherFrontmatterFormatter) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
+	fake.callOrder = append(fake.callOrder, key)
 	if fake.invocations == nil {
 		fake.invocations = map[string][][]interface{}{}
 	}
