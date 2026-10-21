@@ -1,6 +1,6 @@
 module github.com/bborbe/recurring-task-creator
 
-go 1.27.2
+go 1.27.3
 
 tool (
 	k8s.io/code-generator
@@ -9,17 +9,17 @@ tool (
 
 require (
 	cel.dev/cel-go v0.32.0
-	github.com/bborbe/agent v0.101.0
+	github.com/bborbe/agent v0.112.0
 	github.com/bborbe/cqrs v0.6.12
 	github.com/bborbe/errors v1.6.3
 	github.com/bborbe/http v1.26.30
-	github.com/bborbe/kafka v1.27.1
+	github.com/bborbe/kafka v1.28.4
 	github.com/bborbe/log v1.7.4
 	github.com/bborbe/metrics v0.6.7
 	github.com/bborbe/run v1.11.2
-	github.com/bborbe/sentry v1.10.4
-	github.com/bborbe/service v1.10.16
-	github.com/bborbe/time v1.27.16
+	github.com/bborbe/sentry v1.10.5
+	github.com/bborbe/service v1.11.0
+	github.com/bborbe/time v1.27.17
 	github.com/golang/glog v1.2.5
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
@@ -43,13 +43,13 @@ require (
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	github.com/bborbe/argument/v2 v2.13.6 // indirect
 	github.com/bborbe/collection v1.21.2 // indirect
-	github.com/bborbe/k8s v1.14.22 // indirect
+	github.com/bborbe/k8s v1.14.23 // indirect
 	github.com/bborbe/kv v1.21.18 // indirect
-	github.com/bborbe/math v1.4.14 // indirect
+	github.com/bborbe/math v1.4.15 // indirect
 	github.com/bborbe/parse v1.12.3 // indirect
-	github.com/bborbe/strimzi v1.8.20 // indirect
-	github.com/bborbe/validation v1.5.4 // indirect
-	github.com/bborbe/vault-cli v0.169.4 // indirect
+	github.com/bborbe/strimzi v1.8.21 // indirect
+	github.com/bborbe/validation v1.5.5 // indirect
+	github.com/bborbe/vault-cli v0.177.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
@@ -74,7 +74,7 @@ require (
 	github.com/google/cel-go v0.29.2 // indirect
 	github.com/google/gnostic-models v0.7.1 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/pprof v0.0.0-20261014150452-c3b4e57cab2c // indirect
+	github.com/google/pprof v0.0.0-20261016150608-1facf8f91b50 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
 	github.com/hashicorp/go-uuid v1.0.4 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
