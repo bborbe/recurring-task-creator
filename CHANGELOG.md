@@ -8,6 +8,10 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
+## Unreleased
+
+- chore: update github.com/bborbe/agent to v0.131.0, github.com/bborbe/cqrs to v0.6.14, github.com/bborbe/errors to v1.6.5, github.com/bborbe/http to v1.26.31, github.com/bborbe/kafka to v1.29.1, github.com/bborbe/run to v1.11.5, github.com/bborbe/sentry to v1.10.6, sigs.k8s.io/structured-merge-diff/v7 to v7.0.1
+
 ## v0.13.4
 
 - chore: update github.com/bborbe/agent to v0.114.0, github.com/bborbe/kafka to v1.28.5, github.com/bborbe/log to v1.7.5, github.com/bborbe/metrics to v0.6.8, github.com/bborbe/service to v1.11.1, github.com/bborbe/time to v1.27.18
