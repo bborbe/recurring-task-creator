@@ -37,10 +37,11 @@ var _ = Describe("FrontmatterFormatter", func() {
 			)
 			Expect(fm).To(HaveKeyWithValue("status", "in_progress"))
 			Expect(fm).To(HaveKeyWithValue("page_type", "task"))
+			Expect(fm).To(HaveKeyWithValue("phase", "planning"))
 			Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
 			Expect(fm).To(HaveKeyWithValue("auto_abort_prior", false))
 			Expect(fm).To(HaveKeyWithValue("defer_date", "2026-06-20"))
-			Expect(fm).To(HaveLen(5))
+			Expect(fm).To(HaveLen(6))
 		})
 
 		It("force-sets created_by even when operator tries to override it", func() {
@@ -59,6 +60,27 @@ var _ = Describe("FrontmatterFormatter", func() {
 			Expect(fm).To(HaveKeyWithValue("status", "draft"))
 			Expect(fm).To(HaveKeyWithValue("page_type", "log"))
 			Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
+		})
+	})
+
+	Describe("phase stamp", func() {
+		It("stamps phase=planning, a value inside both consumer allow-lists", func() {
+			fm := f.Format(lib.TaskFrontmatter{}, "slug", date, false, schedule.RecurrenceDaily)
+			// "planning" is a member of agent-task-executor's default trigger
+			// phases ({planning, execution, ai_review} —
+			// pkg/handler/task_event_handler.go:33-37) and of
+			// agent-task-controller's redriveTriggerPhases
+			// (pkg/redrive/redrive_sweep.go:29). A row with no phase, or one
+			// outside those sets, is never picked up by either consumer.
+			Expect(fm).To(HaveKeyWithValue("phase", "planning"))
+		})
+
+		It("lets the operator override the phase default", func() {
+			fm := f.Format(
+				lib.TaskFrontmatter{"phase": "todo"},
+				"slug", date, false, schedule.RecurrenceDaily,
+			)
+			Expect(fm).To(HaveKeyWithValue("phase", "todo"))
 		})
 	})
 

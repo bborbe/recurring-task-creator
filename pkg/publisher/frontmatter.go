@@ -47,6 +47,15 @@ type FrontmatterFormatter interface {
 	// the computed value) and BEFORE `auto_abort_prior`/`created_by` are
 	// force-set. The value is an ISO "YYYY-MM-DD" string.
 	//
+	// `phase` is seeded to "planning" alongside `status` and `page_type`, so
+	// operator keys may override it (the same treatment `status` gets). The
+	// seed value is a member of both consumer allow-lists —
+	// agent-task-executor's default trigger phases
+	// (`pkg/handler/task_event_handler.go`) and agent-task-controller's
+	// `redriveTriggerPhases` (`pkg/redrive/redrive_sweep.go`) — which is what
+	// makes a freshly materialized row runnable. A row with no `phase` key, or
+	// one outside those sets, is never picked up by either consumer.
+	//
 	// `autoAbortPrior` is stamped onto the result as the
 	// `auto_abort_prior` key, AFTER operator keys are merged (so an
 	// operator-supplied `auto_abort_prior` cannot override the spec-level
@@ -85,6 +94,7 @@ func (f *frontmatterFormatter) Format(
 	out := lib.TaskFrontmatter{
 		"status":    "in_progress",
 		"page_type": "task",
+		"phase":     "planning",
 	}
 	for k, v := range operator {
 		if list, ok := v.([]interface{}); ok {

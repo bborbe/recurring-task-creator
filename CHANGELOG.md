@@ -8,6 +8,10 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
+## Unreleased
+
+- fix: seed `phase: planning` on every materialized row alongside `status` and `page_type`, so the executor's spawn gate and the controller's redrive sweep pick the row up instead of skipping a task with no `phase` key
+
 ## v0.14.0
 
 - feat: build the image inside a cluster via `make build BUILD_TARGET=<cluster>`
