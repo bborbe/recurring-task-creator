@@ -910,8 +910,9 @@ var _ = Describe("Publisher", func() {
 				Expect(fm).To(HaveKeyWithValue("page_type", "task"))
 				Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
 				Expect(fm).To(HaveKeyWithValue("auto_abort_prior", false))
+				Expect(fm).To(HaveKeyWithValue("phase", "planning"))
 				Expect(fm).To(HaveKeyWithValue("defer_date", "2024-12-30"))
-				Expect(fm).To(HaveLen(5))
+				Expect(fm).To(HaveLen(6))
 				Expect(fm).NotTo(HaveKey("recurring"))
 			},
 		)
@@ -942,9 +943,10 @@ var _ = Describe("Publisher", func() {
 				Expect(fm).To(HaveKeyWithValue("category", "ops"))
 				Expect(fm).To(HaveKeyWithValue("status", "in_progress"))
 				Expect(fm).To(HaveKeyWithValue("page_type", "task"))
+				Expect(fm).To(HaveKeyWithValue("phase", "planning"))
 				Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
 				Expect(fm).To(HaveKeyWithValue("defer_date", "2024-12-30"))
-				Expect(fm).To(HaveLen(9))
+				Expect(fm).To(HaveLen(10))
 			},
 		)
 
@@ -968,10 +970,11 @@ var _ = Describe("Publisher", func() {
 				fm := capture().Frontmatter
 				Expect(fm).To(HaveKeyWithValue("status", "draft"))
 				Expect(fm).To(HaveKeyWithValue("page_type", "log"))
+				Expect(fm).To(HaveKeyWithValue("phase", "planning"))
 				Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
 				Expect(fm).To(HaveKeyWithValue("auto_abort_prior", false))
 				Expect(fm).To(HaveKeyWithValue("defer_date", "2024-12-30"))
-				Expect(fm).To(HaveLen(5))
+				Expect(fm).To(HaveLen(6))
 			},
 		)
 
@@ -995,9 +998,10 @@ var _ = Describe("Publisher", func() {
 				Expect(fm).To(HaveKeyWithValue("created_by", "recurring-task-creator"))
 				Expect(fm).To(HaveKeyWithValue("status", "in_progress"))
 				Expect(fm).To(HaveKeyWithValue("page_type", "task"))
+				Expect(fm).To(HaveKeyWithValue("phase", "planning"))
 				Expect(fm).To(HaveKeyWithValue("auto_abort_prior", false))
 				Expect(fm).To(HaveKeyWithValue("defer_date", "2024-12-30"))
-				Expect(fm).To(HaveLen(5))
+				Expect(fm).To(HaveLen(6))
 			},
 		)
 
