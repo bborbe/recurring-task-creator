@@ -5,7 +5,7 @@
 package pkg
 
 import (
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apiextensionsv1 "k8s.io/apiextensions-api/pkg/apis/apiextensions/v1"
 )
 
 // recurrenceEnum is the closed set of valid recurrence strings on the
