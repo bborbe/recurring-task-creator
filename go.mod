@@ -1,6 +1,6 @@
 module github.com/bborbe/recurring-task-creator
 
-go 1.27.3
+go 1.27.4
 
 tool (
 	k8s.io/code-generator
