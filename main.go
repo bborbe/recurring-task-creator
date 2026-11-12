@@ -24,7 +24,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	apiextensionsclient "k8s.io/apiextensions-api/pkg/client/clientset/clientset"
+	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/rest"
 
 	versioned "github.com/bborbe/recurring-task-creator/k8s/client/clientset/versioned"

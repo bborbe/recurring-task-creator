@@ -17,7 +17,7 @@ import (
 	libkafka "github.com/bborbe/kafka"
 	libsentry "github.com/bborbe/sentry"
 	"github.com/bborbe/service"
-	apiextensionsclient "k8s.io/apiextensions-api/pkg/client/clientset/clientset"
+	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/rest"
 
 	versioned "github.com/bborbe/recurring-task-creator/k8s/client/clientset/versioned"
