@@ -8,9 +8,12 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 * MINOR version when you add functionality in a backwards-compatible manner, and
 * PATCH version when you make backwards-compatible bug fixes.
 
-## v0.14.2
+## Unreleased
 
 - chore: update go module dependencies to go 1.27.4, keeping `k8s.io/apiextensions-apiserver` as the import path and aligning `go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc` at v1.47.0
+
+## v0.14.2
+
 - chore: restate the do-not-merge contract in the gate workflow
 
 ## v0.14.1
