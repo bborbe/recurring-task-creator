@@ -34,10 +34,11 @@ linters:
     - prealloc
   settings:
     govet:
-      # k8s.io/apiextensions-apiserver v0.38 declares its API types as aliases of
-      # k8s.io/apiextensions-api, so the inline analyzer asks every use site to import
-      # that module directly. This repo keeps the canonical apiextensions-apiserver
-      # import path, so the analyzer's suggestion is not applicable here.
+      # 2026-11-12: k8s.io/apiextensions-apiserver v0.38.0-beta.0 declares its API types as
+      # type aliases of k8s.io/apiextensions-api. The inline analyzer follows those aliases
+      # and therefore demands that every use site import k8s.io/apiextensions-api directly rather
+      # than the canonical apiextensions-apiserver path. This repo keeps the canonical import
+      # path, so the analyzer's demand does not apply here.
       disable:
         - inline
     depguard:
