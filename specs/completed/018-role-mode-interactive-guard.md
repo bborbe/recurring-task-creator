@@ -1,8 +1,10 @@
 ---
-status: prompted
+status: completed
 approved: "2026-11-14T12:41:31Z"
 generating: "2026-11-14T12:46:50Z"
 prompted: "2026-11-14T12:57:22Z"
+verifying: "2026-11-14T13:16:28Z"
+completed: "2026-11-14T13:16:34Z"
 branch: dark-factory/role-mode-interactive-guard
 ---
 
