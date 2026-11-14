@@ -1,7 +1,7 @@
 ---
-status: draft
-kind: bug
-created: 2026-11-14
+status: approved
+approved: "2026-11-14T12:41:31Z"
+branch: dark-factory/role-mode-interactive-guard
 ---
 
 ## Summary
