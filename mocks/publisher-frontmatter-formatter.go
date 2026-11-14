@@ -10,14 +10,16 @@ import (
 )
 
 type PublisherFrontmatterFormatter struct {
-	FormatStub        func(lib.TaskFrontmatter, string, schedule.Date, bool, schedule.RecurrenceKind) lib.TaskFrontmatter
+	FormatStub        func(lib.TaskFrontmatter, string, schedule.Date, bool, schedule.RecurrenceKind) (lib.TaskFrontmatter, error)
 	formatMutex       sync.RWMutex
 	formatArgsForCall []PublisherFrontmatterFormatterFormatArgs
 	formatReturns     struct {
 		result1 lib.TaskFrontmatter
+		result2 error
 	}
 	formatReturnsOnCall map[int]struct {
 		result1 lib.TaskFrontmatter
+		result2 error
 	}
 	invocations      map[string][][]interface{}
 	callOrder        []string
@@ -33,7 +35,7 @@ type PublisherFrontmatterFormatterFormatArgs struct {
 	Arg5 schedule.RecurrenceKind
 }
 
-func (fake *PublisherFrontmatterFormatter) Format(arg1 lib.TaskFrontmatter, arg2 string, arg3 schedule.Date, arg4 bool, arg5 schedule.RecurrenceKind) lib.TaskFrontmatter {
+func (fake *PublisherFrontmatterFormatter) Format(arg1 lib.TaskFrontmatter, arg2 string, arg3 schedule.Date, arg4 bool, arg5 schedule.RecurrenceKind) (lib.TaskFrontmatter, error) {
 	fake.formatMutex.Lock()
 	ret, specificReturn := fake.formatReturnsOnCall[len(fake.formatArgsForCall)]
 	fake.formatArgsForCall = append(fake.formatArgsForCall, PublisherFrontmatterFormatterFormatArgs{arg1, arg2, arg3, arg4, arg5})
@@ -45,9 +47,9 @@ func (fake *PublisherFrontmatterFormatter) Format(arg1 lib.TaskFrontmatter, arg2
 		return stub(arg1, arg2, arg3, arg4, arg5)
 	}
 	if specificReturn {
-		return ret.result1
+		return ret.result1, ret.result2
 	}
-	return fakeReturns.result1
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *PublisherFrontmatterFormatter) FormatCallCount() int {
@@ -56,7 +58,7 @@ func (fake *PublisherFrontmatterFormatter) FormatCallCount() int {
 	return len(fake.formatArgsForCall)
 }
 
-func (fake *PublisherFrontmatterFormatter) FormatCalls(stub func(lib.TaskFrontmatter, string, schedule.Date, bool, schedule.RecurrenceKind) lib.TaskFrontmatter) {
+func (fake *PublisherFrontmatterFormatter) FormatCalls(stub func(lib.TaskFrontmatter, string, schedule.Date, bool, schedule.RecurrenceKind) (lib.TaskFrontmatter, error)) {
 	fake.formatMutex.Lock()
 	defer fake.formatMutex.Unlock()
 	fake.FormatStub = stub
@@ -77,27 +79,30 @@ func (fake *PublisherFrontmatterFormatter) FormatArgs() []PublisherFrontmatterFo
 	return args
 }
 
-func (fake *PublisherFrontmatterFormatter) FormatReturns(result1 lib.TaskFrontmatter) {
+func (fake *PublisherFrontmatterFormatter) FormatReturns(result1 lib.TaskFrontmatter, result2 error) {
 	fake.formatMutex.Lock()
 	defer fake.formatMutex.Unlock()
 	fake.FormatStub = nil
 	fake.formatReturns = struct {
 		result1 lib.TaskFrontmatter
-	}{result1}
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *PublisherFrontmatterFormatter) FormatReturnsOnCall(i int, result1 lib.TaskFrontmatter) {
+func (fake *PublisherFrontmatterFormatter) FormatReturnsOnCall(i int, result1 lib.TaskFrontmatter, result2 error) {
 	fake.formatMutex.Lock()
 	defer fake.formatMutex.Unlock()
 	fake.FormatStub = nil
 	if fake.formatReturnsOnCall == nil {
 		fake.formatReturnsOnCall = make(map[int]struct {
 			result1 lib.TaskFrontmatter
+			result2 error
 		})
 	}
 	fake.formatReturnsOnCall[i] = struct {
 		result1 lib.TaskFrontmatter
-	}{result1}
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *PublisherFrontmatterFormatter) Invocations() map[string][][]interface{} {

@@ -20,6 +20,7 @@ require (
 	github.com/bborbe/sentry v1.10.7
 	github.com/bborbe/service v1.11.2
 	github.com/bborbe/time v1.27.26
+	github.com/bborbe/validation v1.5.9
 	github.com/golang/glog v1.2.5
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
@@ -48,7 +49,6 @@ require (
 	github.com/bborbe/math v1.4.19 // indirect
 	github.com/bborbe/parse v1.12.5 // indirect
 	github.com/bborbe/strimzi v1.8.23 // indirect
-	github.com/bborbe/validation v1.5.9 // indirect
 	github.com/bborbe/vault-cli v0.191.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
@@ -84,6 +84,7 @@ require (
 	github.com/klauspost/compress v1.20.4 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.14.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pandatix/go-abnf v0.5.5 // indirect
 	github.com/pierrec/lz4/v4 v4.1.33 // indirect

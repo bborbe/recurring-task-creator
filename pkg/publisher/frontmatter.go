@@ -5,6 +5,7 @@
 package publisher
 
 import (
+	"context"
 	"time"
 
 	lib "github.com/bborbe/agent"
@@ -62,13 +63,18 @@ type FrontmatterFormatter interface {
 	// value) and BEFORE `created_by` is force-set (so `created_by` stays
 	// the last provenance key). The value is a Go bool serialized as a
 	// YAML boolean true/false.
+	//
+	// A contradictory `mode`/`role` pair — `mode: interactive` with a role
+	// other than `human` or `manager`, including an absent role — is
+	// refused with a non-nil error and a nil map, before defaults are
+	// seeded, operator keys are merged, or anything is rendered.
 	Format(
 		operator lib.TaskFrontmatter,
 		slug string,
 		date schedule.Date,
 		autoAbortPrior bool,
 		recurrence schedule.RecurrenceKind,
-	) lib.TaskFrontmatter
+	) (lib.TaskFrontmatter, error)
 }
 
 // NewFrontmatterFormatter returns the default FrontmatterFormatter that
@@ -84,13 +90,23 @@ type frontmatterFormatter struct {
 	renderer Renderer
 }
 
+// Format renders the frontmatter for one published task, refusing a
+// contradictory `mode`/`role` pair before defaults, merging, or rendering.
+// On refusal it returns a nil map and the error.
+//
+// Format's frozen signature carries no context. The mode/role rule is a
+// pure in-memory check, so context.TODO() is used rather than
+// context.Background(), which docs/dod.md bans in business logic.
 func (f *frontmatterFormatter) Format(
 	operator lib.TaskFrontmatter,
 	slug string,
 	date schedule.Date,
 	autoAbortPrior bool,
 	recurrence schedule.RecurrenceKind,
-) lib.TaskFrontmatter {
+) (lib.TaskFrontmatter, error) {
+	if err := (ModeRoleRule{Slug: slug, Frontmatter: operator}).Validate(context.TODO()); err != nil {
+		return nil, err
+	}
 	out := lib.TaskFrontmatter{
 		"status":    "in_progress",
 		"page_type": "task",
@@ -110,7 +126,7 @@ func (f *frontmatterFormatter) Format(
 	out["defer_date"] = deferDateFor(recurrence, date)
 	out["auto_abort_prior"] = autoAbortPrior
 	out["created_by"] = "recurring-task-creator"
-	return out
+	return out, nil
 }
 
 // renderList renders the string entries of a flat list frontmatter value

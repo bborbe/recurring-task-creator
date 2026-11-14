@@ -79,18 +79,27 @@ func (p *publisher) Publish(
 			def.Slug,
 		)
 	}
+	frontmatter, err := p.formatter.Format(
+		def.Frontmatter,
+		def.Slug,
+		date,
+		def.AutoAbortPrior,
+		def.Recurrence,
+	)
+	if err != nil {
+		return errors.Wrapf(
+			ctx,
+			err,
+			"publish failed: format frontmatter for slug %q on %04d-%02d-%02d",
+			def.Slug, date.Year, date.Month, date.Day,
+		)
+	}
 	cmd := task.CreateCommand{
 		TaskIdentifier: identifier,
 		Title: strings.TrimSpace(
 			p.renderer.Render(def.TitleTemplate, def.Slug, date),
 		) + " - " + string(periodToken),
-		Frontmatter: p.formatter.Format(
-			def.Frontmatter,
-			def.Slug,
-			date,
-			def.AutoAbortPrior,
-			def.Recurrence,
-		),
+		Frontmatter: frontmatter,
 		Body:        p.renderer.Render(def.BodyTemplate, def.Slug, date),
 		TargetVault: def.Vault,
 	}
