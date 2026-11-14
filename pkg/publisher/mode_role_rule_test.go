@@ -94,6 +94,11 @@ var _ = Describe("ModeRoleRule", func() {
 			lib.TaskFrontmatter{"mode": "interactive", "role": []interface{}{"human"}},
 			false,
 		),
+		Entry(
+			"explicit null role is refused like an absent role",
+			lib.TaskFrontmatter{"mode": "interactive", "role": nil},
+			true,
+		),
 	)
 
 	It("names the slug and reports an absent role", func() {

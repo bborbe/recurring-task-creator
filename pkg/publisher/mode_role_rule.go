@@ -36,17 +36,19 @@ func (r ModeRoleRule) Validate(ctx context.Context) error {
 }
 
 // validateModeRole refuses `mode: interactive` unless `role` is the literal
-// string `human` or `manager`. Every other shape passes: an absent or
-// non-interactive mode, a non-string mode, and a non-string role impose no
-// constraint. Strings are compared literally, never rendered, so a
-// placeholder-looking role cannot slip past the guard.
+// string `human` or `manager`. An absent key and an explicitly null value
+// (`role:` with no value, which decodes to nil) are both refused: each
+// resolves to `agent` downstream and so forces `headless`. Every other
+// non-string role shape — an int, a bool, a list — imposes no constraint.
+// Strings are compared literally, never rendered, so a placeholder-looking
+// role cannot slip past the guard.
 func (r ModeRoleRule) validateModeRole(ctx context.Context) error {
 	mode, ok := r.Frontmatter["mode"].(string)
 	if !ok || mode != "interactive" {
 		return nil
 	}
 	role, present := r.Frontmatter["role"]
-	if !present {
+	if !present || role == nil {
 		return errors.Errorf(
 			ctx,
 			"schedule %q declares mode %q with role absent; interactive requires role human or manager",

@@ -10,7 +10,7 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
-- fix: refuse to publish a task whose frontmatter pairs `mode: interactive` with a role other than `human` or `manager`; the supervisor forces that pair to headless, so the declared mode was silently ignored
+- fix: refuse to publish a task whose frontmatter pairs `mode: interactive` with a role other than `human` or `manager`; the supervisor forces that pair to headless, so the declared mode was silently ignored. An explicitly null `role` is refused exactly like an absent one, since it resolves to `agent` the same way; non-string role shapes (int, bool, list) still impose no constraint.
 
 ## v0.14.3
 
