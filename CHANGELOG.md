@@ -12,6 +12,10 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 
 - fix: refuse to publish a task whose frontmatter pairs `mode: interactive` with a role other than `human` or `manager`; the supervisor forces that pair to headless, so the declared mode was silently ignored. An explicitly null `role` is refused exactly like an absent one, since it resolves to `agent` the same way; non-string role shapes (int, bool, list) still impose no constraint.
 
+## v0.14.4
+
+- fix: install Trivy from a pinned, checksum-verified release tarball instead of the apt-repo route that needed the removed `apt-key` helper
+
 ## v0.14.3
 
 - chore: update go module dependencies to go 1.27.4, keeping `k8s.io/apiextensions-apiserver` as the import path and aligning `go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc` at v1.47.0
