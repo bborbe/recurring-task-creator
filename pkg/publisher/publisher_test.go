@@ -1140,6 +1140,69 @@ var _ = Describe("Publisher", func() {
 		})
 	})
 
+	Describe("mode/role pair", func() {
+		It("refuses mode interactive with an absent role before sending", func() {
+			def := schedule.TaskDefinition{
+				Slug:          "shutdown-k3s",
+				TitleTemplate: "Shutdown K3s",
+				Recurrence:    schedule.RecurrenceWeekly,
+				Frontmatter:   lib.TaskFrontmatter{"mode": "interactive"},
+			}
+			err := pub.Publish(
+				context.Background(),
+				def,
+				schedule.NewDate(2026, time.June, 20),
+			)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("shutdown-k3s"))
+			Expect(err.Error()).To(ContainSubstring("interactive"))
+			Expect(err.Error()).To(ContainSubstring("absent"))
+			Expect(sender.SendCommandCallCount()).To(Equal(0))
+		})
+
+		It("refuses mode interactive with role agent before sending", func() {
+			def := schedule.TaskDefinition{
+				Slug:          "shutdown-k3s",
+				TitleTemplate: "Shutdown K3s",
+				Recurrence:    schedule.RecurrenceWeekly,
+				Frontmatter: lib.TaskFrontmatter{
+					"mode": "interactive",
+					"role": "agent",
+				},
+			}
+			err := pub.Publish(
+				context.Background(),
+				def,
+				schedule.NewDate(2026, time.June, 20),
+			)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("shutdown-k3s"))
+			Expect(err.Error()).To(ContainSubstring("agent"))
+			Expect(sender.SendCommandCallCount()).To(Equal(0))
+		})
+
+		It("publishes mode interactive with role human and keeps both keys", func() {
+			def := schedule.TaskDefinition{
+				Slug:          "shutdown-k3s",
+				TitleTemplate: "Shutdown K3s",
+				Recurrence:    schedule.RecurrenceWeekly,
+				Frontmatter: lib.TaskFrontmatter{
+					"mode": "interactive",
+					"role": "human",
+				},
+			}
+			Expect(pub.Publish(
+				context.Background(),
+				def,
+				schedule.NewDate(2026, time.June, 20),
+			)).To(Succeed())
+			Expect(sender.SendCommandCallCount()).To(Equal(1))
+			fm := capture().Frontmatter
+			Expect(fm).To(HaveKeyWithValue("mode", "interactive"))
+			Expect(fm).To(HaveKeyWithValue("role", "human"))
+		})
+	})
+
 	Describe("sender interaction", func() {
 		It("calls the sender exactly once per valid Publish", func() {
 			def := schedule.TaskDefinition{
