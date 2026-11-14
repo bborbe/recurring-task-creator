@@ -12,6 +12,10 @@ Please choose versions by [Semantic Versioning](http://semver.org/).
 
 - fix: refuse to publish a task whose frontmatter pairs `mode: interactive` with a role other than `human` or `manager`; the supervisor forces that pair to headless, so the declared mode was silently ignored. An explicitly null `role` is refused exactly like an absent one, since it resolves to `agent` the same way; non-string role shapes (int, bool, list) still impose no constraint.
 
+## v0.15.0
+
+- feat: add a `check-task-link` gate that fails a PR whose body carries no `Task: <task_identifier>` line
+
 ## v0.14.4
 
 - fix: install Trivy from a pinned, checksum-verified release tarball instead of the apt-repo route that needed the removed `apt-key` helper
