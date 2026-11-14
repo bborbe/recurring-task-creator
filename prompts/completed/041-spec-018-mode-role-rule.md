@@ -1,8 +1,13 @@
 ---
-status: approved
+status: completed
 spec: [018-role-mode-interactive-guard]
+summary: 'Landed and fully tested ModeRoleRule, the validation value type that refuses mode: interactive unless role is literally human or manager, with matrix/robustness specs and bborbe/validation now a direct dependency.'
+execution_id: 68b0ced1-4024-5e3e-94db-39df70648379-exec-041-spec-018-mode-role-rule
+dark-factory-version: dev
 created: "2026-11-14T12:50:00Z"
 queued: "2026-11-14T13:07:44Z"
+started: "2026-11-14T13:14:58Z"
+completed: "2026-11-14T13:16:28Z"
 branch: dark-factory/role-mode-interactive-guard
 ---
 
